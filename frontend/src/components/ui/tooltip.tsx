@@ -1,50 +1,58 @@
-import * as React from 'react';
-import { cn } from '../../utils/cn.js';
+import * as React from "react"
+import * as TooltipPrimitive from "@radix-ui/react-tooltip"
 
-interface TooltipProps {
-  content: React.ReactNode;
+import { cn } from "@/utils/cn"
+
+const TooltipProvider = TooltipPrimitive.Provider
+
+const TooltipRoot = TooltipPrimitive.Root
+
+const TooltipTrigger = TooltipPrimitive.Trigger
+
+const TooltipContent = React.forwardRef<
+  React.ElementRef<typeof TooltipPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
+>(({ className, sideOffset = 4, ...props }, ref) => (
+  <TooltipPrimitive.Content
+    ref={ref}
+    sideOffset={sideOffset}
+    className={cn(
+      "z-50 overflow-hidden rounded-md border border-border bg-popover px-2.5 py-1 text-xs text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-tooltip-content-transform-origin]",
+      className
+    )}
+    {...props}
+  />
+))
+TooltipContent.displayName = TooltipPrimitive.Content.displayName
+
+interface QuickTooltipProps {
+  content?: React.ReactNode;
+  side?: "top" | "right" | "bottom" | "left";
   children: React.ReactNode;
-  side?: 'top' | 'right' | 'bottom' | 'left';
   className?: string;
-  disabled?: boolean;
 }
 
-export const Tooltip: React.FC<TooltipProps> = ({
+const Tooltip: React.FC<QuickTooltipProps & React.ComponentProps<typeof TooltipPrimitive.Root>> = ({
   content,
+  side = "right",
   children,
-  side = 'right',
   className,
-  disabled = false,
+  ...props
 }) => {
-  const [visible, setVisible] = React.useState(false);
+  if (content !== undefined) {
+    return (
+      <TooltipProvider>
+        <TooltipRoot {...props}>
+          <TooltipTrigger asChild>{children}</TooltipTrigger>
+          <TooltipContent side={side} className={className}>
+            {content}
+          </TooltipContent>
+        </TooltipRoot>
+      </TooltipProvider>
+    );
+  }
 
-  if (disabled) return <>{children}</>;
-
-  const positions = {
-    top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
-    bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
-    left: 'right-full top-1/2 -translate-y-1/2 mr-2',
-    right: 'left-full top-1/2 -translate-y-1/2 ml-2',
-  };
-
-  return (
-    <div
-      className="relative inline-flex items-center"
-      onMouseEnter={() => setVisible(true)}
-      onMouseLeave={() => setVisible(false)}
-    >
-      {children}
-      {visible && (
-        <div
-          className={cn(
-            'absolute z-50 whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1 text-xs text-white shadow-md animate-in fade-in-0 zoom-in-95 pointer-events-none dark:bg-slate-100 dark:text-slate-900 font-medium',
-            positions[side],
-            className
-          )}
-        >
-          {content}
-        </div>
-      )}
-    </div>
-  );
+  return <TooltipRoot {...props}>{children}</TooltipRoot>;
 };
+
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
