@@ -10,6 +10,7 @@ import { OrdersPage } from '../features/orders/OrdersPage.js';
 import { KitchenPage } from '../features/kitchen/KitchenPage.js';
 import { FoodsPage } from '../features/foods/FoodsPage.js';
 import { InventoryPage } from '../features/inventory/InventoryPage.js';
+import { AiAnalyticsPage } from '../features/ai/AiAnalyticsPage.js';
 import { StudentHomePage } from '../features/student/StudentHomePage.js';
 
 // Protected Route Wrapper
@@ -18,7 +19,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   if (isLoading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-slate-900 text-emerald-400 font-bold text-sm">
+      <div className="h-screen w-screen flex items-center justify-center bg-background text-primary font-bold text-sm">
         Đang khởi động hệ thống Smart Canteen...
       </div>
     );
@@ -74,7 +75,7 @@ export const AppRoutes: React.FC = () => {
         <Route path="promotions" element={<DashboardPage />} />
         <Route path="reviews" element={<DashboardPage />} />
         <Route path="reports" element={<DashboardPage />} />
-        <Route path="ai-analytics" element={<DashboardPage />} />
+        <Route path="ai-analytics" element={<AiAnalyticsPage />} />
         <Route path="settings" element={<DashboardPage />} />
       </Route>
 

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card.js';
+import { Card, CardContent } from '../../components/ui/Card.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
+import { Sheet, SheetHeader, SheetTitle, SheetClose } from '../../components/ui/sheet.js';
 import { formatCurrency, formatDateTime } from '../../utils/format.js';
 import { 
   Search, 
@@ -11,8 +12,11 @@ import {
   Clock, 
   XCircle, 
   ChefHat, 
-  Filter,
-  Download
+  Download,
+  User,
+  MapPin,
+  CreditCard,
+  Layers
 } from 'lucide-react';
 
 interface OrderItemRow {
@@ -22,9 +26,11 @@ interface OrderItemRow {
   canteenName: string;
   tableNumber: string;
   itemsSummary: string;
+  itemsDetail: { name: string; qty: number; price: number; note?: string }[];
   finalAmount: number;
   status: 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
   paymentStatus: 'PAID' | 'UNPAID' | 'REFUNDED';
+  paymentMethod: string;
   orderedAt: string;
 }
 
@@ -41,9 +47,14 @@ export const OrdersPage: React.FC = () => {
       canteenName: 'Căng tin Khu A (H1)',
       tableNumber: 'Bàn A1-01',
       itemsSummary: '1× Cơm Gà Xối Mỡ, 1× Trứng ốp la',
+      itemsDetail: [
+        { name: 'Cơm Gà Xối Mỡ Giòn Da', qty: 1, price: 35000, note: 'Nhiều cơm' },
+        { name: 'Trứng Ốp La', qty: 1, price: 6000 },
+      ],
       finalAmount: 32800,
       status: 'COMPLETED',
       paymentStatus: 'PAID',
+      paymentMethod: 'Ví MoMo QR',
       orderedAt: '2026-08-26 07:15:00',
     },
     {
@@ -53,9 +64,13 @@ export const OrdersPage: React.FC = () => {
       canteenName: 'Căng tin Khu A (H1)',
       tableNumber: 'Bàn A1-02',
       itemsSummary: '1× Phở Bò Tái Hà Nội',
+      itemsDetail: [
+        { name: 'Phở Bò Tái Hà Nội', qty: 1, price: 35000, note: 'Không hành tây' },
+      ],
       finalAmount: 35000,
       status: 'COMPLETED',
       paymentStatus: 'PAID',
+      paymentMethod: 'Tiền mặt',
       orderedAt: '2026-08-26 07:20:00',
     },
     {
@@ -65,9 +80,13 @@ export const OrdersPage: React.FC = () => {
       canteenName: 'Căng tin Khu A (H1)',
       tableNumber: 'Bàn A1-01',
       itemsSummary: '1× Cơm Gà Xối Mỡ Giòn Da',
+      itemsDetail: [
+        { name: 'Cơm Gà Xối Mỡ Giòn Da', qty: 1, price: 35000 },
+      ],
       finalAmount: 35000,
       status: 'PREPARING',
       paymentStatus: 'PAID',
+      paymentMethod: 'Ví SV Bách Khoa',
       orderedAt: '2026-08-26 12:45:00',
     },
     {
@@ -77,9 +96,13 @@ export const OrdersPage: React.FC = () => {
       canteenName: 'Căng tin Khu A (H1)',
       tableNumber: 'Bàn A1-02',
       itemsSummary: '1× Cơm Sườn Nướng Mật Ong',
+      itemsDetail: [
+        { name: 'Cơm Sườn Nướng Mật Ong', qty: 1, price: 35000 },
+      ],
       finalAmount: 35000,
       status: 'CONFIRMED',
       paymentStatus: 'PAID',
+      paymentMethod: 'Ví MoMo QR',
       orderedAt: '2026-08-26 12:48:00',
     },
     {
@@ -89,9 +112,13 @@ export const OrdersPage: React.FC = () => {
       canteenName: 'Căng tin Khu A (H1)',
       tableNumber: 'Mang về',
       itemsSummary: '1× Cà Phê Sữa Đá',
+      itemsDetail: [
+        { name: 'Cà Phê Sữa Đá', qty: 1, price: 18000, note: 'Ít đường' },
+      ],
       finalAmount: 18000,
       status: 'PENDING',
       paymentStatus: 'UNPAID',
+      paymentMethod: 'Chưa thanh toán',
       orderedAt: '2026-08-26 12:52:00',
     },
   ];
@@ -105,11 +132,11 @@ export const OrdersPage: React.FC = () => {
       case 'CONFIRMED':
         return <Badge variant="warning" hasDot>Đã xác nhận</Badge>;
       case 'PENDING':
-        return <Badge variant="neutral" hasDot>Chờ xử lý</Badge>;
+        return <Badge variant="outline" hasDot>Chờ xử lý</Badge>;
       case 'CANCELLED':
-        return <Badge variant="danger" hasDot>Đã hủy</Badge>;
+        return <Badge variant="destructive" hasDot>Đã hủy</Badge>;
       default:
-        return <Badge variant="neutral">{status}</Badge>;
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
@@ -126,8 +153,8 @@ export const OrdersPage: React.FC = () => {
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Quản Lý Đơn Hàng</h2>
-          <p className="text-xs text-slate-500">Theo dõi, lọc và xử lý toàn bộ các đơn hàng đặt trực tiếp và online</p>
+          <h2 className="text-xl font-bold text-foreground tracking-tight">Quản Lý Đơn Hàng</h2>
+          <p className="text-xs text-muted-foreground">Theo dõi, lọc và xử lý toàn bộ các đơn hàng đặt trực tiếp và online</p>
         </div>
         <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
           Xuất Báo Cáo Đơn
@@ -138,13 +165,13 @@ export const OrdersPage: React.FC = () => {
       <Card>
         <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="relative flex-1 max-w-sm">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Tìm theo mã đơn hoặc tên khách..."
-              className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              className="w-full pl-9 pr-3.5 py-2 bg-muted/60 border border-input rounded-lg text-xs text-foreground focus:bg-background focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
 
@@ -154,7 +181,7 @@ export const OrdersPage: React.FC = () => {
                 key={st}
                 onClick={() => setFilterStatus(st)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
-                  filterStatus === st ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  filterStatus === st ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {st === 'ALL' ? 'Tất cả' : st}
@@ -169,9 +196,9 @@ export const OrdersPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <tr className="border-b border-border bg-muted/50 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                 <th className="py-3.5 px-4">Mã Đơn</th>
-                <th className="py-3.5 px-4">Khách Hàng / Bàn</th>
+                <th className="py-3.5 px-4">Khách Hàng / Vị Trí</th>
                 <th className="py-3.5 px-4">Chi Tiết Món</th>
                 <th className="py-3.5 px-4">Tổng Tiền</th>
                 <th className="py-3.5 px-4">Trạng Thái</th>
@@ -180,23 +207,23 @@ export const OrdersPage: React.FC = () => {
                 <th className="py-3.5 px-4 text-right">Thao Tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+            <tbody className="divide-y divide-border text-xs text-foreground">
               {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="py-3.5 px-4 font-bold text-slate-900">{order.code}</td>
+                <tr key={order.id} className="hover:bg-muted/40 transition-colors">
+                  <td className="py-3.5 px-4 font-bold font-mono">{order.code}</td>
                   <td className="py-3.5 px-4">
-                    <p className="font-semibold text-slate-800">{order.customerName}</p>
-                    <p className="text-[11px] text-emerald-600 font-medium">{order.tableNumber}</p>
+                    <p className="font-semibold text-foreground">{order.customerName}</p>
+                    <p className="text-[11px] text-primary font-medium">{order.tableNumber}</p>
                   </td>
-                  <td className="py-3.5 px-4 max-w-xs truncate">{order.itemsSummary}</td>
-                  <td className="py-3.5 px-4 font-bold text-slate-900">{formatCurrency(order.finalAmount)}</td>
+                  <td className="py-3.5 px-4 max-w-xs truncate text-muted-foreground">{order.itemsSummary}</td>
+                  <td className="py-3.5 px-4 font-bold text-foreground">{formatCurrency(order.finalAmount)}</td>
                   <td className="py-3.5 px-4">{getStatusBadge(order.status)}</td>
                   <td className="py-3.5 px-4">
-                    <Badge variant={order.paymentStatus === 'PAID' ? 'success' : 'warning'} size="sm">
+                    <Badge variant={order.paymentStatus === 'PAID' ? 'success' : 'warning'} hasDot>
                       {order.paymentStatus === 'PAID' ? 'Đã thu' : 'Chưa thu'}
                     </Badge>
                   </td>
-                  <td className="py-3.5 px-4 text-slate-500">{formatDateTime(order.orderedAt)}</td>
+                  <td className="py-3.5 px-4 text-muted-foreground">{formatDateTime(order.orderedAt)}</td>
                   <td className="py-3.5 px-4 text-right">
                     <Button onClick={() => setSelectedOrder(order)} variant="ghost" size="sm">
                       <Eye className="w-3.5 h-3.5 mr-1" /> Chi Tiết
@@ -209,33 +236,86 @@ export const OrdersPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Order Detail Modal */}
-      {selectedOrder && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div>
-                <h4 className="text-base font-bold text-slate-800">{selectedOrder.code}</h4>
-                <p className="text-xs text-slate-500">{formatDateTime(selectedOrder.orderedAt)}</p>
+      {/* Order Detail Sheet Drawer */}
+      <Sheet open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
+        {selectedOrder && (
+          <div className="space-y-6">
+            <SheetHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <SheetTitle>Chi Tiết Đơn Hàng {selectedOrder.code}</SheetTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">{formatDateTime(selectedOrder.orderedAt)}</p>
+                </div>
+                <SheetClose onClick={() => setSelectedOrder(null)} />
               </div>
-              {getStatusBadge(selectedOrder.status)}
+            </SheetHeader>
+
+            {/* Order Timeline */}
+            <div className="p-4 rounded-xl bg-muted/40 border border-border space-y-3">
+              <h5 className="text-xs font-bold text-foreground">Hành Trình Đơn Hàng</h5>
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center gap-2 text-primary font-semibold">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>Đã đặt hàng ({selectedOrder.orderedAt.slice(-8)})</span>
+                </div>
+                <div className="flex items-center gap-2 text-primary font-semibold">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>Đã xác nhận & thanh toán ({selectedOrder.paymentMethod})</span>
+                </div>
+                <div className="flex items-center gap-2 text-foreground font-medium">
+                  <Clock className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span>Đang nấu tại Bếp Căng tin Khu A</span>
+                </div>
+              </div>
             </div>
 
+            {/* Items List */}
+            <div className="space-y-2">
+              <h5 className="text-xs font-bold text-foreground">Danh Sách Món Ăn</h5>
+              <div className="divide-y divide-border border border-border rounded-xl p-3 bg-card space-y-2">
+                {selectedOrder.itemsDetail.map((item, idx) => (
+                  <div key={idx} className="pt-2 first:pt-0 flex items-start justify-between text-xs">
+                    <div>
+                      <p className="font-bold text-foreground">{item.qty}× {item.name}</p>
+                      {item.note && <p className="text-[11px] text-muted-foreground italic">Ghi chú: {item.note}</p>}
+                    </div>
+                    <span className="font-semibold text-foreground">{formatCurrency(item.price * item.qty)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Payment & Location Info */}
             <div className="space-y-2 text-xs">
-              <p><span className="font-bold text-slate-700">Khách hàng:</span> {selectedOrder.customerName}</p>
-              <p><span className="font-bold text-slate-700">Vị trí phục vụ:</span> {selectedOrder.tableNumber}</p>
-              <p><span className="font-bold text-slate-700">Món đã đặt:</span> {selectedOrder.itemsSummary}</p>
-              <p><span className="font-bold text-slate-700">Tổng thanh toán:</span> <span className="font-bold text-emerald-600 text-sm">{formatCurrency(selectedOrder.finalAmount)}</span></p>
+              <div className="flex justify-between py-1 border-b border-border">
+                <span className="text-muted-foreground">Khách hàng:</span>
+                <span className="font-bold text-foreground">{selectedOrder.customerName}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-border">
+                <span className="text-muted-foreground">Vị trí nhận món:</span>
+                <span className="font-bold text-primary">{selectedOrder.tableNumber}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-border">
+                <span className="text-muted-foreground">Phương thức thanh toán:</span>
+                <span className="font-bold text-foreground">{selectedOrder.paymentMethod}</span>
+              </div>
+              <div className="flex justify-between py-2 text-sm font-bold text-foreground">
+                <span>Tổng cộng:</span>
+                <span className="text-base text-primary">{formatCurrency(selectedOrder.finalAmount)}</span>
+              </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex justify-end">
-              <Button onClick={() => setSelectedOrder(null)} variant="primary" size="sm">
+            <div className="pt-4 flex gap-2">
+              <Button onClick={() => setSelectedOrder(null)} variant="default" className="flex-1">
+                In Hóa Đơn
+              </Button>
+              <Button onClick={() => setSelectedOrder(null)} variant="outline">
                 Đóng
               </Button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Sheet>
     </div>
   );
 };

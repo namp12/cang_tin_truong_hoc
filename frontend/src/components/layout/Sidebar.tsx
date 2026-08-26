@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.js';
 import { cn } from '../../utils/cn.js';
+import { Tooltip } from '../ui/tooltip.js';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -19,7 +20,8 @@ import {
   Settings,
   Sparkles,
   Layers,
-  Clock,
+  ChevronLeft,
+  ChevronRight,
   ShieldCheck,
 } from 'lucide-react';
 
@@ -40,9 +42,15 @@ interface MenuSection {
 
 interface SidebarProps {
   onCloseMobile?: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
+export const Sidebar: React.FC<SidebarProps> = ({
+  onCloseMobile,
+  isCollapsed = false,
+  onToggleCollapse,
+}) => {
   const { user, hasRole } = useAuth();
 
   const menuSections: MenuSection[] = [
@@ -106,19 +114,39 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
   ];
 
   return (
-    <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col h-full border-r border-slate-800 select-none">
+    <aside
+      className={cn(
+        'bg-card text-card-foreground flex flex-col h-full border-r border-border select-none transition-all duration-300 relative',
+        isCollapsed ? 'w-20' : 'w-64'
+      )}
+    >
       {/* Brand Header */}
-      <div className="h-16 flex items-center px-6 gap-3 border-b border-slate-800/80 bg-slate-950/40">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
-          <UtensilsCrossed className="w-5 h-5 stroke-[2.2]" />
-        </div>
-        <div>
-          <div className="flex items-center gap-1.5">
-            <h1 className="font-bold text-white tracking-wide text-sm leading-tight">SMART CANTEEN</h1>
-            <span className="text-[10px] bg-emerald-500/20 text-emerald-400 font-semibold px-1.5 py-0.2 rounded border border-emerald-500/30">PRO</span>
+      <div className="h-16 flex items-center justify-between px-4 border-b border-border bg-card/50">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-sm shrink-0">
+            <UtensilsCrossed className="w-5 h-5 stroke-[2.2]" />
           </div>
-          <p className="text-[11px] text-slate-400 font-medium">ĐH Bách Khoa TP.HCM</p>
+          {!isCollapsed && (
+            <div className="min-w-0 animate-in fade-in-0 duration-200">
+              <div className="flex items-center gap-1.5">
+                <h1 className="font-bold text-foreground tracking-wide text-xs truncate">SMART CANTEEN</h1>
+                <span className="text-[9px] bg-primary/10 text-primary font-bold px-1.5 py-0.2 rounded border border-primary/20">PRO</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground font-medium truncate">ĐH Bách Khoa TP.HCM</p>
+            </div>
+          )}
         </div>
+
+        {/* Collapse Toggle Button (Desktop) */}
+        {onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            className="hidden lg:flex p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            title={isCollapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
+          >
+            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
+        )}
       </div>
 
       {/* Navigation Links */}
@@ -129,41 +157,55 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
 
           return (
             <div key={idx} className="space-y-1">
-              <p className="px-3 text-[10px] font-bold tracking-wider text-slate-300 uppercase">
-                {section.title}
-              </p>
+              {!isCollapsed ? (
+                <p className="px-3 text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                  {section.title}
+                </p>
+              ) : (
+                <div className="h-px bg-border/60 mx-2 my-2" />
+              )}
               <div className="space-y-0.5">
                 {section.items.map((item) => {
                   const Icon = item.icon;
-                  return (
+                  const navContent = (
                     <NavLink
                       key={item.path}
                       to={item.path}
                       onClick={onCloseMobile}
                       className={({ isActive }) =>
                         cn(
-                          'flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150 group',
+                          'flex items-center rounded-lg text-xs font-medium transition-all duration-150 group',
+                          isCollapsed ? 'justify-center p-2.5' : 'justify-between px-3 py-2',
                           isActive
-                            ? 'bg-emerald-600 text-white font-semibold shadow-sm shadow-emerald-600/30'
-                            : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
+                            ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                         )
                       }
                     >
                       <div className="flex items-center gap-3">
                         <Icon className="w-4 h-4 transition-transform group-hover:scale-110 shrink-0" />
-                        <span>{item.label}</span>
+                        {!isCollapsed && <span className="truncate">{item.label}</span>}
                       </div>
-                      {item.badge && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+
+                      {!isCollapsed && item.badge && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30">
                           {item.badge}
                         </span>
                       )}
-                      {item.isAi && (
-                        <span className="flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                      {!isCollapsed && item.isAi && (
+                        <span className="flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-500 border border-blue-500/30">
                           <Sparkles className="w-2.5 h-2.5" /> AI
                         </span>
                       )}
                     </NavLink>
+                  );
+
+                  return isCollapsed ? (
+                    <Tooltip key={item.path} content={item.label} side="right">
+                      {navContent}
+                    </Tooltip>
+                  ) : (
+                    navContent
                   );
                 })}
               </div>
@@ -173,18 +215,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ onCloseMobile }) => {
       </div>
 
       {/* User Quick Info Footer */}
-      <div className="p-3 border-t border-slate-800/80 bg-slate-950/40">
-        <div className="flex items-center gap-3 p-2 rounded-lg bg-slate-800/50 border border-slate-800">
-          <div className="w-8 h-8 rounded-full bg-emerald-700 text-white font-bold text-xs flex items-center justify-center">
+      <div className="p-3 border-t border-border bg-card/50">
+        <div
+          className={cn(
+            'flex items-center rounded-lg bg-muted/60 border border-border/80 p-2',
+            isCollapsed ? 'justify-center' : 'gap-3'
+          )}
+        >
+          <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
             {user?.fullName?.charAt(0) || 'A'}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-white truncate">{user?.fullName || 'Admin User'}</p>
-            <p className="text-[10px] text-emerald-400 font-medium truncate flex items-center gap-1">
-              <ShieldCheck className="w-3 h-3" />
-              {user?.roles?.[0] || 'SUPER_ADMIN'}
-            </p>
-          </div>
+          {!isCollapsed && (
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-foreground truncate">{user?.fullName || 'Admin User'}</p>
+              <p className="text-[10px] text-primary font-medium truncate flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3" />
+                {user?.roles?.[0] || 'SUPER_ADMIN'}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </aside>

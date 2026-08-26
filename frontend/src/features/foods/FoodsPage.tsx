@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card.js';
+import { Card, CardContent } from '../../components/ui/Card.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
-import { Input } from '../../components/ui/Input.js';
+import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '../../components/ui/dialog.js';
 import { formatCurrency } from '../../utils/format.js';
 import { 
   Search, 
@@ -11,9 +11,7 @@ import {
   Trash2, 
   UtensilsCrossed, 
   Flame, 
-  Layers, 
-  Eye,
-  CheckCircle2
+  Layers
 } from 'lucide-react';
 
 interface FoodItem {
@@ -83,10 +81,10 @@ export const FoodsPage: React.FC = () => {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Quản Lý Thực Đơn Món Ăn</h2>
-          <p className="text-xs text-slate-500">Thêm mới, điều chỉnh giá bán, giá vốn và định lượng món ăn</p>
+          <h2 className="text-xl font-bold text-foreground tracking-tight">Quản Lý Thực Đơn Món Ăn</h2>
+          <p className="text-xs text-muted-foreground">Thêm mới, điều chỉnh giá bán, giá vốn và định lượng món ăn</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)} variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+        <Button onClick={() => setShowAddModal(true)} variant="default" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
           Thêm Món Ăn Mới
         </Button>
       </div>
@@ -95,13 +93,13 @@ export const FoodsPage: React.FC = () => {
       <Card>
         <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="relative flex-1 max-w-sm">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Tìm kiếm món ăn theo tên hoặc mã..."
-              className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              className="w-full pl-9 pr-3.5 py-2 bg-muted/60 border border-input rounded-lg text-xs text-foreground focus:bg-background focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
 
@@ -111,7 +109,7 @@ export const FoodsPage: React.FC = () => {
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
-                  selectedCategory === cat ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  selectedCategory === cat ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {cat === 'ALL' ? 'Tất cả' : cat}
@@ -126,7 +124,7 @@ export const FoodsPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/70 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <tr className="border-b border-border bg-muted/50 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                 <th className="py-3.5 px-4">Món Ăn</th>
                 <th className="py-3.5 px-4">Danh Mục</th>
                 <th className="py-3.5 px-4">Giá Bán</th>
@@ -136,36 +134,36 @@ export const FoodsPage: React.FC = () => {
                 <th className="py-3.5 px-4 text-right">Thao Tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+            <tbody className="divide-y divide-border text-xs text-foreground">
               {filteredFoods.map((food) => {
                 const margin = Math.round(((food.basePrice - food.costPrice) / food.basePrice) * 100);
                 return (
-                  <tr key={food.id} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={food.id} className="hover:bg-muted/40 transition-colors">
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                        <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0">
                           <UtensilsCrossed className="w-4 h-4" />
                         </div>
                         <div>
-                          <p className="font-bold text-slate-900 flex items-center gap-1.5">
+                          <p className="font-bold text-foreground flex items-center gap-1.5">
                             {food.name}
                             {food.isBestSeller && (
-                              <span className="text-[10px] bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.2 rounded font-bold">
+                              <span className="text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 px-1.5 py-0.2 rounded font-bold">
                                 HOT
                               </span>
                             )}
                           </p>
-                          <p className="text-[11px] text-slate-400">{food.code}</p>
+                          <p className="text-[11px] text-muted-foreground font-mono">{food.code}</p>
                         </div>
                       </div>
                     </td>
                     <td className="py-3.5 px-4">
-                      <Badge variant="neutral">{food.category}</Badge>
+                      <Badge variant="outline">{food.category}</Badge>
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-slate-900">{formatCurrency(food.basePrice)}</td>
-                    <td className="py-3.5 px-4 text-slate-500">{formatCurrency(food.costPrice)}</td>
+                    <td className="py-3.5 px-4 font-bold text-foreground">{formatCurrency(food.basePrice)}</td>
+                    <td className="py-3.5 px-4 text-muted-foreground">{formatCurrency(food.costPrice)}</td>
                     <td className="py-3.5 px-4">
-                      <span className="font-bold text-emerald-600">~{margin}%</span>
+                      <span className="font-bold text-primary">~{margin}%</span>
                     </td>
                     <td className="py-3.5 px-4">
                       <Badge variant="success" hasDot>
@@ -180,7 +178,7 @@ export const FoodsPage: React.FC = () => {
                         onClick={() => setFoods(foods.filter((f) => f.id !== food.id))}
                         variant="ghost"
                         size="sm"
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        className="text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
@@ -193,78 +191,77 @@ export const FoodsPage: React.FC = () => {
         </div>
       </Card>
 
-      {/* Add Food Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h4 className="text-base font-bold text-slate-800">Thêm Món Ăn Mới</h4>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">✕</button>
-            </div>
-
-            <form onSubmit={handleAddFood} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Tên Món Ăn</label>
-                <input
-                  type="text"
-                  required
-                  value={newFood.name}
-                  onChange={(e) => setNewFood({ ...newFood, name: e.target.value })}
-                  placeholder="Ví dụ: Cơm Gà Xối Mỡ..."
-                  className="w-full px-3 py-2 border rounded-lg text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Danh Mục</label>
-                <select
-                  value={newFood.category}
-                  onChange={(e) => setNewFood({ ...newFood, category: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-xs"
-                >
-                  <option value="Cơm Phần">Cơm Phần</option>
-                  <option value="Bún - Phở">Bún - Phở</option>
-                  <option value="Bánh Mì">Bánh Mì</option>
-                  <option value="Đồ Uống">Đồ Uống</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Giá Bán (VNĐ)</label>
-                  <input
-                    type="number"
-                    required
-                    value={newFood.basePrice}
-                    onChange={(e) => setNewFood({ ...newFood, basePrice: e.target.value })}
-                    placeholder="35000"
-                    className="w-full px-3 py-2 border rounded-lg text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Giá Vốn (Ước tính)</label>
-                  <input
-                    type="number"
-                    value={newFood.costPrice}
-                    onChange={(e) => setNewFood({ ...newFood, costPrice: e.target.value })}
-                    placeholder="18000"
-                    className="w-full px-3 py-2 border rounded-lg text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 flex gap-2 justify-end">
-                <Button onClick={() => setShowAddModal(false)} type="button" variant="outline" size="sm">
-                  Hủy
-                </Button>
-                <Button type="submit" variant="primary" size="sm">
-                  Lưu Món Ăn
-                </Button>
-              </div>
-            </form>
+      {/* Add Food Dialog */}
+      <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Thêm Món Ăn Mới</DialogTitle>
+            <DialogClose onClick={() => setShowAddModal(false)} />
           </div>
-        </div>
-      )}
+          <DialogDescription>Điền thông tin và định giá cho món ăn mới trên thực đơn</DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleAddFood} className="space-y-3 py-2">
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">Tên Món Ăn</label>
+            <input
+              type="text"
+              required
+              value={newFood.name}
+              onChange={(e) => setNewFood({ ...newFood, name: e.target.value })}
+              placeholder="Ví dụ: Cơm Gà Xối Mỡ..."
+              className="w-full px-3 py-2 border border-input rounded-lg text-xs bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">Danh Mục</label>
+            <select
+              value={newFood.category}
+              onChange={(e) => setNewFood({ ...newFood, category: e.target.value })}
+              className="w-full px-3 py-2 border border-input rounded-lg text-xs bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="Cơm Phần">Cơm Phần</option>
+              <option value="Bún - Phở">Bún - Phở</option>
+              <option value="Bánh Mì">Bánh Mì</option>
+              <option value="Đồ Uống">Đồ Uống</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">Giá Bán (VNĐ)</label>
+              <input
+                type="number"
+                required
+                value={newFood.basePrice}
+                onChange={(e) => setNewFood({ ...newFood, basePrice: e.target.value })}
+                placeholder="35000"
+                className="w-full px-3 py-2 border border-input rounded-lg text-xs bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1">Giá Vốn (Ước tính)</label>
+              <input
+                type="number"
+                value={newFood.costPrice}
+                onChange={(e) => setNewFood({ ...newFood, costPrice: e.target.value })}
+                placeholder="18000"
+                className="w-full px-3 py-2 border border-input rounded-lg text-xs bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button onClick={() => setShowAddModal(false)} type="button" variant="outline" size="sm">
+              Hủy
+            </Button>
+            <Button type="submit" variant="default" size="sm">
+              Lưu Món Ăn
+            </Button>
+          </DialogFooter>
+        </form>
+      </Dialog>
     </div>
   );
 };
