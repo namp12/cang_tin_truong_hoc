@@ -271,31 +271,17 @@ export const StudentHomePage: React.FC = () => {
 
               <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-100">
                 <span className="text-xs font-extrabold text-orange-600 font-mono">{formatCurrency(food.price)}</span>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedFoodToReview(food.name);
-                      setShowReviewModal(true);
-                    }}
-                    className="px-2 py-1 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 text-[11px] font-bold flex items-center gap-0.5 border border-amber-200"
-                    title="Đánh giá món này"
-                  >
-                    <Star className="w-3 h-3 fill-amber-400" />
-                    <span>Đánh giá</span>
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      dnuStore.addToStudentCart(food);
-                    }}
-                    className="px-2.5 py-1 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm hover:scale-105 transition-transform"
-                    title="Thêm vào giỏ"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Thêm</span>
-                  </button>
-                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    dnuStore.addToStudentCart(food);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm hover:scale-105 transition-transform"
+                  title="Thêm vào giỏ"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Thêm</span>
+                </button>
               </div>
             </div>
           </div>

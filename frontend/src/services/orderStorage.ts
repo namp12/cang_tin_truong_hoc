@@ -302,4 +302,37 @@ export const orderStorage = {
 
     return { tickets: updatedTickets, orders: updatedOrders };
   },
+
+  getStudentOrderedFoods(studentFullName?: string, studentUsername?: string): { foodName: string; orderCode: string; orderDate: string }[] {
+    const orders = this.getOrders();
+    const nameLower = (studentFullName || '').toLowerCase();
+    const userLower = (studentUsername || '').toLowerCase();
+
+    const studentOrders = orders.filter((o) => {
+      if (o.status !== 'COMPLETED') return false;
+      const cLower = (o.customerName || '').toLowerCase();
+      return (
+        (nameLower && cLower.includes(nameLower)) ||
+        (userLower && cLower.includes(userLower)) ||
+        cLower.includes('nguyễn thành nam') ||
+        cLower.includes('sinh viên dnu') ||
+        cLower.includes('sv cntt')
+      );
+    });
+
+    const orderedFoods: { foodName: string; orderCode: string; orderDate: string }[] = [];
+    studentOrders.forEach((o) => {
+      o.itemsDetail.forEach((item) => {
+        if (!orderedFoods.some((f) => f.foodName.toLowerCase() === item.name.toLowerCase())) {
+          orderedFoods.push({
+            foodName: item.name,
+            orderCode: o.code,
+            orderDate: o.orderedAt,
+          });
+        }
+      });
+    });
+
+    return orderedFoods;
+  },
 };

@@ -4,6 +4,7 @@ import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog.js';
 import { dnuStore, DishReview, ReviewReply } from '../../services/dnuStore.js';
+import { orderStorage } from '../../services/orderStorage.js';
 import { useAuth } from '../../contexts/AuthContext.js';
 import { 
   Star, 
@@ -37,13 +38,16 @@ export const ReviewsPage: React.FC = () => {
   const [filterRating, setFilterRating] = useState<number | 'ALL'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Student Ordered Dishes
+  const orderedFoods = orderStorage.getStudentOrderedFoods(user?.fullName, user?.username);
+
   // Student Add Review Modal
   const [showAddModal, setShowAddModal] = useState(false);
   const [foods] = useState(() => dnuStore.getFoods());
   const [newReview, setNewReview] = useState({
     studentName: user?.fullName || 'Nguyễn Thành Nam',
     studentClass: isStudent ? (user?.username || 'K16 Khoa CNTT DNU') : 'K16 Khoa CNTT DNU',
-    foodName: foods[0]?.name || 'Cơm Gà Xối Mỡ Giòn Da',
+    foodName: orderedFoods[0]?.foodName || 'Cơm Rang Dưa Bò Hà Nội',
     rating: 5,
     comment: '',
     sentiment: 'POSITIVE' as const,
@@ -504,68 +508,98 @@ export const ReviewsPage: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleCreateReview} className="space-y-3.5 py-2 text-xs">
-            <div>
-              <label className="block font-semibold text-foreground mb-1">Món ăn bạn muốn đánh giá *</label>
-              <select
-                value={newReview.foodName}
-                onChange={(e) => setNewReview({ ...newReview, foodName: e.target.value })}
-                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg"
-              >
-                {foods.map((f) => (
-                  <option key={f.id} value={f.name}>
-                    {f.name} ({f.category})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block font-semibold text-foreground mb-1">Số sao đánh giá (Rating) *</label>
-              <div className="flex items-center gap-2 p-2 bg-muted/40 rounded-lg border border-input">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setNewReview({ ...newReview, rating: star })}
-                    className="p-1 hover:scale-110 transition-transform"
-                  >
-                    <Star
-                      className={`w-6 h-6 ${
-                        star <= newReview.rating
-                          ? 'fill-amber-500 text-amber-500'
-                          : 'text-muted-foreground/30'
-                      }`}
-                    />
-                  </button>
-                ))}
-                <span className="ml-auto font-mono font-bold text-amber-600 text-sm">
-                  {newReview.rating} / 5 Sao
-                </span>
+          {orderedFoods.length === 0 ? (
+            <div className="py-6 text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 mx-auto flex items-center justify-center">
+                <UtensilsCrossed className="w-6 h-6" />
+              </div>
+              <h4 className="text-sm font-bold text-foreground">Bạn Cần Đặt Món Trước Khi Đánh Giá</h4>
+              <p className="text-xs text-muted-foreground px-4">
+                Nhằm đảm bảo tính xác thực và khách quan, hệ thống chỉ cho phép bạn đánh giá các món ăn mà bạn đã đặt và nhận món thành công tại Căng tin DNU.
+              </p>
+              <div className="pt-2">
+                <Button
+                  onClick={() => {
+                    setShowAddModal(false);
+                    window.location.href = '/student/home';
+                  }}
+                  variant="default"
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs"
+                >
+                  Khám Phá Thực Đơn & Đặt Món
+                </Button>
               </div>
             </div>
+          ) : (
+            <form onSubmit={handleCreateReview} className="space-y-3.5 py-2 text-xs">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-semibold text-foreground">Món ăn bạn đã đặt & dùng bữa *</label>
+                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Xác thực đơn hàng DNU</span>
+                  </span>
+                </div>
+                <select
+                  value={newReview.foodName}
+                  onChange={(e) => setNewReview({ ...newReview, foodName: e.target.value })}
+                  className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg font-bold text-foreground"
+                >
+                  {orderedFoods.map((f, idx) => (
+                    <option key={idx} value={f.foodName}>
+                      {f.foodName} (Mã đơn: {f.orderCode})
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div>
-              <label className="block font-semibold text-foreground mb-1">Cảm nhận chi tiết của bạn *</label>
-              <textarea
-                rows={3}
-                required
-                value={newReview.comment}
-                onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
-                placeholder="Món ăn vừa miệng, thịt thơm giòn, cơm dẻo, phục vụ nhiệt tình..."
-                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg resize-none"
-              />
-            </div>
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Số sao đánh giá (Rating) *</label>
+                <div className="flex items-center gap-2 p-2 bg-muted/40 rounded-lg border border-input">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setNewReview({ ...newReview, rating: star })}
+                      className="p-1 hover:scale-110 transition-transform"
+                    >
+                      <Star
+                        className={`w-6 h-6 ${
+                          star <= newReview.rating
+                            ? 'fill-amber-500 text-amber-500'
+                            : 'text-muted-foreground/30'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-auto font-mono font-bold text-amber-600 text-sm">
+                    {newReview.rating} / 5 Sao
+                  </span>
+                </div>
+              </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>
-                Hủy
-              </Button>
-              <Button type="submit" variant="default" className="bg-amber-600 hover:bg-amber-700 text-white font-bold">
-                Gửi Đánh Giá Ngay
-              </Button>
-            </DialogFooter>
-          </form>
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Cảm nhận chi tiết của bạn *</label>
+                <textarea
+                  rows={3}
+                  required
+                  value={newReview.comment}
+                  onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
+                  placeholder="Món ăn vừa miệng, thịt thơm giòn, cơm dẻo, phục vụ nhiệt tình..."
+                  className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg resize-none"
+                />
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>
+                  Hủy
+                </Button>
+                <Button type="submit" variant="default" className="bg-amber-600 hover:bg-amber-700 text-white font-bold">
+                  Gửi Đánh Giá Ngay
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
 

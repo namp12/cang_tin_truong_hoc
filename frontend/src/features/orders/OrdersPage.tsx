@@ -7,6 +7,7 @@ import { ReceiptModal, ReceiptData } from '../../components/common/ReceiptModal.
 import { useSocket } from '../../contexts/SocketContext.js';
 import { useAuth } from '../../contexts/AuthContext.js';
 import { orderStorage, OrderItem } from '../../services/orderStorage.js';
+import { dnuStore } from '../../services/dnuStore.js';
 import { formatCurrency, formatDateTime } from '../../utils/format.js';
 import { 
   Search, 
@@ -24,7 +25,9 @@ import {
   Layers,
   Wifi,
   CheckCheck,
-  ShoppingBag
+  ShoppingBag,
+  Star,
+  Sparkles
 } from 'lucide-react';
 
 export const OrdersPage: React.FC = () => {
@@ -37,6 +40,14 @@ export const OrdersPage: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
+
+  // Rating Modal for completed student orders
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingOrder, setRatingOrder] = useState<OrderItem | null>(null);
+  const [ratingFoodName, setRatingFoodName] = useState('');
+  const [ratingStars, setRatingStars] = useState(5);
+  const [ratingComment, setRatingComment] = useState('');
+  const [ratingSuccess, setRatingSuccess] = useState<string | null>(null);
 
   const [orders, setOrders] = useState<OrderItem[]>(() => orderStorage.getOrders());
 
@@ -285,6 +296,24 @@ export const OrdersPage: React.FC = () => {
                         </button>
                       )}
 
+                      {/* Student Action: Rate completed meal */}
+                      {isStudent && order.status === 'COMPLETED' && (
+                        <button
+                          onClick={() => {
+                            setRatingOrder(order);
+                            setRatingFoodName(order.itemsDetail[0]?.name || '');
+                            setRatingStars(5);
+                            setRatingComment('');
+                            setShowRatingModal(true);
+                          }}
+                          className="px-2.5 py-1 bg-amber-500/15 text-amber-700 dark:text-amber-300 hover:bg-amber-500/25 rounded-lg text-[10px] font-bold shadow-xs transition-colors flex items-center gap-1 border border-amber-500/30"
+                          title="Đánh giá món ăn đã dùng trong đơn này"
+                        >
+                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                          <span>Đánh Giá Món</span>
+                        </button>
+                      )}
+
                       {/* View E-Receipt / Order Details (Available to everyone) */}
                       <button
                         onClick={() => setSelectedOrder(order)}
@@ -396,6 +425,99 @@ export const OrdersPage: React.FC = () => {
       {/* Thermal Receipt Modal */}
       {receiptData && (
         <ReceiptModal open={showReceipt} onOpenChange={setShowReceipt} data={receiptData} />
+      )}
+
+      {/* Student Order Rating Modal */}
+      {showRatingModal && ratingOrder && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-amber-500/15 text-amber-600">
+                  <Star className="w-5 h-5 fill-amber-400" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-foreground">Đánh Giá Món Đã Dùng</h4>
+                  <p className="text-[11px] text-muted-foreground font-mono">Đơn hàng {ratingOrder.code}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowRatingModal(false)}
+                className="text-muted-foreground hover:text-foreground font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-semibold text-muted-foreground mb-1">Món ăn bạn muốn đánh giá:</label>
+                <select
+                  value={ratingFoodName}
+                  onChange={(e) => setRatingFoodName(e.target.value)}
+                  className="w-full px-3 py-2 bg-muted/50 border border-input rounded-xl text-foreground font-bold"
+                >
+                  {ratingOrder.itemsDetail.map((item, idx) => (
+                    <option key={idx} value={item.name}>
+                      {item.name} ({item.qty} suất)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-muted-foreground mb-1">Số sao đánh giá (Rating):</label>
+                <div className="flex items-center justify-center gap-2 py-2 bg-muted/40 rounded-xl border border-border">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setRatingStars(s)}
+                      className="p-1 hover:scale-125 transition-transform"
+                    >
+                      <Star
+                        className={`w-7 h-7 ${s <= ratingStars ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30'}`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-muted-foreground mb-1">Cảm nhận thực tế của bạn:</label>
+                <textarea
+                  rows={3}
+                  value={ratingComment}
+                  onChange={(e) => setRatingComment(e.target.value)}
+                  placeholder="Món ăn vừa miệng, nóng sốt, đúng khẩu vị..."
+                  className="w-full p-2.5 bg-muted/50 border border-input rounded-xl text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500 resize-none"
+                />
+              </div>
+
+              <Button
+                onClick={() => {
+                  if (!ratingComment.trim()) return;
+                  dnuStore.addReview({
+                    studentName: user?.fullName || 'Nguyễn Thành Nam',
+                    studentClass: isStudent ? (user?.username || 'K16 Khoa CNTT DNU') : 'Sinh Viên DNU',
+                    foodName: ratingFoodName || ratingOrder.itemsDetail[0]?.name || 'Món ăn DNU',
+                    rating: ratingStars,
+                    comment: ratingComment.trim(),
+                    sentiment: ratingStars >= 4 ? 'POSITIVE' : ratingStars === 3 ? 'NEUTRAL' : 'CRITICAL',
+                    canteenName: ratingOrder.canteenName,
+                  });
+                  setShowRatingModal(false);
+                  setRatingSuccess(`Cảm ơn bạn! Đánh giá món "${ratingFoodName}" đã được gửi thành công.`);
+                  setTimeout(() => setRatingSuccess(null), 3000);
+                }}
+                variant="default"
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs"
+              >
+                Gửi Đánh Giá Ngay
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
