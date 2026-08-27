@@ -219,7 +219,14 @@ export const PosPage: React.FC = () => {
     // Broadcast order to Kitchen (KDS) realtime via WebSocket & Save to DB/Storage
     const orderNum = `#${Math.floor(1000 + Math.random() * 9000)}`;
     const newOrderId = Date.now();
-    const cName = customerRole === 'STUDENT' ? 'Sinh viên DNU (Quầy POS)' : customerRole === 'STAFF' ? 'Cán bộ DNU (Quầy POS)' : 'Khách vãng lai (Quầy POS)';
+    const studentMssv = user?.username ? user.username.replace(/\D/g, '') || '2110001' : '2110001';
+    const cName = user?.fullName
+      ? `${user.fullName} (${user.roles?.[0] || 'DNU'})`
+      : customerRole === 'STUDENT'
+      ? 'Nguyễn Thành Nam (SV CNTT K16)'
+      : customerRole === 'STAFF'
+      ? 'Cán bộ DNU (Quầy POS)'
+      : 'Khách vãng lai (Quầy POS)';
 
     const orderData = {
       id: newOrderId,
@@ -241,7 +248,12 @@ export const PosPage: React.FC = () => {
 
     // If paid via DNU Pay Wallet, deduct student wallet balance
     if (selectedPaymentMethod === 'DNUPAY') {
-      dnuStore.deductStudentWallet(finalTotal, orderNum, `Thanh toán quầy POS: ${cart.map((i) => `${i.quantity}x ${i.name}`).join(', ')}`);
+      dnuStore.deductStudentWallet(
+        finalTotal,
+        orderNum,
+        `Thanh toán đơn hàng ${orderNum}: ${cart.map((i) => `${i.quantity}x ${i.name}`).join(', ')}`,
+        studentMssv
+      );
     }
 
     // Record Inflow to Canteen Financial Treasury

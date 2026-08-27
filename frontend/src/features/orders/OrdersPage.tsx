@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button.js';
 import { Sheet, SheetHeader, SheetTitle, SheetClose } from '../../components/ui/sheet.js';
 import { ReceiptModal, ReceiptData } from '../../components/common/ReceiptModal.js';
 import { useSocket } from '../../contexts/SocketContext.js';
+import { useAuth } from '../../contexts/AuthContext.js';
 import { orderStorage, OrderItem } from '../../services/orderStorage.js';
 import { formatCurrency, formatDateTime } from '../../utils/format.js';
 import { 
@@ -22,10 +23,14 @@ import {
   CreditCard,
   Layers,
   Wifi,
-  CheckCheck
+  CheckCheck,
+  ShoppingBag
 } from 'lucide-react';
 
 export const OrdersPage: React.FC = () => {
+  const { user, hasRole } = useAuth();
+  const isStudent = hasRole('STUDENT') || user?.roles?.includes('STUDENT') || user?.userType === 'STUDENT';
+
   const { latestOrder, latestStatusUpdate, isConnected, emitStatusUpdate } = useSocket();
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
@@ -108,7 +113,7 @@ export const OrdersPage: React.FC = () => {
       case 'COMPLETED':
         return <Badge variant="success" hasDot>Đã trả món (Xong)</Badge>;
       case 'READY':
-        return <Badge variant="success" hasDot>Sẵn sàng</Badge>;
+        return <Badge variant="success" hasDot>Sẵn sàng nhận</Badge>;
       case 'PREPARING':
         return <Badge variant="info" hasDot>Bếp đang nấu</Badge>;
       case 'WAITING':
@@ -123,11 +128,28 @@ export const OrdersPage: React.FC = () => {
     }
   };
 
-  const filteredOrders = orders.filter((o) => {
+  // Base list depending on user role
+  const scopedOrders = isStudent
+    ? orders.filter((o) => {
+        const nameLower = (o.customerName || '').toLowerCase();
+        const userFullNameLower = (user?.fullName || '').toLowerCase();
+        const usernameLower = (user?.username || '').toLowerCase();
+        return (
+          (userFullNameLower && nameLower.includes(userFullNameLower)) ||
+          (usernameLower && nameLower.includes(usernameLower)) ||
+          nameLower.includes('nguyễn thành nam') ||
+          nameLower.includes('sv cntt') ||
+          nameLower.includes('sinh viên dnu')
+        );
+      })
+    : orders;
+
+  const filteredOrders = scopedOrders.filter((o) => {
     const matchStatus = filterStatus === 'ALL' || o.status === filterStatus;
     const matchSearch =
       o.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      o.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+      o.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      o.itemsSummary.toLowerCase().includes(searchTerm.toLowerCase());
     return matchStatus && matchSearch;
   });
 
@@ -137,13 +159,15 @@ export const OrdersPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-foreground tracking-tight flex items-center gap-2">
-            <span>Quản Lý Đơn Hàng Căng Tin DNU</span>
+            <span>{isStudent ? 'Lịch Sử & Đơn Hàng Của Tôi' : 'Quản Lý Đơn Hàng Căng Tin DNU'}</span>
             <Badge variant="primary" className="text-xs font-mono">
-              {orders.length} đơn
+              {scopedOrders.length} đơn
             </Badge>
           </h2>
           <p className="text-xs text-muted-foreground">
-            Theo dõi đơn hàng tại quầy POS, Kiosk, Cổng sinh viên và cập nhật trạng thái chế biến theo thời gian thực
+            {isStudent
+              ? 'Theo dõi trạng thái chế biến món ăn và lịch sử dùng bữa của bạn tại Căng tin DNU'
+              : 'Theo dõi đơn hàng tại quầy POS, Kiosk, Cổng sinh viên và cập nhật trạng thái chế biến theo thời gian thực'}
           </p>
         </div>
 

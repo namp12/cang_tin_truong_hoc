@@ -998,7 +998,8 @@ export const dnuStore = {
     return wallet;
   },
   deductStudentWallet(amount: number, orderCode: string, orderDesc: string, mssv: string = '2110001') {
-    const wallet = this.getStudentWallet(mssv);
+    const cleanMssv = (mssv || '2110001').replace(/\D/g, '') || '2110001';
+    const wallet = this.getStudentWallet(cleanMssv);
     const newBalance = Math.max(0, wallet.balance - amount);
     const newTx: WalletTransaction = {
       id: Date.now(),
