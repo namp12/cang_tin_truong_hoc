@@ -8,6 +8,7 @@ import { testDbConnection } from './config/database.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
+import ordersRoutes from './modules/orders/orders.routes.js';
 import { initSocketServer } from './socket.js';
 
 dotenv.config();
@@ -43,6 +44,7 @@ app.get('/api/v1/health', (req, res) => {
 // API Modules
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/orders', ordersRoutes);
 
 // Global Error Handler
 app.use(errorHandler);

@@ -5,6 +5,7 @@ import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
 import { ReceiptModal, ReceiptData } from '../../components/common/ReceiptModal.js';
 import { initialFoodCatalog, FoodCatalogItem } from '../../data/foodCatalog.js';
+import { orderStorage } from '../../services/orderStorage.js';
 import { useSocket } from '../../contexts/SocketContext.js';
 import { formatCurrency } from '../../utils/format.js';
 import { 
@@ -73,10 +74,26 @@ export const KioskPage: React.FC = () => {
 
   const handleKioskCheckout = () => {
     const orderNum = `#K-${Math.floor(100 + Math.random() * 900)}`;
+    const newOrderId = Date.now();
+
+    orderStorage.addOrder({
+      id: newOrderId,
+      code: orderNum,
+      customerName: 'Sinh Viên DNU (Kiosk Tòa G)',
+      canteenName: 'Căng tin Tòa G (Hà Đông)',
+      tableNumber: 'Nhận tại Quầy 1',
+      itemsSummary: cart.map((i) => `${i.qty}× ${i.name}`).join(', '),
+      itemsDetail: cart.map((i) => ({ name: i.name, qty: i.qty, price: i.price })),
+      finalAmount: totalAmount,
+      status: 'PREPARING',
+      paymentStatus: 'PAID',
+      paymentMethod: 'Ví DNU Pay / QR Kiosk',
+      orderedAt: new Date().toISOString().replace('T', ' ').slice(0, 19),
+    });
 
     // Dispatch WebSocket order to Kitchen
     emitNewOrder({
-      orderId: Date.now(),
+      orderId: newOrderId,
       orderNumber: orderNum,
       tableNumber: 'Kiosk Sảnh Tòa G',
       canteenId: 1,

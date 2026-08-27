@@ -4,6 +4,7 @@ import { Button } from '../../components/ui/Button.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { ReceiptModal, ReceiptData } from '../../components/common/ReceiptModal.js';
 import { initialFoodCatalog, FoodCatalogItem } from '../../data/foodCatalog.js';
+import { orderStorage } from '../../services/orderStorage.js';
 import { useSocket } from '../../contexts/SocketContext.js';
 import { formatCurrency } from '../../utils/format.js';
 import { 
@@ -118,10 +119,27 @@ export const PosPage: React.FC = () => {
   const handlePay = () => {
     setPaymentSuccess(true);
     
-    // Broadcast order to Kitchen (KDS) realtime via WebSocket
+    // Broadcast order to Kitchen (KDS) realtime via WebSocket & Save to DB/Storage
     const orderNum = `#${Math.floor(1000 + Math.random() * 9000)}`;
+    const newOrderId = Date.now();
+
+    orderStorage.addOrder({
+      id: newOrderId,
+      code: orderNum,
+      customerName: 'Khách Quầy POS Tòa G',
+      canteenName: 'Căng tin Tòa G (Hà Đông)',
+      tableNumber: 'Bàn G1-02',
+      itemsSummary: cart.map((i) => `${i.quantity}× ${i.name}`).join(', '),
+      itemsDetail: cart.map((i) => ({ name: i.name, qty: i.quantity, price: i.price, note: i.toppings?.join(', ') })),
+      finalAmount: finalTotal,
+      status: 'PREPARING',
+      paymentStatus: 'PAID',
+      paymentMethod: selectedPaymentMethod === 'CASH' ? 'Tiền mặt' : selectedPaymentMethod === 'DNUPAY' ? 'Ví DNU Pay' : 'QR MoMo/VNPAY',
+      orderedAt: new Date().toISOString().replace('T', ' ').slice(0, 19),
+    });
+
     emitNewOrder({
-      orderId: Date.now(),
+      orderId: newOrderId,
       orderNumber: orderNum,
       tableNumber: 'Bàn G1-02',
       canteenId: 1,

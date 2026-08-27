@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button.js';
 import { Sheet, SheetHeader, SheetTitle, SheetClose } from '../../components/ui/sheet.js';
 import { ReceiptModal, ReceiptData } from '../../components/common/ReceiptModal.js';
 import { useSocket } from '../../contexts/SocketContext.js';
+import { orderStorage, OrderItem } from '../../services/orderStorage.js';
 import { formatCurrency, formatDateTime } from '../../utils/format.js';
 import { 
   Search, 
@@ -20,33 +21,21 @@ import {
   MapPin,
   CreditCard,
   Layers,
-  Wifi
+  Wifi,
+  CheckCheck
 } from 'lucide-react';
 
-interface OrderItemRow {
-  id: number;
-  code: string;
-  customerName: string;
-  canteenName: string;
-  tableNumber: string;
-  itemsSummary: string;
-  itemsDetail: { name: string; qty: number; price: number; note?: string }[];
-  finalAmount: number;
-  status: 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
-  paymentStatus: 'PAID' | 'UNPAID' | 'REFUNDED';
-  paymentMethod: string;
-  orderedAt: string;
-}
-
 export const OrdersPage: React.FC = () => {
-  const { latestOrder, latestStatusUpdate, isConnected } = useSocket();
+  const { latestOrder, latestStatusUpdate, isConnected, emitStatusUpdate } = useSocket();
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedOrder, setSelectedOrder] = useState<OrderItemRow | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<OrderItem | null>(null);
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
 
-  const handlePrintOrder = (order: OrderItemRow) => {
+  const [orders, setOrders] = useState<OrderItem[]>(() => orderStorage.getOrders());
+
+  const handlePrintOrder = (order: OrderItem) => {
     const sub = order.itemsDetail.reduce((s, i) => s + i.price * i.qty, 0);
     const disc = Math.max(0, sub - order.finalAmount);
 
@@ -66,135 +55,65 @@ export const OrdersPage: React.FC = () => {
     setShowReceipt(true);
   };
 
-  const [orders, setOrders] = useState<OrderItemRow[]>([
-    {
-      id: 1,
-      code: 'ORD-20260826-0001',
-      customerName: 'Nguyễn Thành Nam (SV CNTT K16)',
-      canteenName: 'Căng tin Tòa G (Hà Đông)',
-      tableNumber: 'Bàn G1-01',
-      itemsSummary: '1× Cơm Rang Dưa Bò, 1× Trà Đào Cam Sả',
-      itemsDetail: [
-        { name: 'Cơm Rang Dưa Bò Hà Nội', qty: 1, price: 35000, note: 'Nhiều dưa chua' },
-        { name: 'Trà Đào Cam Sả Hà Đông', qty: 1, price: 25000 },
-      ],
-      finalAmount: 45000,
-      status: 'COMPLETED',
-      paymentStatus: 'PAID',
-      paymentMethod: 'Ví DNU Pay',
-      orderedAt: '2026-08-26 11:15:00',
-    },
-    {
-      id: 2,
-      code: 'ORD-20260826-0002',
-      customerName: 'Lê Khánh Hòa (SV Dược K17)',
-      canteenName: 'Căng tin Tòa G (Hà Đông)',
-      tableNumber: 'Bàn G1-02',
-      itemsSummary: '1× Phở Bò Tái Lăn DNU',
-      itemsDetail: [
-        { name: 'Phở Bò Tái Lăn DNU', qty: 1, price: 40000, note: 'Thêm quẩy giòn' },
-      ],
-      finalAmount: 40000,
-      status: 'COMPLETED',
-      paymentStatus: 'PAID',
-      paymentMethod: 'QR MoMo',
-      orderedAt: '2026-08-26 11:20:00',
-    },
-    {
-      id: 16,
-      code: 'ORD-20260826-0016',
-      customerName: 'Cao Minh Trí (SV QTKD K18)',
-      canteenName: 'Căng tin Tòa G (Hà Đông)',
-      tableNumber: 'Bàn G1-03',
-      itemsSummary: '1× Bún Chả Hà Nội Nướng Than, 1× Trà Tắc',
-      itemsDetail: [
-        { name: 'Bún Chả Hà Nội Nướng Than', qty: 1, price: 35000 },
-        { name: 'Trà Quất Mật Ong Hoa Nhài', qty: 1, price: 15000 },
-      ],
-      finalAmount: 35000,
-      status: 'PREPARING',
-      paymentStatus: 'PAID',
-      paymentMethod: 'Ví DNU Pay',
-      orderedAt: '2026-08-26 11:45:00',
-    },
-    {
-      id: 17,
-      code: 'ORD-20260826-0017',
-      customerName: 'Phan Hải Yến (SV Y Khoa K17)',
-      canteenName: 'Căng tin Tòa G (Hà Đông)',
-      tableNumber: 'Bàn G1-04',
-      itemsSummary: '1× Bánh Mì Chảo DNU, 1× Cà Phê Cốt Dừa',
-      itemsDetail: [
-        { name: 'Bánh Mì Chảo Đặc Biệt DNU', qty: 1, price: 30000 },
-        { name: 'Cà Phê Cốt Dừa Hà Nội', qty: 1, price: 25000 },
-      ],
-      finalAmount: 45000,
-      status: 'CONFIRMED',
-      paymentStatus: 'PAID',
-      paymentMethod: 'QR MoMo',
-      orderedAt: '2026-08-26 11:48:00',
-    },
-    {
-      id: 19,
-      code: 'ORD-20260826-0019',
-      customerName: 'Dương Thùy Linh (SV Truyền Thông K18)',
-      canteenName: 'Căng tin Tòa A-B DNU',
-      tableNumber: 'Mang về (KTX)',
-      itemsSummary: '1× Trà Chanh Giã Tay DNU',
-      itemsDetail: [
-        { name: 'Trà Chanh Giã Tay DNU', qty: 1, price: 18000, note: 'Ít ngọt' },
-      ],
-      finalAmount: 18000,
-      status: 'PENDING',
-      paymentStatus: 'UNPAID',
-      paymentMethod: 'Tiền mặt',
-      orderedAt: '2026-08-26 11:55:00',
-    },
-  ]);
-
-  // Listen to new orders created in realtime via WebSocket
+  // Listen to incoming WebSocket orders
   useEffect(() => {
     if (latestOrder) {
-      const newRow: OrderItemRow = {
-        id: latestOrder.orderId,
-        code: `ORD-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${latestOrder.orderNumber.replace('#', '')}`,
-        customerName: latestOrder.customerName,
-        canteenName: 'Căng tin Tòa G (Hà Đông)',
-        tableNumber: latestOrder.tableNumber,
-        itemsSummary: latestOrder.items.map((i) => `${i.qty}× ${i.name}`).join(', '),
-        itemsDetail: latestOrder.items,
-        finalAmount: latestOrder.totalAmount,
-        status: latestOrder.status,
-        paymentStatus: 'PAID',
-        paymentMethod: 'Quầy POS / DNU Pay',
-        orderedAt: new Date().toISOString().replace('T', ' ').slice(0, 19),
-      };
-
-      setOrders((prev) => [newRow, ...prev]);
+      const exists = orders.some((o) => o.id === latestOrder.orderId);
+      if (!exists) {
+        const { order } = orderStorage.addOrder({
+          id: latestOrder.orderId,
+          code: latestOrder.orderNumber,
+          customerName: latestOrder.customerName || 'Khách Quầy POS / App',
+          canteenName: 'Căng tin Tòa G (Hà Đông)',
+          tableNumber: latestOrder.tableNumber,
+          itemsSummary: latestOrder.items.map((i) => `${i.qty}× ${i.name}`).join(', '),
+          itemsDetail: latestOrder.items.map((i) => ({ name: i.name, qty: i.qty, price: i.price || 30000, note: i.note })),
+          finalAmount: latestOrder.totalAmount || 50000,
+          status: 'PREPARING',
+          paymentStatus: 'PAID',
+          paymentMethod: 'Ví DNU Pay',
+          orderedAt: new Date().toISOString().replace('T', ' ').slice(0, 19),
+        });
+        setOrders((prev) => [order, ...prev]);
+      }
     }
   }, [latestOrder]);
 
-  // Listen to status changes from Kitchen
+  // Listen to status changes from Kitchen & sync
   useEffect(() => {
     if (latestStatusUpdate) {
-      setOrders((prev) =>
-        prev.map((o) =>
-          o.id === latestStatusUpdate.orderId || o.code.includes(latestStatusUpdate.orderNumber.replace('#', ''))
-            ? { ...o, status: latestStatusUpdate.status as OrderItemRow['status'] }
-            : o
-        )
+      const { orders: updated } = orderStorage.updateTicketStatus(
+        latestStatusUpdate.orderId,
+        latestStatusUpdate.status as any
       );
+      setOrders(updated);
     }
   }, [latestStatusUpdate]);
 
-  const getStatusBadge = (status: OrderItemRow['status']) => {
+  const handleChangeStatus = (orderId: number, nextStatus: OrderItem['status']) => {
+    const { orders: updated } = orderStorage.updateTicketStatus(orderId, nextStatus as any);
+    setOrders(updated);
+
+    const target = updated.find((o) => o.id === orderId);
+    if (target) {
+      emitStatusUpdate(orderId, target.code, nextStatus, 1);
+    }
+    if (selectedOrder && selectedOrder.id === orderId) {
+      setSelectedOrder({ ...selectedOrder, status: nextStatus });
+    }
+  };
+
+  const getStatusBadge = (status: OrderItem['status']) => {
     switch (status) {
       case 'COMPLETED':
-        return <Badge variant="success" hasDot>Hoàn thành</Badge>;
+        return <Badge variant="success" hasDot>Đã trả món (Xong)</Badge>;
+      case 'READY':
+        return <Badge variant="success" hasDot>Sẵn sàng</Badge>;
       case 'PREPARING':
-        return <Badge variant="info" hasDot>Đang nấu</Badge>;
+        return <Badge variant="info" hasDot>Bếp đang nấu</Badge>;
+      case 'WAITING':
       case 'CONFIRMED':
-        return <Badge variant="warning" hasDot>Đã xác nhận</Badge>;
+        return <Badge variant="warning" hasDot>Chờ chế biến</Badge>;
       case 'PENDING':
         return <Badge variant="outline" hasDot>Chờ xử lý</Badge>;
       case 'CANCELLED':
@@ -217,15 +136,26 @@ export const OrdersPage: React.FC = () => {
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-foreground tracking-tight">Quản Lý Đơn Hàng</h2>
-          <p className="text-xs text-muted-foreground">Theo dõi, lọc và xử lý toàn bộ các đơn hàng đặt trực tiếp và online</p>
+          <h2 className="text-xl font-bold text-foreground tracking-tight flex items-center gap-2">
+            <span>Quản Lý Đơn Hàng Căng Tin DNU</span>
+            <Badge variant="primary" className="text-xs font-mono">
+              {orders.length} đơn
+            </Badge>
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Theo dõi đơn hàng tại quầy POS, Kiosk, Cổng sinh viên và cập nhật trạng thái chế biến theo thời gian thực
+          </p>
         </div>
-        <Button variant="outline" size="sm" leftIcon={<Download className="w-4 h-4" />}>
-          Xuất Báo Cáo Đơn
-        </Button>
+
+        <div className="flex items-center gap-2">
+          <Badge variant="primary" className="bg-emerald-600 text-white flex items-center gap-1 text-xs py-1">
+            <Wifi className="w-3.5 h-3.5 animate-pulse" />
+            <span>{isConnected ? 'Realtime DB Active' : 'Offline Cached'}</span>
+          </Badge>
+        </div>
       </div>
 
-      {/* Filter Card */}
+      {/* Filter and Search Bar */}
       <Card>
         <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="relative flex-1 max-w-sm">
@@ -234,21 +164,29 @@ export const OrdersPage: React.FC = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Tìm theo mã đơn hoặc tên khách..."
+              placeholder="Tìm mã đơn, tên sinh viên..."
               className="w-full pl-9 pr-3.5 py-2 bg-muted/60 border border-input rounded-lg text-xs text-foreground focus:bg-background focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto">
-            {['ALL', 'PENDING', 'CONFIRMED', 'PREPARING', 'COMPLETED', 'CANCELLED'].map((st) => (
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            {[
+              { id: 'ALL', label: 'Tất cả' },
+              { id: 'WAITING', label: 'Chờ nấu' },
+              { id: 'PREPARING', label: 'Đang nấu' },
+              { id: 'READY', label: 'Sẵn sàng' },
+              { id: 'COMPLETED', label: 'Đã hoàn tất / Đã trả món' },
+            ].map((st) => (
               <button
-                key={st}
-                onClick={() => setFilterStatus(st)}
+                key={st.id}
+                onClick={() => setFilterStatus(st.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
-                  filterStatus === st ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted text-muted-foreground hover:text-foreground'
+                  filterStatus === st.id
+                    ? 'bg-primary text-primary-foreground font-bold shadow-xs'
+                    : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
-                {st === 'ALL' ? 'Tất cả' : st}
+                {st.label}
               </button>
             ))}
           </div>
@@ -262,39 +200,71 @@ export const OrdersPage: React.FC = () => {
             <thead>
               <tr className="border-b border-border bg-muted/50 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                 <th className="py-3.5 px-4">Mã Đơn</th>
-                <th className="py-3.5 px-4">Khách Hàng / Vị Trí</th>
-                <th className="py-3.5 px-4">Chi Tiết Món</th>
+                <th className="py-3.5 px-4">Khách Hàng</th>
+                <th className="py-3.5 px-4">Vị Trí / Bàn</th>
+                <th className="py-3.5 px-4">Món Ăn</th>
                 <th className="py-3.5 px-4">Tổng Tiền</th>
-                <th className="py-3.5 px-4">Trạng Thái</th>
                 <th className="py-3.5 px-4">Thanh Toán</th>
-                <th className="py-3.5 px-4">Thời Gian</th>
+                <th className="py-3.5 px-4">Trạng Thái Bếp</th>
                 <th className="py-3.5 px-4 text-right">Thao Tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border text-xs text-foreground">
               {filteredOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-muted/40 transition-colors">
-                  <td className="py-3.5 px-4 font-bold font-mono">{order.code}</td>
+                  <td className="py-3.5 px-4 font-mono font-bold text-primary">{order.code}</td>
                   <td className="py-3.5 px-4">
                     <p className="font-semibold text-foreground">{order.customerName}</p>
-                    <p className="text-[11px] text-primary font-medium">{order.tableNumber}</p>
+                    <p className="text-[11px] text-muted-foreground font-mono">{formatDateTime(order.orderedAt)}</p>
                   </td>
-                  <td className="py-3.5 px-4 max-w-xs truncate text-muted-foreground">{order.itemsSummary}</td>
-                  <td className="py-3.5 px-4 font-bold text-foreground">{formatCurrency(order.finalAmount)}</td>
-                  <td className="py-3.5 px-4">{getStatusBadge(order.status)}</td>
                   <td className="py-3.5 px-4">
-                    <Badge variant={order.paymentStatus === 'PAID' ? 'success' : 'warning'} hasDot>
-                      {order.paymentStatus === 'PAID' ? 'Đã thu' : 'Chưa thu'}
-                    </Badge>
+                    <span className="font-medium">{order.tableNumber}</span>
                   </td>
-                  <td className="py-3.5 px-4 text-muted-foreground">{formatDateTime(order.orderedAt)}</td>
-                  <td className="py-3.5 px-4 text-right flex items-center justify-end gap-1">
-                    <Button onClick={() => handlePrintOrder(order)} variant="ghost" size="sm" title="In Hóa Đơn K80">
-                      <Printer className="w-3.5 h-3.5 text-muted-foreground" />
-                    </Button>
-                    <Button onClick={() => setSelectedOrder(order)} variant="ghost" size="sm">
-                      <Eye className="w-3.5 h-3.5 mr-1" /> Chi Tiết
-                    </Button>
+                  <td className="py-3.5 px-4">
+                    <p className="font-medium text-foreground line-clamp-1 max-w-[220px]">{order.itemsSummary}</p>
+                    <p className="text-[11px] text-muted-foreground">{order.itemsDetail.length} món</p>
+                  </td>
+                  <td className="py-3.5 px-4 font-extrabold text-foreground font-mono">
+                    {formatCurrency(order.finalAmount)}
+                  </td>
+                  <td className="py-3.5 px-4">
+                    <div className="space-y-0.5">
+                      <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                        {order.paymentStatus === 'PAID' ? 'Đã thu tiền' : 'Chưa thanh toán'}
+                      </span>
+                      <p className="text-[10px] text-muted-foreground">{order.paymentMethod}</p>
+                    </div>
+                  </td>
+                  <td className="py-3.5 px-4">{getStatusBadge(order.status)}</td>
+                  <td className="py-3.5 px-4 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      {order.status === 'READY' && (
+                        <button
+                          onClick={() => handleChangeStatus(order.id, 'COMPLETED')}
+                          className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold shadow-xs transition-colors flex items-center gap-1"
+                          title="Xác nhận trả món cho khách"
+                        >
+                          <CheckCheck className="w-3 h-3" />
+                          <span>Trả món</span>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => handlePrintOrder(order)}
+                        className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                        title="In hóa đơn K80"
+                      >
+                        <Printer className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        onClick={() => setSelectedOrder(order)}
+                        className="p-1.5 text-muted-foreground hover:text-primary hover:bg-muted rounded-lg transition-colors"
+                        title="Xem chi tiết"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -306,49 +276,51 @@ export const OrdersPage: React.FC = () => {
       {/* Order Detail Sheet Drawer */}
       <Sheet open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
         {selectedOrder && (
-          <div className="space-y-6">
+          <div className="space-y-6 text-xs">
             <SheetHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <SheetTitle>Chi Tiết Đơn Hàng {selectedOrder.code}</SheetTitle>
+                  <SheetTitle className="text-sm font-bold">Chi Tiết Đơn Hàng {selectedOrder.code}</SheetTitle>
                   <p className="text-xs text-muted-foreground mt-0.5">{formatDateTime(selectedOrder.orderedAt)}</p>
                 </div>
                 <SheetClose onClick={() => setSelectedOrder(null)} />
               </div>
             </SheetHeader>
 
-            {/* Order Timeline */}
-            <div className="p-4 rounded-xl bg-muted/40 border border-border space-y-3">
-              <h5 className="text-xs font-bold text-foreground">Hành Trình Đơn Hàng</h5>
-              <div className="space-y-2 text-xs">
-                <div className="flex items-center gap-3">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20" />
-                  <span className="font-semibold text-foreground">11:15 - Đã tạo đơn hàng thành công</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="w-2.5 h-2.5 rounded-full bg-primary ring-4 ring-primary/20" />
-                  <span className="font-semibold text-foreground">11:16 - Bếp tiếp nhận và bắt đầu chế biến</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="w-2.5 h-2.5 rounded-full bg-muted-foreground/40" />
-                  <span className="text-muted-foreground">11:22 - Món sẵn sàng tại quầy nhận món</span>
-                </div>
+            {/* Quick Status Bar */}
+            <div className="p-3 bg-muted/40 rounded-xl border border-border flex items-center justify-between">
+              <div>
+                <span className="text-muted-foreground">Trạng thái:</span>
+                <div className="mt-1">{getStatusBadge(selectedOrder.status)}</div>
+              </div>
+              <div className="flex gap-1.5">
+                {selectedOrder.status !== 'COMPLETED' && (
+                  <Button
+                    onClick={() => handleChangeStatus(selectedOrder.id, 'COMPLETED')}
+                    variant="default"
+                    size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-xs font-bold"
+                  >
+                    <CheckCheck className="w-3.5 h-3.5 mr-1" />
+                    Đã Trả Món
+                  </Button>
+                )}
               </div>
             </div>
 
             {/* Items Summary Table */}
             <div className="space-y-2">
-              <h5 className="text-xs font-bold text-foreground">Danh Sách Món</h5>
-              <div className="p-3 rounded-xl bg-muted/30 border border-border space-y-2 text-xs">
+              <h5 className="text-xs font-bold text-foreground">Danh Sách Món Ăn</h5>
+              <div className="p-3 rounded-xl bg-card border border-border space-y-2 text-xs">
                 {selectedOrder.itemsDetail.map((item, idx) => (
                   <div key={idx} className="flex justify-between items-center py-1">
                     <div>
                       <p className="font-semibold text-foreground">{item.name}</p>
-                      {item.note && <p className="text-[11px] text-muted-foreground">Ghi chú: {item.note}</p>}
+                      {item.note && <p className="text-[11px] text-amber-600 dark:text-amber-400">Ghi chú: {item.note}</p>}
                     </div>
                     <div className="text-right">
                       <span className="font-mono text-muted-foreground mr-3">x{item.qty}</span>
-                      <span className="font-bold text-foreground">{formatCurrency(item.price * item.qty)}</span>
+                      <span className="font-bold text-foreground font-mono">{formatCurrency(item.price * item.qty)}</span>
                     </div>
                   </div>
                 ))}
@@ -356,7 +328,7 @@ export const OrdersPage: React.FC = () => {
             </div>
 
             {/* Payment Summary */}
-            <div className="space-y-1.5 text-xs">
+            <div className="space-y-1.5 text-xs p-3 bg-muted/20 rounded-xl border border-border">
               <div className="flex justify-between py-1 border-b border-border">
                 <span className="text-muted-foreground">Khách hàng:</span>
                 <span className="font-bold text-foreground">{selectedOrder.customerName}</span>
@@ -370,13 +342,13 @@ export const OrdersPage: React.FC = () => {
                 <span className="font-bold text-foreground">{selectedOrder.paymentMethod}</span>
               </div>
               <div className="flex justify-between py-2 text-sm font-bold text-foreground">
-                <span>Tổng cộng:</span>
-                <span className="text-base text-primary">{formatCurrency(selectedOrder.finalAmount)}</span>
+                <span>Tổng tiền:</span>
+                <span className="text-base text-primary font-mono">{formatCurrency(selectedOrder.finalAmount)}</span>
               </div>
             </div>
 
-            <div className="pt-4 flex gap-2">
-              <Button onClick={() => handlePrintOrder(selectedOrder)} variant="default" className="flex-1">
+            <div className="pt-2 flex gap-2">
+              <Button onClick={() => handlePrintOrder(selectedOrder)} variant="default" className="flex-1 font-bold">
                 <Printer className="w-3.5 h-3.5 mr-1" /> In Hóa Đơn (K80)
               </Button>
               <Button onClick={() => setSelectedOrder(null)} variant="outline">
@@ -386,6 +358,11 @@ export const OrdersPage: React.FC = () => {
           </div>
         )}
       </Sheet>
+
+      {/* Thermal Receipt Modal */}
+      {receiptData && (
+        <ReceiptModal open={showReceipt} onOpenChange={setShowReceipt} data={receiptData} />
+      )}
     </div>
   );
 };
