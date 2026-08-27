@@ -150,10 +150,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileSidebar }) => {
               className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-muted transition-colors"
             >
               <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-xs flex items-center justify-center shadow-xs">
-                {user?.fullName?.charAt(0) || 'A'}
+                {(user?.username === 'admin_super' || user?.roles?.includes('SUPER_ADMIN') || user?.fullName?.includes('Long') ? 'C' : (user?.fullName?.charAt(0) || 'C'))}
               </div>
               <div className="hidden lg:block text-left">
-                <p className="text-xs font-semibold text-foreground leading-tight">{user?.fullName || 'Admin User'}</p>
+                <p className="text-xs font-semibold text-foreground leading-tight">
+                  {user?.username === 'admin_super' || user?.roles?.includes('SUPER_ADMIN') || user?.fullName?.includes('Long')
+                    ? 'Căng tin Đại Nam'
+                    : (user?.fullName || 'Căng tin Đại Nam')}
+                </p>
                 <p className="text-[11px] text-muted-foreground leading-tight">{user?.roles?.[0] || 'SUPER_ADMIN'}</p>
               </div>
               <ChevronDown className="w-3.5 h-3.5 text-muted-foreground hidden lg:block" />
@@ -163,8 +167,12 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileSidebar }) => {
             {showUserMenu && (
               <div className="absolute right-0 mt-2 w-64 bg-card rounded-xl shadow-xl border border-border py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
                 <div className="px-4 py-2.5 border-b border-border">
-                  <p className="text-xs font-bold text-foreground">{user?.fullName}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
+                  <p className="text-xs font-bold text-foreground">
+                    {user?.username === 'admin_super' || user?.roles?.includes('SUPER_ADMIN') || user?.fullName?.includes('Long')
+                      ? 'Căng tin Đại Nam'
+                      : (user?.fullName || 'Căng tin Đại Nam')}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground truncate">{user?.email || 'canteen@dainam.edu.vn'}</p>
                 </div>
 
                 {/* User Menu Items */}

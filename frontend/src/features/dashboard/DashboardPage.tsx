@@ -77,7 +77,7 @@ export const DashboardPage: React.FC = () => {
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-            Xin chào, {user?.fullName || 'Quản trị viên DNU'} 👋
+            Xin chào, {user?.username === 'admin_super' || user?.roles?.includes('SUPER_ADMIN') || user?.fullName?.includes('Long') ? 'Căng tin Đại Nam' : (user?.fullName || 'Căng tin Đại Nam')} 👋
           </h2>
           <p className="text-xs text-slate-300">
             Tổng quan tình hình kinh doanh Căng tin Tòa G (Đại Học Đại Nam - Hà Đông) hôm nay.

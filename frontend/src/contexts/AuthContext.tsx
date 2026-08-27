@@ -62,11 +62,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return;
           }
 
+          if (checkUser) {
+            parsed.fullName = checkUser.fullName;
+          }
+          if (parsed.username === 'admin_super' || parsed.roles?.includes('SUPER_ADMIN') || parsed.userType === 'ADMIN' || parsed.fullName?.includes('Long')) {
+            parsed.fullName = 'Căng tin Đại Nam';
+          }
+
           setUser(parsed);
+          localStorage.setItem('canteen_user', JSON.stringify(parsed));
+          
           // Refresh user profile in background
-          const refreshedUser = await authApi.getMe();
-          setUser(refreshedUser);
-          localStorage.setItem('canteen_user', JSON.stringify(refreshedUser));
+          try {
+            const refreshedUser = await authApi.getMe();
+            if (refreshedUser.username === 'admin_super' || refreshedUser.roles?.includes('SUPER_ADMIN') || refreshedUser.userType === 'ADMIN') {
+              refreshedUser.fullName = 'Căng tin Đại Nam';
+            }
+            setUser(refreshedUser);
+            localStorage.setItem('canteen_user', JSON.stringify(refreshedUser));
+          } catch (e) {}
         } catch (error) {
           console.warn('Session check warning');
         }
@@ -120,10 +134,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Tài khoản này đã bị khóa bởi Quản trị viên. Vui lòng liên hệ quản lý căng tin DNU.');
       }
 
+      const finalUser = { ...response.user };
+      if (checkReturned) {
+        finalUser.fullName = checkReturned.fullName;
+      }
+      if (finalUser.username === 'admin_super' || finalUser.roles?.includes('SUPER_ADMIN') || finalUser.userType === 'ADMIN' || finalUser.fullName?.includes('Long')) {
+        finalUser.fullName = 'Căng tin Đại Nam';
+      }
+
       localStorage.setItem('canteen_access_token', response.tokens.accessToken);
       localStorage.setItem('canteen_refresh_token', response.tokens.refreshToken);
-      localStorage.setItem('canteen_user', JSON.stringify(response.user));
-      setUser(response.user);
+      localStorage.setItem('canteen_user', JSON.stringify(finalUser));
+      setUser(finalUser);
     } finally {
       setIsLoading(false);
     }
