@@ -39,3 +39,13 @@ Thumbs.db
 *.sublime-workspace
 *.sublime-project
 .gemini/
+
+# Database dumps & SQL files (Hidden & Protected)
+*.sql
+*.sql.gz
+*.db
+*.sqlite
+*.sqlite3
+canteen_management.sql
+database/
+db_backups/

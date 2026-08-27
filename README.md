@@ -126,7 +126,6 @@
 
 ```text
 d:/btl/
-├── canteen_management.sql                 # File Database SQL hoàn chỉnh (Schema & Seed Data)
 ├── start_all.bat                          # File Batch script khởi động 1-click toàn bộ hệ thống
 │
 ├── backend/                               # Backend REST API Server (Node.js + TypeScript)
@@ -179,10 +178,14 @@ Script sẽ tự động khởi động đồng thời cả Backend API (`http:/
 
 ### Cách 2: Chạy Thủ Công Từng Phần
 
-#### 1. Khởi tạo Cơ Sở Dữ Liệu MySQL
-Import file SQL vào MySQL Server 8.x:
-```bash
-mysql -u root -p < canteen_management.sql
+#### 1. Cấu hình Cơ Sở Dữ Liệu MySQL (Bảo mật nội bộ)
+Cấu hình thông tin kết nối MySQL trong file `backend/.env` (tham khảo `backend/.env.example`):
+```env
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=canteen_management
 ```
 
 #### 2. Cài đặt & Chạy Backend
