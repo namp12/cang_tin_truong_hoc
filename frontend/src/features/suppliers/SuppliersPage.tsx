@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
-import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog.js';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog.js';
 import { formatCurrency } from '../../utils/format.js';
 import { 
   Truck, 
@@ -226,45 +226,47 @@ export const SuppliersPage: React.FC = () => {
 
       {/* Modal Add Supplier */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogHeader>
-          <DialogTitle>Thêm Nhà Cung Cấp Mới</DialogTitle>
-          <DialogDescription>
-            Đăng ký đối tác cung cấp nguyên vật liệu cho Căng tin Đại Học Đại Nam
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3 py-2 text-xs">
-          <div>
-            <label className="block font-semibold text-foreground mb-1">Tên nhà cung cấp *</label>
-            <input
-              type="text"
-              placeholder="VD: Công ty TNHH Thực Phẩm Sạch Phú Lãm"
-              className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Thêm Nhà Cung Cấp Mới</DialogTitle>
+            <DialogDescription>
+              Đăng ký đối tác cung cấp nguyên vật liệu cho Căng tin Đại Học Đại Nam
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2 text-xs">
             <div>
-              <label className="block font-semibold text-foreground mb-1">Nhóm thực phẩm</label>
+              <label className="block font-semibold text-foreground mb-1">Tên nhà cung cấp *</label>
               <input
                 type="text"
-                placeholder="VD: Thịt gà tươi, Trứng"
+                placeholder="VD: Công ty TNHH Thực Phẩm Sạch Phú Lãm"
                 className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
               />
             </div>
-            <div>
-              <label className="block font-semibold text-foreground mb-1">Số điện thoại</label>
-              <input
-                type="text"
-                placeholder="0988xxxxxx"
-                className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Nhóm thực phẩm</label>
+                <input
+                  type="text"
+                  placeholder="VD: Thịt gà tươi, Trứng"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Số điện thoại</label>
+                <input
+                  type="text"
+                  placeholder="0988xxxxxx"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
+                />
+              </div>
             </div>
           </div>
-        </div>
-        <DialogFooter>
-          <Button onClick={() => setShowAddModal(false)} variant="default" className="w-full">
-            Lưu Thông Tin Nhà Cung Cấp
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button onClick={() => setShowAddModal(false)} variant="default" className="w-full">
+              Lưu Thông Tin Nhà Cung Cấp
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     </div>
   );

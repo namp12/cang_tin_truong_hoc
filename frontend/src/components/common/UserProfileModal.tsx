@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext.js';
-import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog.js';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog.js';
 import { Badge } from '../ui/Badge.js';
 import { Button } from '../ui/Button.js';
 import { 
@@ -94,15 +94,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onOpen
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-primary" />
-          <span>Hồ Sơ Tài Khoản Cán Bộ / Sinh Viên DNU</span>
-        </DialogTitle>
-        <DialogDescription>
-          Thông tin định danh người dùng trong hệ thống Căng tin Đại Học Đại Nam
-        </DialogDescription>
-      </DialogHeader>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-primary" />
+            <span>Hồ Sơ Tài Khoản Cán Bộ / Sinh Viên DNU</span>
+          </DialogTitle>
+          <DialogDescription>
+            Thông tin định danh người dùng trong hệ thống Căng tin Đại Học Đại Nam
+          </DialogDescription>
+        </DialogHeader>
 
       {/* Tabs Navigation */}
       <div className="flex items-center gap-1.5 bg-muted/60 p-1 rounded-lg border border-border/50 text-xs font-semibold my-1">
@@ -349,6 +350,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onOpen
           </div>
         </div>
       )}
+      </DialogContent>
     </Dialog>
   );
 };

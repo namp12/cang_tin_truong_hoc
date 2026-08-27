@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
-import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog.js';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog.js';
 import { formatCurrency } from '../../utils/format.js';
 import { 
   Layers, 
@@ -280,45 +280,47 @@ export const CategoriesPage: React.FC = () => {
 
       {/* Modal Add Category / Combo */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogHeader>
-          <DialogTitle>{activeTab === 'CATEGORIES' ? 'Thêm Danh Mục Món Mới' : 'Tạo Gói Combo Tiết Kiệm'}</DialogTitle>
-          <DialogDescription>
-            Cấu hình danh mục hiển thị trên Quầy POS và Cổng Đặt Món Sinh Viên DNU
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3 py-2 text-xs">
-          <div>
-            <label className="block font-semibold text-foreground mb-1">Tên {activeTab === 'CATEGORIES' ? 'danh mục' : 'combo'} *</label>
-            <input
-              type="text"
-              placeholder={activeTab === 'CATEGORIES' ? 'VD: Món Tráng Miệng & Chè' : 'VD: Combo Cơm Sườn + Trà Sữa'}
-              className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{activeTab === 'CATEGORIES' ? 'Thêm Danh Mục Món Mới' : 'Tạo Gói Combo Tiết Kiệm'}</DialogTitle>
+            <DialogDescription>
+              Cấu hình danh mục hiển thị trên Quầy POS và Cổng Đặt Món Sinh Viên DNU
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2 text-xs">
             <div>
-              <label className="block font-semibold text-foreground mb-1">Mã danh mục</label>
+              <label className="block font-semibold text-foreground mb-1">Tên {activeTab === 'CATEGORIES' ? 'danh mục' : 'combo'} *</label>
               <input
                 type="text"
-                placeholder="VD: DESSERT"
+                placeholder={activeTab === 'CATEGORIES' ? 'VD: Món Tráng Miệng & Chè' : 'VD: Combo Cơm Sườn + Trà Sữa'}
                 className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
               />
             </div>
-            <div>
-              <label className="block font-semibold text-foreground mb-1">Icon Emoji</label>
-              <input
-                type="text"
-                defaultValue="🍨"
-                className="w-full px-3 py-2 bg-background border border-input rounded-lg text-center focus:ring-2 focus:ring-ring"
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Mã danh mục</label>
+                <input
+                  type="text"
+                  placeholder="VD: DESSERT"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Icon Emoji</label>
+                <input
+                  type="text"
+                  defaultValue="🍨"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-lg text-center focus:ring-2 focus:ring-ring"
+                />
+              </div>
             </div>
           </div>
-        </div>
-        <DialogFooter>
-          <Button onClick={() => setShowAddModal(false)} variant="default" className="w-full">
-            Hoàn Tất & Lưu
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button onClick={() => setShowAddModal(false)} variant="default" className="w-full">
+              Hoàn Tất & Lưu
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     </div>
   );

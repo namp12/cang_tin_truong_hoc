@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
-import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog.js';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog.js';
 import { formatCurrency } from '../../utils/format.js';
 import { 
   Gift, 
@@ -191,52 +191,54 @@ export const PromotionsPage: React.FC = () => {
 
       {/* Modal Add Voucher */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogHeader>
-          <DialogTitle>Tạo Mã Khuyến Mãi / Voucher Mới</DialogTitle>
-          <DialogDescription>
-            Cấu hình mã giảm giá áp dụng trên Quầy POS và Cổng Đặt Món Sinh Viên DNU
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-3 py-2 text-xs">
-          <div>
-            <label className="block font-semibold text-foreground mb-1">Mã Voucher (In hoa) *</label>
-            <input
-              type="text"
-              placeholder="VD: DNU2026"
-              className="w-full px-3 py-2 bg-background border border-input rounded-lg font-mono font-bold uppercase focus:ring-2 focus:ring-ring"
-            />
-          </div>
-          <div>
-            <label className="block font-semibold text-foreground mb-1">Tiêu đề chương trình *</label>
-            <input
-              type="text"
-              placeholder="VD: Giảm 15% Đơn Đầu Tiên"
-              className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Tạo Mã Khuyến Mãi / Voucher Mới</DialogTitle>
+            <DialogDescription>
+              Cấu hình mã giảm giá áp dụng trên Quầy POS và Cổng Đặt Món Sinh Viên DNU
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2 text-xs">
             <div>
-              <label className="block font-semibold text-foreground mb-1">Loại giảm giá</label>
-              <select className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring">
-                <option value="PERCENT">Giảm theo %</option>
-                <option value="FIXED">Giảm số tiền cố định (VNĐ)</option>
-              </select>
+              <label className="block font-semibold text-foreground mb-1">Mã Voucher (In hoa) *</label>
+              <input
+                type="text"
+                placeholder="VD: DNU2026"
+                className="w-full px-3 py-2 bg-background border border-input rounded-lg font-mono font-bold uppercase focus:ring-2 focus:ring-ring"
+              />
             </div>
             <div>
-              <label className="block font-semibold text-foreground mb-1">Giá trị giảm</label>
+              <label className="block font-semibold text-foreground mb-1">Tiêu đề chương trình *</label>
               <input
-                type="number"
-                placeholder="VD: 20 hoặc 15000"
+                type="text"
+                placeholder="VD: Giảm 15% Đơn Đầu Tiên"
                 className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
               />
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Loại giảm giá</label>
+                <select className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring">
+                  <option value="PERCENT">Giảm theo %</option>
+                  <option value="FIXED">Giảm số tiền cố định (VNĐ)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Giá trị giảm</label>
+                <input
+                  type="number"
+                  placeholder="VD: 20 hoặc 15000"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
           </div>
-        </div>
-        <DialogFooter>
-          <Button onClick={() => setShowAddModal(false)} variant="default" className="w-full">
-            Kích Hoạt & Phát Hành Voucher
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button onClick={() => setShowAddModal(false)} variant="default" className="w-full">
+              Kích Hoạt & Phát Hành Voucher
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     </div>
   );

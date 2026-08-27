@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '../../components/ui/Card.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
-import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '../../components/ui/dialog.js';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '../../components/ui/dialog.js';
 import { formatDateTime } from '../../utils/format.js';
 import { 
   Users, 
@@ -288,85 +288,87 @@ export const UsersPage: React.FC = () => {
 
       {/* Provision Staff Modal Dialog */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
-        <DialogHeader>
-          <DialogTitle>Cấp Tài Khoản Nhân Viên Mới</DialogTitle>
-          <DialogDescription>
-            Tạo tài khoản và phân quyền cho nhân viên làm việc tại Căng tin Đại Học Đại Nam
-          </DialogDescription>
-        </DialogHeader>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cấp Tài Khoản Nhân Viên Mới</DialogTitle>
+            <DialogDescription>
+              Tạo tài khoản và phân quyền cho nhân viên làm việc tại Căng tin Đại Học Đại Nam
+            </DialogDescription>
+          </DialogHeader>
 
-        <form onSubmit={handleCreateUser} className="space-y-3.5 py-2">
-          <div>
-            <label className="block text-xs font-semibold text-foreground mb-1">Họ và tên nhân viên *</label>
-            <input
-              type="text"
-              required
-              value={newUser.fullName}
-              onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
-              placeholder="VD: Nguyễn Văn An"
-              className="w-full px-3 py-2 bg-background border border-input rounded-lg text-xs focus:ring-2 focus:ring-ring"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
+          <form onSubmit={handleCreateUser} className="space-y-3.5 py-2">
             <div>
-              <label className="block text-xs font-semibold text-foreground mb-1">Tên đăng nhập (Username) *</label>
+              <label className="block text-xs font-semibold text-foreground mb-1">Họ và tên nhân viên *</label>
               <input
                 type="text"
                 required
-                value={newUser.username}
-                onChange={(e) => setNewUser({ ...newUser, username: e.target.value.toLowerCase() })}
-                placeholder="VD: cashier_toag_02"
+                value={newUser.fullName}
+                onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
+                placeholder="VD: Nguyễn Văn An"
                 className="w-full px-3 py-2 bg-background border border-input rounded-lg text-xs focus:ring-2 focus:ring-ring"
               />
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-foreground mb-1">Mật khẩu khởi tạo</label>
-              <input
-                type="text"
-                value={newUser.password}
-                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                className="w-full px-3 py-2 bg-background border border-input rounded-lg text-xs font-mono focus:ring-2 focus:ring-ring"
-              />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-foreground mb-1">Vai trò công việc (Role) *</label>
-              <select
-                value={newUser.role}
-                onChange={(e) => setNewUser({ ...newUser, role: e.target.value as StaffUser['role'] })}
-                aria-label="Chọn vai trò nhân viên"
-                className="w-full px-3 py-2 bg-background border border-input rounded-lg text-xs focus:ring-2 focus:ring-ring"
-              >
-                <option value="CASHIER">Thu Ngân (Quầy POS)</option>
-                <option value="KITCHEN_STAFF">Đầu Bếp (Màn hình KDS)</option>
-                <option value="WAREHOUSE_MANAGER">Thủ Kho (Nhập/Xuất kho)</option>
-                <option value="CANTEEN_MANAGER">Quản Lý Căng Tin Chi Nhánh</option>
-              </select>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1">Tên đăng nhập (Username) *</label>
+                <input
+                  type="text"
+                  required
+                  value={newUser.username}
+                  onChange={(e) => setNewUser({ ...newUser, username: e.target.value.toLowerCase() })}
+                  placeholder="VD: cashier_toag_02"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-lg text-xs focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1">Mật khẩu khởi tạo</label>
+                <input
+                  type="text"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  className="w-full px-3 py-2 bg-background border border-input rounded-lg text-xs font-mono focus:ring-2 focus:ring-ring"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-xs font-semibold text-foreground mb-1">Căng tin làm việc *</label>
-              <select
-                value={newUser.canteenName}
-                onChange={(e) => setNewUser({ ...newUser, canteenName: e.target.value })}
-                aria-label="Chọn chi nhánh căng tin"
-                className="w-full px-3 py-2 bg-background border border-input rounded-lg text-xs focus:ring-2 focus:ring-ring"
-              >
-                <option value="Căng tin Tòa G (Hà Đông)">Căng tin Tòa G (Hà Đông)</option>
-                <option value="Căng tin Tòa A-B DNU">Căng tin Tòa A-B DNU</option>
-                <option value="DNU Garden Coffee">DNU Garden Coffee</option>
-              </select>
-            </div>
-          </div>
 
-          <DialogFooter className="pt-2">
-            <Button type="submit" variant="default" className="w-full">
-              Hoàn Tất & Cấp Tài Khoản
-            </Button>
-          </DialogFooter>
-        </form>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1">Vai trò công việc (Role) *</label>
+                <select
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({ ...newUser, role: e.target.value as StaffUser['role'] })}
+                  aria-label="Chọn vai trò nhân viên"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-lg text-xs focus:ring-2 focus:ring-ring"
+                >
+                  <option value="CASHIER">Thu Ngân (Quầy POS)</option>
+                  <option value="KITCHEN_STAFF">Đầu Bếp (Màn hình KDS)</option>
+                  <option value="WAREHOUSE_MANAGER">Thủ Kho (Nhập/Xuất kho)</option>
+                  <option value="CANTEEN_MANAGER">Quản Lý Căng Tin Chi Nhánh</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1">Căng tin làm việc *</label>
+                <select
+                  value={newUser.canteenName}
+                  onChange={(e) => setNewUser({ ...newUser, canteenName: e.target.value })}
+                  aria-label="Chọn chi nhánh căng tin"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-lg text-xs focus:ring-2 focus:ring-ring"
+                >
+                  <option value="Căng tin Tòa G (Hà Đông)">Căng tin Tòa G (Hà Đông)</option>
+                  <option value="Căng tin Tòa A-B DNU">Căng tin Tòa A-B DNU</option>
+                  <option value="DNU Garden Coffee">DNU Garden Coffee</option>
+                </select>
+              </div>
+            </div>
+
+            <DialogFooter className="pt-2">
+              <Button type="submit" variant="default" className="w-full">
+                Hoàn Tất & Cấp Tài Khoản
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
       </Dialog>
     </div>
   );
