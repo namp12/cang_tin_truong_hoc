@@ -134,14 +134,14 @@ export const ReviewsPage: React.FC = () => {
     if (!selectedReviewForReply || !adminReplyText.trim()) return;
 
     dnuStore.replyReview(selectedReviewForReply.id, {
-      replierName: user?.fullName || 'Ban Quản Lý Căng Tin DNU',
+      replierName: 'Căng tin Đại Nam',
       content: adminReplyText.trim(),
     });
 
     setShowReplyModal(false);
     setAdminReplyText('');
     setSelectedReviewForReply(null);
-    setActionSuccess(`Đã gửi phản hồi chính thức tới sinh viên ${selectedReviewForReply.studentName}!`);
+    setActionSuccess(`Đã gửi phản hồi từ Căng tin Đại Nam tới sinh viên ${selectedReviewForReply.studentName}!`);
     setTimeout(() => setActionSuccess(null), 3000);
   };
 
@@ -150,9 +150,9 @@ export const ReviewsPage: React.FC = () => {
     if (!inlineCommentText.trim()) return;
 
     dnuStore.addReplyToReview(reviewId, {
-      authorName: user?.fullName || (isStudent ? 'Sinh viên DNU' : 'Quản Lý Căng Tin'),
+      authorName: isStudent ? (user?.fullName || 'Sinh viên DNU') : 'Căng tin Đại Nam',
       authorRole: isStudent ? 'STUDENT' : 'ADMIN',
-      authorClass: isStudent ? (user?.username || 'SV DNU') : 'Ban Quản Lý',
+      authorClass: isStudent ? (user?.username || 'SV DNU') : 'Ban Quản Lý Căng Tin',
       content: inlineCommentText.trim(),
     });
 
@@ -362,7 +362,7 @@ export const ReviewsPage: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-300">
                         <ShieldCheck className="w-4 h-4 text-amber-600" />
-                        <span>Phản Hồi Từ Ban Quản Lý Căng Tin:</span>
+                        <span>Phản Hồi Từ {rev.adminReply.replierName || 'Căng tin Đại Nam'}:</span>
                       </div>
                       <span className="text-[10px] text-muted-foreground font-mono">{rev.adminReply.repliedAt}</span>
                     </div>
@@ -613,10 +613,10 @@ export const ReviewsPage: React.FC = () => {
               <span className="p-2 rounded-xl bg-amber-500/15 text-amber-600">
                 <Reply className="w-5 h-5 text-amber-600" />
               </span>
-              <span>Phản Hồi Đánh Giá Sinh Viên</span>
+              <span>Căng Tin Đại Nam Phản Hồi Sinh Viên</span>
             </DialogTitle>
             <DialogDescription>
-              Gửi phản hồi chính thức từ Ban Quản Lý Căng Tin DNU tới sinh viên {selectedReviewForReply?.studentName}
+              Gửi phản hồi chính thức từ Căng Tin Đại Nam tới sinh viên {selectedReviewForReply?.studentName}
             </DialogDescription>
           </DialogHeader>
 

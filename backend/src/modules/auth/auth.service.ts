@@ -137,8 +137,8 @@ export class AuthService {
       return {
         id: userId,
         username: 'admin_super',
-        email: 'admin@dainam.edu.vn',
-        fullName: 'Nguyễn Hoàng Long',
+        email: 'canteen@dainam.edu.vn',
+        fullName: 'Căng tin Đại Nam',
         userType: 'ADMIN',
         roles: ['SUPER_ADMIN'],
         canteenId: 1,
@@ -189,7 +189,7 @@ export class AuthService {
     }
 
     let role = 'SUPER_ADMIN';
-    let fullName = 'Nguyễn Hoàng Long (Admin DNU)';
+    let fullName = 'Căng tin Đại Nam';
     let userType = 'ADMIN';
 
     if (credential.includes('cashier')) {

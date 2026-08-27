@@ -158,7 +158,7 @@ export const FinancePage: React.FC = () => {
       paymentMethod: expenseForm.paymentMethod,
       paymentMethodLabel: expenseForm.paymentMethod === 'CASH' ? 'Tiền mặt' : 'Chuyển khoản',
       counterpart: expenseForm.counterpart,
-      performedBy: 'Quản lý Nguyễn Hoàng Long',
+      performedBy: 'Căng tin Đại Nam',
       canteenName: expenseForm.canteenName,
       notes: expenseForm.notes,
     });

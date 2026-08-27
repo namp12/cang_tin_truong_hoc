@@ -32,7 +32,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ open, onOpen
   const [activeTab, setActiveTab] = useState<'INFO' | 'PASSWORD' | 'SESSIONS'>('INFO');
 
   // Edit profile state
-  const [fullName, setFullName] = useState(user?.fullName || 'Nguyễn Hoàng Long');
+  const [fullName, setFullName] = useState(user?.fullName || 'Căng tin Đại Nam');
   const [phone, setPhone] = useState(user?.phone || '0901 234 567');
   const [isSaved, setIsSaved] = useState(false);
 
