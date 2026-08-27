@@ -116,6 +116,69 @@ export interface OutboundIssue {
   supplierName?: string;
 }
 
+export interface FoodRecipeItem {
+  ingredientCode: string;
+  ingredientName: string;
+  qtyPerPortion: number;
+  unit: string;
+}
+
+export interface DishRecipe {
+  foodName: string;
+  portionName: string;
+  description: string;
+  ingredients: FoodRecipeItem[];
+}
+
+export const FOOD_RECIPES: Record<string, DishRecipe> = {
+  'cơm gà xối mỡ giòn da': {
+    foodName: 'Cơm Gà Xối Mỡ Giòn Da',
+    portionName: '1 Suất Cơm',
+    description: '1 Đùi gà chiên giòn, 1 bát cơm vàng nghệ, 1 trứng ốp la',
+    ingredients: [
+      { ingredientCode: 'NL-THIT-GA', ingredientName: 'Đùi gà góc tư tươi CP', qtyPerPortion: 0.3, unit: 'kg' },
+      { ingredientCode: 'NL-GAO-ST25', ingredientName: 'Gạo thơm lài ST25 Thượng Hạng', qtyPerPortion: 0.15, unit: 'kg' },
+      { ingredientCode: 'NL-TRUNG-GA', ingredientName: 'Trứng gà tươi Ba Huân loại A', qtyPerPortion: 1, unit: 'quả' },
+    ],
+  },
+  'cơm rang dưa bò hà nội': {
+    foodName: 'Cơm Rang Dưa Bò Hà Nội',
+    portionName: '1 Suất Cơm',
+    description: 'Thịt bò xào dưa cải chua giòn, cơm rang tơi hạt',
+    ingredients: [
+      { ingredientCode: 'NL-THIT-BO', ingredientName: 'Thịt thăn bò tươi loại 1', qtyPerPortion: 0.12, unit: 'kg' },
+      { ingredientCode: 'NL-GAO-ST25', ingredientName: 'Gạo thơm lài ST25 Thượng Hạng', qtyPerPortion: 0.18, unit: 'kg' },
+      { ingredientCode: 'NL-TRUNG-GA', ingredientName: 'Trứng gà tươi Ba Huân loại A', qtyPerPortion: 1, unit: 'quả' },
+    ],
+  },
+  'phở bò tái lăn dnu': {
+    foodName: 'Phở Bò Tái Lăn DNU',
+    portionName: '1 Bát Phở',
+    description: 'Thịt bò tái xào tỏi thơm nức, nước dùng xương hầm 12 tiếng',
+    ingredients: [
+      { ingredientCode: 'NL-THIT-BO', ingredientName: 'Thịt thăn bò tươi loại 1', qtyPerPortion: 0.15, unit: 'kg' },
+      { ingredientCode: 'NL-GAO-ST25', ingredientName: 'Gạo thơm lài ST25 Thượng Hạng', qtyPerPortion: 0.1, unit: 'kg' },
+    ],
+  },
+  'bún chả hà nội nướng than': {
+    foodName: 'Bún Chả Hà Nội Nướng Than',
+    portionName: '1 Suất Bún',
+    description: 'Chả thịt nướng than hoa thơm lừng, đu đủ cà rốt dầm chua ngọt',
+    ingredients: [
+      { ingredientCode: 'NL-SUON-HEO', ingredientName: 'Sườn non heo tươi sạch CP', qtyPerPortion: 0.2, unit: 'kg' },
+    ],
+  },
+  'bánh mì chảo đặc biệt dnu': {
+    foodName: 'Bánh Mì Chảo Đặc Biệt DNU',
+    portionName: '1 Chảo Nóng',
+    description: '2 Trứng ốp la, pate thơm, sườn heo rim sốt sánh mịn',
+    ingredients: [
+      { ingredientCode: 'NL-TRUNG-GA', ingredientName: 'Trứng gà tươi Ba Huân loại A', qtyPerPortion: 2, unit: 'quả' },
+      { ingredientCode: 'NL-SUON-HEO', ingredientName: 'Sườn non heo tươi sạch CP', qtyPerPortion: 0.1, unit: 'kg' },
+    ],
+  },
+};
+
 // -------------------------------------------------------------
 // FINANCIAL & CASHFLOW LEDGER INTERFACES
 // -------------------------------------------------------------
@@ -924,6 +987,79 @@ export const dnuStore = {
   saveOutboundIssues(issues: OutboundIssue[]) {
     localStorage.setItem(KEYS.OUTBOUND, JSON.stringify(issues));
     window.dispatchEvent(new Event('dnu_store_updated'));
+  },
+
+  deductIngredientsForOrder(orderCode: string, items: { name: string; qty: number }[]) {
+    const stocks = this.getStocks();
+    const deductedItems: { name: string; qty: number; unit: string }[] = [];
+
+    items.forEach((item) => {
+      const foodNameLower = item.name.toLowerCase();
+      const matchEntry = Object.entries(FOOD_RECIPES).find(([key]) =>
+        foodNameLower.includes(key) || key.includes(foodNameLower)
+      );
+
+      if (matchEntry) {
+        const recipe = matchEntry[1];
+        recipe.ingredients.forEach((ing) => {
+          const totalQty = Number((ing.qtyPerPortion * item.qty).toFixed(2));
+          const existing = deductedItems.find(
+            (d) => d.name.toLowerCase() === ing.ingredientName.toLowerCase()
+          );
+          if (existing) {
+            existing.qty = Number((existing.qty + totalQty).toFixed(2));
+          } else {
+            deductedItems.push({
+              name: ing.ingredientName,
+              qty: totalQty,
+              unit: ing.unit,
+            });
+          }
+        });
+      }
+    });
+
+    if (deductedItems.length === 0) return { success: false, deductedItems: [] };
+
+    // Update stock levels
+    const updatedStocks = stocks.map((stock) => {
+      const match = deductedItems.find(
+        (d) =>
+          d.name.toLowerCase() === stock.name.toLowerCase() ||
+          d.name.toLowerCase().includes(stock.name.toLowerCase()) ||
+          stock.name.toLowerCase().includes(d.name.toLowerCase())
+      );
+      if (match) {
+        const newQty = Math.max(0, Number((stock.quantity - match.qty).toFixed(2)));
+        const newAvailable = Math.max(0, Number((stock.available - match.qty).toFixed(2)));
+        const newStatus =
+          newQty <= 0 ? 'OUT_OF_STOCK' : newQty <= stock.minStock ? 'LOW_STOCK' : 'NORMAL';
+        return {
+          ...stock,
+          quantity: newQty,
+          available: newAvailable,
+          status: newStatus as StockItem['status'],
+        };
+      }
+      return stock;
+    });
+
+    this.saveStocks(updatedStocks);
+
+    // Auto-generate Outbound Issue (Phiếu xuất kho tự động)
+    const outbounds = this.getOutboundIssues();
+    const cleanCode = orderCode ? orderCode.replace(/[^a-zA-Z0-9]/g, '') : Date.now().toString().slice(-4);
+    const newOutbound: OutboundIssue = {
+      id: Date.now(),
+      code: `PXK-AUTO-${cleanCode}`,
+      reason: `Xuất kho chế biến đơn hàng ${orderCode} (Bếp Căng tin Tòa G)`,
+      issuedDate: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      issuer: 'Hệ thống tự động (Bếp KDS)',
+      items: deductedItems,
+    };
+    this.saveOutboundIssues([newOutbound, ...outbounds]);
+
+    return { success: true, deductedItems, outboundCode: newOutbound.code };
   },
 
   // -------------------------------------------------------------

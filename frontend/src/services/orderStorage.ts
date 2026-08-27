@@ -1,3 +1,5 @@
+import { dnuStore } from './dnuStore.js';
+
 export interface OrderItem {
   id: number;
   code: string;
@@ -249,6 +251,13 @@ export const orderStorage = {
     };
     const updatedTickets = [newTicket, ...tickets.filter((t) => t.id !== order.id)];
     this.saveKitchenTickets(updatedTickets);
+
+    // Auto deduct ingredients from warehouse stock based on Recipe BOM
+    try {
+      dnuStore.deductIngredientsForOrder(order.code, order.itemsDetail);
+    } catch (e) {
+      console.warn('Auto stock deduction warning:', e);
+    }
 
     // Also sync to backend API in background
     try {

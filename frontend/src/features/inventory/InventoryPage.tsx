@@ -4,7 +4,7 @@ import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog.js';
 import { formatCurrency, formatNumber } from '../../utils/format.js';
-import { dnuStore, StockItem, InboundReceipt, OutboundIssue, Supplier } from '../../services/dnuStore.js';
+import { dnuStore, StockItem, InboundReceipt, OutboundIssue, Supplier, FOOD_RECIPES } from '../../services/dnuStore.js';
 import { 
   Package, 
   Search, 
@@ -25,13 +25,14 @@ import {
   Sliders,
   DollarSign,
   Edit3,
-  Trash2
+  Trash2,
+  BookOpen
 } from 'lucide-react';
 
 export const InventoryPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('ALL');
-  const [activeTab, setActiveTab] = useState<'STOCKS' | 'INBOUND_LOGS' | 'OUTBOUND_LOGS'>('STOCKS');
+  const [activeTab, setActiveTab] = useState<'STOCKS' | 'INBOUND_LOGS' | 'OUTBOUND_LOGS' | 'RECIPES'>('STOCKS');
 
   // Modals state
   const [showInboundModal, setShowInboundModal] = useState(false);
@@ -374,6 +375,16 @@ export const InventoryPage: React.FC = () => {
             >
               📤 Phiếu Xuất Cho Bếp ({outboundIssues.length})
             </button>
+            <button
+              onClick={() => setActiveTab('RECIPES')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                activeTab === 'RECIPES'
+                  ? 'bg-primary text-primary-foreground shadow-xs font-bold'
+                  : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              📖 Định Lượng Món (BOM Bếp)
+            </button>
           </div>
         </CardContent>
       </Card>
@@ -531,6 +542,85 @@ export const InventoryPage: React.FC = () => {
             </table>
           </div>
         </Card>
+      )}
+
+      {/* TAB 4: Dish Recipe & BOM Table */}
+      {activeTab === 'RECIPES' && (
+        <div className="space-y-4">
+          {/* Guide Banner */}
+          <div className="p-4 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-start gap-3">
+            <ChefHat className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
+            <div className="text-xs space-y-1">
+              <p className="font-bold text-orange-950 dark:text-orange-300">
+                Quy Trình Tự Động Trừ Kho Theo Định Lượng Suất Ăn (BOM - Bill of Materials)
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                Mỗi khi một đơn hàng được tạo (tại Quầy POS hoặc Cổng Sinh Viên), hệ thống sẽ đối chiếu định lượng công thức chuẩn dưới đây và <strong>tự động trừ số lượng nguyên liệu thực tế trong kho</strong>, đồng thời phát sinh 1 Phiếu Xuất Kho tự động (<code>PXK-AUTO-xxx</code>) lưu vết cho Bếp Tòa G.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Object.entries(FOOD_RECIPES).map(([key, recipe]) => (
+              <Card key={key} className="hover:border-orange-500/40 transition-all shadow-xs">
+                <CardHeader className="p-4 pb-2 border-b border-border bg-muted/20">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                      <span>{recipe.foodName}</span>
+                    </CardTitle>
+                    <Badge variant="primary" className="bg-orange-600 text-white font-mono text-[10px]">
+                      {recipe.portionName}
+                    </Badge>
+                  </div>
+                  <CardDescription className="text-[11px] text-muted-foreground">
+                    {recipe.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-4 space-y-2.5 text-xs">
+                  <p className="font-bold text-muted-foreground text-[11px] uppercase tracking-wider">
+                    Định Lượng Nguyên Liệu Tiêu Hao:
+                  </p>
+                  <div className="space-y-1.5">
+                    {recipe.ingredients.map((ing, idx) => {
+                      const matchStock = stocks.find(
+                        (s) =>
+                          s.name.toLowerCase().includes(ing.ingredientName.toLowerCase()) ||
+                          ing.ingredientName.toLowerCase().includes(s.name.toLowerCase())
+                      );
+                      return (
+                        <div
+                          key={idx}
+                          className="p-2 rounded-lg bg-muted/40 flex items-center justify-between border border-border/40"
+                        >
+                          <div>
+                            <p className="font-bold text-foreground">{ing.ingredientName}</p>
+                            <p className="text-[10px] text-muted-foreground font-mono">
+                              Kho hiện có:{' '}
+                              <strong
+                                className={
+                                  matchStock && matchStock.available < 5
+                                    ? 'text-rose-600'
+                                    : 'text-emerald-600'
+                                }
+                              >
+                                {matchStock ? `${matchStock.available} ${matchStock.unit}` : 'Đầy đủ'}
+                              </strong>
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <span className="px-2 py-0.5 rounded-md bg-orange-500/15 text-orange-700 dark:text-orange-300 font-mono font-bold text-[11px]">
+                              {ing.qtyPerPortion} {ing.unit} / suất
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* MODAL 1: Create Inbound Receipt (Tạo Phiếu Nhập Kho) */}
