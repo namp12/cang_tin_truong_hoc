@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.js';
+import { dnuStore } from '../../services/dnuStore.js';
 import { Button } from '../../components/ui/Button.js';
 import { Card, CardContent } from '../../components/ui/Card.js';
 import { 
@@ -19,6 +20,7 @@ import {
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [credential, setCredential] = useState('');
   const [password, setPassword] = useState('');
@@ -26,6 +28,15 @@ export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    const reason = searchParams.get('reason');
+    if (reason === 'locked') {
+      setErrorMessage('Tài khoản của bạn vừa bị Khóa bởi Quản trị viên. Phiên làm việc đã kết thúc.');
+    } else if (reason === 'deleted') {
+      setErrorMessage('Tài khoản của bạn đã bị Xóa khỏi hệ thống.');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,12 +70,23 @@ export const LoginPage: React.FC = () => {
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
+    setErrorMessage('');
     try {
+      const allUsers = dnuStore.getUsers();
+      const studentUser = allUsers.find(
+        (u) => u.role === 'STUDENT' || u.username.includes('student')
+      );
+      if (!studentUser) {
+        throw new Error('Tài khoản sinh viên không tồn tại hoặc đã bị xóa khỏi hệ thống.');
+      }
+      if (studentUser.status === 'LOCKED') {
+        throw new Error(`Tài khoản sinh viên (${studentUser.username}) đã bị Khóa bởi Quản trị viên.`);
+      }
       // Simulate Google DNU SSO Authentication
-      await login('student_2110001', 'Password@123');
+      await login(studentUser.username, 'Password@123');
       navigate('/student/home');
     } catch (err: any) {
-      setErrorMessage('Không thể xác thực tài khoản Google DNU');
+      setErrorMessage(err.message || 'Không thể xác thực tài khoản Google DNU');
     } finally {
       setIsLoading(false);
     }

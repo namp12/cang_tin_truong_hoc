@@ -22,7 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const initAuth = async () => {
+    const checkActiveSession = async () => {
       const token = localStorage.getItem('canteen_access_token');
       const savedUser = localStorage.getItem('canteen_user');
       
@@ -30,38 +30,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const parsed = JSON.parse(savedUser);
           const localUsers = dnuStore.getUsers();
-          const checkLocked = localUsers.find(
+          const checkUser = localUsers.find(
             (u) => u.username.toLowerCase() === parsed.username?.toLowerCase()
           );
-          if (checkLocked && checkLocked.status === 'LOCKED') {
+
+          // If user was DELETED from system
+          if (!checkUser) {
+            console.warn('Current account was deleted from system, logging out');
+            localStorage.removeItem('canteen_access_token');
+            localStorage.removeItem('canteen_refresh_token');
+            localStorage.removeItem('canteen_user');
+            setUser(null);
+            setIsLoading(false);
+            if (!window.location.pathname.includes('/auth/')) {
+              window.location.href = '/auth/login?reason=deleted';
+            }
+            return;
+          }
+
+          // If user was LOCKED by admin
+          if (checkUser.status === 'LOCKED') {
             console.warn('Current account is locked, logging out');
             localStorage.removeItem('canteen_access_token');
             localStorage.removeItem('canteen_refresh_token');
             localStorage.removeItem('canteen_user');
             setUser(null);
             setIsLoading(false);
+            if (!window.location.pathname.includes('/auth/')) {
+              window.location.href = '/auth/login?reason=locked';
+            }
             return;
           }
+
           setUser(parsed);
           // Refresh user profile in background
           const refreshedUser = await authApi.getMe();
           setUser(refreshedUser);
           localStorage.setItem('canteen_user', JSON.stringify(refreshedUser));
         } catch (error) {
-          console.warn('Session expired or invalid, using stored profile');
+          console.warn('Session check warning');
         }
       }
       setIsLoading(false);
     };
 
-    initAuth();
+    checkActiveSession();
+
+    window.addEventListener('dnu_store_updated', checkActiveSession);
+    window.addEventListener('storage', checkActiveSession);
+    return () => {
+      window.removeEventListener('dnu_store_updated', checkActiveSession);
+      window.removeEventListener('storage', checkActiveSession);
+    };
   }, []);
 
   const login = async (credential: string, password: string) => {
     setIsLoading(true);
     try {
       const cleanCred = credential.trim().toLowerCase();
-      // Check if user is locked in dnuStore
+      // Check if user is in dnuStore
       const localUsers = dnuStore.getUsers();
       const localUser = localUsers.find(
         (u) =>
@@ -69,17 +96,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           u.email.toLowerCase() === cleanCred ||
           u.phone === cleanCred
       );
-      if (localUser && localUser.status === 'LOCKED') {
+
+      // Check if account was deleted from system
+      if (!localUser) {
+        throw new Error('Tài khoản không tồn tại hoặc đã bị xóa khỏi hệ thống.');
+      }
+
+      // Check if account is locked
+      if (localUser.status === 'LOCKED') {
         throw new Error('Tài khoản này đã bị khóa bởi Quản trị viên. Vui lòng liên hệ quản lý căng tin DNU.');
       }
 
       const response = await authApi.login(credential, password);
       
-      // Double check returned user against locked list
+      // Double check returned user against locked/deleted list
       const checkReturned = localUsers.find(
         (u) => u.username.toLowerCase() === response.user.username.toLowerCase()
       );
-      if (checkReturned && checkReturned.status === 'LOCKED') {
+      if (!checkReturned) {
+        throw new Error('Tài khoản không tồn tại hoặc đã bị xóa khỏi hệ thống.');
+      }
+      if (checkReturned.status === 'LOCKED') {
         throw new Error('Tài khoản này đã bị khóa bởi Quản trị viên. Vui lòng liên hệ quản lý căng tin DNU.');
       }
 
