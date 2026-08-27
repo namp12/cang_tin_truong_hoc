@@ -35,18 +35,6 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileSidebar }) => {
     { id: 3, title: 'Thanh toán thành công', desc: 'Đơn #1028 đã thanh toán QR 70.000đ', time: '25 phút trước', isNew: false },
   ];
 
-  const quickRoles = [
-    { label: 'Admin', user: 'admin_super' },
-    { label: 'Thu Ngân (POS)', user: 'cashier_01' },
-    { label: 'Đầu Bếp (KDS)', user: 'chef_01' },
-    { label: 'Sinh Viên', user: 'student_2110001' },
-  ];
-
-  const handleQuickSwitch = async (username: string) => {
-    await login(username, 'Password@123');
-    setShowUserMenu(false);
-  };
-
   return (
     <header className="h-16 bg-card border-b border-border px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs transition-colors duration-200">
       {/* Left Area: Mobile Menu Trigger & Search */}
@@ -168,32 +156,25 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileSidebar }) => {
                 <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
               </div>
 
-              {/* Demo Quick Role Switcher */}
-              <div className="px-4 py-2 border-b border-border bg-muted/30">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                  <UserCheck className="w-3 h-3 text-primary" />
-                  Đổi nhanh Role Demo:
-                </p>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {quickRoles.map((r) => (
-                    <button
-                      key={r.user}
-                      onClick={() => handleQuickSwitch(r.user)}
-                      className="text-[11px] font-medium py-1 px-2 rounded bg-card hover:bg-primary/10 hover:text-primary border border-border text-foreground transition-colors text-left truncate"
-                    >
-                      {r.label}
-                    </button>
-                  ))}
+              {/* User Menu Items */}
+              <div className="py-1 text-xs">
+                <div className="px-4 py-2 hover:bg-muted/60 cursor-pointer flex items-center gap-2.5 text-foreground transition-colors">
+                  <UserCheck className="w-3.5 h-3.5 text-primary" />
+                  <span>Hồ sơ & Tài khoản DNU</span>
+                </div>
+                <div className="px-4 py-2 hover:bg-muted/60 cursor-pointer flex items-center gap-2.5 text-foreground transition-colors">
+                  <Store className="w-3.5 h-3.5 text-orange-500" />
+                  <span>Căng tin: Tòa G Hà Đông</span>
                 </div>
               </div>
 
-              <div className="pt-1">
+              <div className="pt-1 border-t border-border">
                 <button
                   onClick={logout}
-                  className="w-full px-4 py-2 text-left text-xs font-medium text-destructive hover:bg-destructive/10 flex items-center gap-2 transition-colors"
+                  className="w-full px-4 py-2 text-left text-xs font-semibold text-destructive hover:bg-destructive/10 flex items-center gap-2 transition-colors"
                 >
                   <LogOut className="w-3.5 h-3.5" />
-                  Đăng xuất
+                  <span>Đăng xuất khỏi hệ thống</span>
                 </button>
               </div>
             </div>
