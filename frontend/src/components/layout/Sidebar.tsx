@@ -59,14 +59,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const menuSections: MenuSection[] = [
     {
       title: 'TỔNG QUAN',
-      roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER'],
+      roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER', 'STUDENT'],
       items: [
         { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard, exact: true },
+        { label: 'Cổng Sinh Viên DNU', path: '/student/home', icon: Sparkles, badge: 'APP' },
       ],
     },
     {
       title: 'BÁN HÀNG & PHỤC VỤ',
-      roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER', 'CASHIER', 'KITCHEN_STAFF'],
+      roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER', 'CASHIER', 'KITCHEN_STAFF', 'STUDENT'],
       items: [
         { label: 'Quầy POS Cảm ứng', path: '/admin/pos', icon: ShoppingCart, badge: 'HOT' },
         { label: 'Kiosk Tự Phục Vụ', path: '/kiosk', icon: Store, badge: 'KIOSK' },
@@ -84,7 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       title: 'THỰC ĐƠN & MÓN ĂN',
-      roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER'],
+      roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER', 'STUDENT'],
       items: [
         { label: 'Danh sách Món ăn', path: '/admin/foods', icon: UtensilsCrossed },
         { label: 'Danh mục & Combo', path: '/admin/categories', icon: Layers },
@@ -100,7 +101,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       title: 'VẬN HÀNH & NHÂN SỰ',
-      roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER'],
+      roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER', 'STUDENT'],
       items: [
         { label: 'Cấp & Quản lý Tài khoản', path: '/admin/users', icon: Users },
         { label: 'Dòng tiền & Chi phí', path: '/admin/finance', icon: DollarSign },
@@ -110,7 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       title: 'BÁO CÁO & TRÍ TUỆ NHÂN TẠO',
-      roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER'],
+      roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER', 'STUDENT'],
       items: [
         { label: 'Báo cáo Kinh doanh', path: '/admin/reports', icon: BarChart3 },
         { label: 'AI Analytics Insights', path: '/admin/ai-analytics', icon: Bot, isAi: true },
@@ -118,7 +119,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       title: 'HỆ THỐNG',
-      roles: ['SUPER_ADMIN', 'ADMIN'],
+      roles: ['SUPER_ADMIN', 'ADMIN', 'STUDENT'],
       items: [
         { label: 'Kiểm Thử Dữ Liệu DB', path: '/admin/tester', icon: Activity, badge: 'TEST' },
         { label: 'Cài đặt hệ thống', path: '/admin/settings', icon: Settings },
@@ -171,7 +172,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Navigation Links */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
         {menuSections.map((section, idx) => {
-          const isAllowed = section.roles.some((role: any) => hasRole(role));
+          const isSuper = user?.roles?.includes('SUPER_ADMIN') || user?.userType === 'ADMIN';
+          const isAllowed =
+            isSuper ||
+            section.roles.some(
+              (role: any) =>
+                hasRole(role) ||
+                user?.roles?.includes(role) ||
+                (role === 'STUDENT' && (user?.userType === 'STUDENT' || user?.roles?.includes('STUDENT')))
+            );
           if (!isAllowed) return null;
 
           return (
