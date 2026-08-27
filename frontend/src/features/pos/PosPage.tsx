@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card.js';
 import { Button } from '../../components/ui/Button.js';
 import { Badge } from '../../components/ui/Badge.js';
+import { useAuth } from '../../contexts/AuthContext.js';
 import { ReceiptModal, ReceiptData } from '../../components/common/ReceiptModal.js';
 import { FoodCatalogItem } from '../../data/foodCatalog.js';
 import { orderStorage } from '../../services/orderStorage.js';
@@ -32,7 +33,24 @@ interface CartItem {
   toppings?: string[];
 }
 
+const getStudentCohort = (username?: string) => {
+  if (!username) return 'K18';
+  const match = username.match(/\d+/);
+  if (match) {
+    const numStr = match[0];
+    if (numStr.length >= 2) {
+      const yearPrefix = Number(numStr.slice(0, 2));
+      if (yearPrefix >= 10 && yearPrefix <= 30) {
+        const enrollmentYear = 2000 + yearPrefix;
+        return `K${enrollmentYear - 2006}`;
+      }
+    }
+  }
+  return 'K18';
+};
+
 export const PosPage: React.FC = () => {
+  const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -133,6 +151,26 @@ export const PosPage: React.FC = () => {
           });
           setDiscount(0);
           return;
+        }
+      }
+
+      // Cohort/Class validation
+      if (customerRole === 'STUDENT') {
+        const studentUsername = user?.username || 'student_2110001';
+        const studentCohort = getStudentCohort(studentUsername);
+        
+        // Match specific K-cohort like K18, K17, etc. in targetStudents
+        const cohortMatches = found.targetStudents.match(/K\d+/i);
+        if (cohortMatches) {
+          const requiredCohort = cohortMatches[0].toUpperCase();
+          if (requiredCohort !== studentCohort.toUpperCase()) {
+            setVoucherMessage({
+              type: 'error',
+              text: `Mã ${found.code} chỉ dành riêng cho khóa ${requiredCohort} (Bạn thuộc khóa ${studentCohort})!`,
+            });
+            setDiscount(0);
+            return;
+          }
         }
       }
 

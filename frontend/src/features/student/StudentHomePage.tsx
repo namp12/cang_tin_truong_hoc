@@ -4,6 +4,7 @@ import { Card, CardContent } from '../../components/ui/Card.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
 import { OrderTrackingModal } from '../../components/common/OrderTrackingModal.js';
+import { useAuth } from '../../contexts/AuthContext.js';
 import { initialFoodCatalog } from '../../data/foodCatalog.js';
 import { formatCurrency } from '../../utils/format.js';
 import { 
@@ -19,8 +20,31 @@ import {
   Clock
 } from 'lucide-react';
 
+const getStudentCohort = (username?: string) => {
+  if (!username) return 'K18';
+  const match = username.match(/\d+/);
+  if (match) {
+    const numStr = match[0];
+    if (numStr.length >= 2) {
+      const yearPrefix = Number(numStr.slice(0, 2));
+      if (yearPrefix >= 10 && yearPrefix <= 30) {
+        const enrollmentYear = 2000 + yearPrefix;
+        return `K${enrollmentYear - 2006}`;
+      }
+    }
+  }
+  return 'K18';
+};
+
 export const StudentHomePage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const studentCohort = getStudentCohort(user?.username || 'student_2110001');
+
+  // Determine promo details based on cohort
+  const promoTitle = studentCohort === 'K18' ? '🎁 CHÀO TÂN SINH VIÊN K18 DNU' : `🎁 ƯU ĐÃI SINH VIÊN DNU (${studentCohort})`;
+  const promoOffer = studentCohort === 'K18' ? 'Giảm 20% Cho Đơn Đầu Tiên' : 'Giảm 10.000đ Combo Trưa';
+  const promoCode = studentCohort === 'K18' ? 'DNUCHAO2026' : 'DNUFOOD';
   const [selectedCat, setSelectedCat] = useState('ALL');
   const [cartCount, setCartCount] = useState(2);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
@@ -79,10 +103,12 @@ export const StudentHomePage: React.FC = () => {
       <div className="p-4 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md relative overflow-hidden">
         <div className="relative z-10 space-y-1">
           <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full inline-block backdrop-blur-xs">
-            🎁 CHÀO TÂN SINH VIÊN K18 DNU
+            {promoTitle}
           </span>
-          <h2 className="text-base font-extrabold leading-tight">Giảm 20% Cho Đơn Đầu Tiên</h2>
-          <p className="text-[11px] text-orange-100">Nhập mã voucher <span className="font-bold underline bg-white/20 px-1 py-0.5 rounded">DNUCHAO2026</span> khi thanh toán</p>
+          <h2 className="text-base font-extrabold leading-tight">{promoOffer}</h2>
+          <p className="text-[11px] text-orange-100">
+            Nhập mã voucher <span className="font-bold underline bg-white/20 px-1 py-0.5 rounded">{promoCode}</span> khi thanh toán
+          </p>
         </div>
         <Sparkles className="w-16 h-16 absolute -right-2 -bottom-2 text-white/20" />
       </div>
