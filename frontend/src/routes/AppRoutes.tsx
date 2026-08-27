@@ -10,9 +10,16 @@ import { PosPage } from '../features/pos/PosPage.js';
 import { OrdersPage } from '../features/orders/OrdersPage.js';
 import { KitchenPage } from '../features/kitchen/KitchenPage.js';
 import { FoodsPage } from '../features/foods/FoodsPage.js';
+import { CategoriesPage } from '../features/categories/CategoriesPage.js';
 import { InventoryPage } from '../features/inventory/InventoryPage.js';
+import { SuppliersPage } from '../features/suppliers/SuppliersPage.js';
 import { UsersPage } from '../features/users/UsersPage.js';
+import { FinancePage } from '../features/finance/FinancePage.js';
+import { PromotionsPage } from '../features/promotions/PromotionsPage.js';
+import { ReviewsPage } from '../features/reviews/ReviewsPage.js';
+import { ReportsPage } from '../features/reports/ReportsPage.js';
 import { AiAnalyticsPage } from '../features/ai/AiAnalyticsPage.js';
+import { SettingsPage } from '../features/settings/SettingsPage.js';
 import { StudentHomePage } from '../features/student/StudentHomePage.js';
 
 // Protected Route Wrapper
@@ -75,17 +82,17 @@ export const AppRoutes: React.FC = () => {
         <Route path="orders" element={<OrdersPage />} />
         <Route path="kitchen" element={<KitchenPage />} />
         <Route path="foods" element={<FoodsPage />} />
-        <Route path="categories" element={<FoodsPage />} />
+        <Route path="categories" element={<CategoriesPage />} />
         <Route path="inventory" element={<InventoryPage />} />
-        <Route path="suppliers" element={<InventoryPage />} />
+        <Route path="suppliers" element={<SuppliersPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="employees" element={<UsersPage />} />
-        <Route path="finance" element={<DashboardPage />} />
-        <Route path="promotions" element={<DashboardPage />} />
-        <Route path="reviews" element={<DashboardPage />} />
-        <Route path="reports" element={<DashboardPage />} />
+        <Route path="finance" element={<FinancePage />} />
+        <Route path="promotions" element={<PromotionsPage />} />
+        <Route path="reviews" element={<ReviewsPage />} />
+        <Route path="reports" element={<ReportsPage />} />
         <Route path="ai-analytics" element={<AiAnalyticsPage />} />
-        <Route path="settings" element={<DashboardPage />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
 
       {/* Student Portal Mobile-First Routes */}
