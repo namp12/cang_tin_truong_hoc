@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.js';
 import { UserProfileModal } from '../common/UserProfileModal.js';
+import { StudentWalletModal } from '../common/StudentWalletModal.js';
+import { AiFoodAssistant } from '../common/AiFoodAssistant.js';
 import { 
   Home, 
   UtensilsCrossed, 
   ShoppingBag, 
   Receipt, 
   User as UserIcon,
-  LogOut
+  LogOut,
+  Wallet
 } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 
@@ -16,6 +19,7 @@ export const StudentLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showWalletModal, setShowWalletModal] = useState(false);
 
   const navItems = [
     { label: 'Trang chủ', path: '/student/home', icon: Home },
@@ -39,16 +43,28 @@ export const StudentLayout: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* DNU Pay Wallet Quick Button */}
+          <button
+            type="button"
+            onClick={() => setShowWalletModal(true)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-500/15 to-amber-500/15 text-orange-700 dark:text-orange-300 border border-orange-500/20 text-xs font-bold hover:scale-105 transition-transform"
+            title="Ví DNU Pay"
+          >
+            <Wallet className="w-3.5 h-3.5 text-orange-600" />
+            <span className="hidden sm:inline">Ví:</span>
+            <span className="font-mono">185.000đ</span>
+          </button>
+
           {user ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setShowProfileModal(true)}
-                className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition-colors"
+                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition-colors"
               >
                 <div className="w-5 h-5 rounded-full bg-orange-600 text-white text-[10px] flex items-center justify-center font-bold">
                   {user.fullName?.charAt(0) || 'S'}
                 </div>
-                <span className="hidden sm:inline truncate max-w-[120px]">{user.fullName}</span>
+                <span className="hidden sm:inline truncate max-w-[100px]">{user.fullName}</span>
               </button>
               <button 
                 onClick={logout} 
@@ -73,6 +89,9 @@ export const StudentLayout: React.FC = () => {
       <main className="flex-1 p-4">
         <Outlet />
       </main>
+
+      {/* Floating AI Nutri-Food Assistant */}
+      <AiFoodAssistant />
 
       {/* Mobile Bottom Navigation Bar */}
       <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto sm:max-w-2xl bg-white border-t border-slate-200/80 px-2 py-1.5 flex items-center justify-around z-40 shadow-lg">
@@ -102,6 +121,16 @@ export const StudentLayout: React.FC = () => {
           );
         })}
 
+        {/* Wallet Bottom Nav Item */}
+        <button
+          type="button"
+          onClick={() => setShowWalletModal(true)}
+          className="flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-medium text-slate-400 hover:text-slate-600 transition-all"
+        >
+          <Wallet className="w-5 h-5 mb-0.5" />
+          <span>Ví DNU</span>
+        </button>
+
         {/* Profile Bottom Nav Item */}
         <button
           type="button"
@@ -113,8 +142,9 @@ export const StudentLayout: React.FC = () => {
         </button>
       </nav>
 
-      {/* Interactive User Profile Modal Dialog */}
+      {/* Interactive Modals */}
       <UserProfileModal open={showProfileModal} onOpenChange={setShowProfileModal} />
+      <StudentWalletModal open={showWalletModal} onOpenChange={setShowWalletModal} />
     </div>
   );
 };

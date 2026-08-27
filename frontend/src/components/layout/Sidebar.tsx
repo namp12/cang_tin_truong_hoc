@@ -24,6 +24,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  Store,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -67,11 +68,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER', 'CASHIER', 'KITCHEN_STAFF'],
       items: [
         { label: 'Quầy POS Cảm ứng', path: '/admin/pos', icon: ShoppingCart, badge: 'HOT' },
+        { label: 'Kiosk Tự Phục Vụ', path: '/kiosk', icon: Store, badge: 'KIOSK' },
         { label: 'Quản lý Đơn hàng', path: '/admin/orders', icon: Receipt },
         { label: 'Màn hình Bếp (KDS)', path: '/admin/kitchen', icon: ChefHat, badge: 'LIVE' },
       ].filter((item) => {
         if (user?.roles?.includes('CASHIER') && !user?.roles?.includes('SUPER_ADMIN')) {
-          return item.path === '/admin/pos' || item.path === '/admin/orders';
+          return item.path === '/admin/pos' || item.path === '/admin/orders' || item.path === '/kiosk';
         }
         if (user?.roles?.includes('KITCHEN_STAFF') && !user?.roles?.includes('SUPER_ADMIN')) {
           return item.path === '/admin/kitchen';

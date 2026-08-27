@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '../../components/ui/Card.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
+import { OrderTrackingModal } from '../../components/common/OrderTrackingModal.js';
 import { formatCurrency } from '../../utils/format.js';
 import { 
   Search, 
@@ -11,13 +12,30 @@ import {
   Plus, 
   ShoppingBag, 
   Flame, 
-  UtensilsCrossed 
+  UtensilsCrossed,
+  ChefHat,
+  ChevronRight,
+  Clock
 } from 'lucide-react';
 
 export const StudentHomePage: React.FC = () => {
   const navigate = useNavigate();
   const [selectedCat, setSelectedCat] = useState('ALL');
   const [cartCount, setCartCount] = useState(2);
+  const [showTrackingModal, setShowTrackingModal] = useState(false);
+
+  const activeOrder = {
+    orderNumber: '#1029',
+    status: 'PREPARING' as const,
+    canteenName: 'Căng tin Tòa G (Hà Đông)',
+    tableNumber: 'Bàn G1-02',
+    items: [
+      { name: 'Cơm Gà Xối Mỡ Giòn Da', qty: 2 },
+      { name: 'Trà Đào Cam Sả Hà Đông', qty: 1 },
+    ],
+    totalAmount: 95000,
+    orderedAt: '11:45',
+  };
 
   const categories = [
     { id: 'ALL', name: 'Tất Cả', icon: '🍽️' },
@@ -92,6 +110,31 @@ export const StudentHomePage: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      {/* Live Active Order Tracking Banner */}
+      <div
+        onClick={() => setShowTrackingModal(true)}
+        className="p-3.5 rounded-2xl bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-emerald-500/10 border border-orange-500/30 flex items-center justify-between cursor-pointer hover:border-orange-500/60 shadow-xs transition-all"
+      >
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-orange-600 text-white shadow-xs animate-pulse">
+            <ChefHat className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-xs text-slate-800">Đơn #{activeOrder.orderNumber}</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-700">
+                🍳 Bếp đang nấu (5p)
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 truncate max-w-[200px]">2 Cơm gà xối mỡ • Quầy 1</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 text-xs font-bold text-orange-600">
+          <span>Xem</span>
+          <ChevronRight className="w-4 h-4" />
+        </div>
+      </div>
+
       {/* Promo Banner Card */}
       <div className="p-4 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md relative overflow-hidden">
         <div className="relative z-10 space-y-1">
@@ -185,6 +228,9 @@ export const StudentHomePage: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* Live Order Tracking Modal */}
+      <OrderTrackingModal open={showTrackingModal} onOpenChange={setShowTrackingModal} order={activeOrder} />
     </div>
   );
 };

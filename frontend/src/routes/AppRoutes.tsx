@@ -21,6 +21,7 @@ import { ReportsPage } from '../features/reports/ReportsPage.js';
 import { AiAnalyticsPage } from '../features/ai/AiAnalyticsPage.js';
 import { SettingsPage } from '../features/settings/SettingsPage.js';
 import { StudentHomePage } from '../features/student/StudentHomePage.js';
+import { KioskPage } from '../features/kiosk/KioskPage.js';
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -104,6 +105,9 @@ export const AppRoutes: React.FC = () => {
         <Route path="orders" element={<OrdersPage />} />
         <Route path="profile" element={<StudentHomePage />} />
       </Route>
+
+      {/* Self-Ordering Smart Kiosk Terminal Route */}
+      <Route path="/kiosk" element={<KioskPage />} />
 
       {/* Fallback 404 Route */}
       <Route path="*" element={<Navigate to="/" replace />} />

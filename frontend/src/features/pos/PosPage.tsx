@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card.js';
 import { Button } from '../../components/ui/Button.js';
 import { Badge } from '../../components/ui/Badge.js';
+import { ReceiptModal, ReceiptData } from '../../components/common/ReceiptModal.js';
 import { useSocket } from '../../contexts/SocketContext.js';
 import { formatCurrency } from '../../utils/format.js';
 import { 
@@ -160,6 +161,9 @@ export const PosPage: React.FC = () => {
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const finalTotal = Math.max(0, subtotal - discount);
 
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
+  const [showReceipt, setShowReceipt] = useState(false);
+
   const { emitNewOrder } = useSocket();
 
   const handlePay = () => {
@@ -184,11 +188,28 @@ export const PosPage: React.FC = () => {
       orderedAt: new Date().toLocaleTimeString().slice(0, 5),
     });
 
+    const receipt: ReceiptData = {
+      orderNumber: orderNum,
+      orderTime: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      cashierName: 'Phạm Quỳnh Như (Quầy POS Tòa G)',
+      canteenName: 'Căng tin Trung Tâm (Tòa nhà G - Hà Đông)',
+      tableNumber: 'Bàn G1-02',
+      items: cart.map((i) => ({ name: i.name, qty: i.quantity, price: i.price })),
+      subtotal,
+      discount,
+      voucherCode,
+      finalTotal,
+      paymentMethod: selectedPaymentMethod === 'CASH' ? 'Tiền mặt' : selectedPaymentMethod === 'DNUPAY' ? 'Ví DNU Pay' : 'QR MoMo/VNPAY',
+    };
+
+    setReceiptData(receipt);
+
     setTimeout(() => {
       setPaymentSuccess(false);
       setShowCheckoutModal(false);
+      setShowReceipt(true);
       setCart([]);
-    }, 1800);
+    }, 1200);
   };
 
   return (
@@ -455,6 +476,9 @@ export const PosPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* 80mm Thermal Receipt Modal */}
+      <ReceiptModal open={showReceipt} onOpenChange={setShowReceipt} data={receiptData} />
     </div>
   );
 };

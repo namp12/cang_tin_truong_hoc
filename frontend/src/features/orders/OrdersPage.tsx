@@ -3,12 +3,14 @@ import { Card, CardContent } from '../../components/ui/Card.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
 import { Sheet, SheetHeader, SheetTitle, SheetClose } from '../../components/ui/sheet.js';
+import { ReceiptModal, ReceiptData } from '../../components/common/ReceiptModal.js';
 import { useSocket } from '../../contexts/SocketContext.js';
 import { formatCurrency, formatDateTime } from '../../utils/format.js';
 import { 
   Search, 
   Receipt, 
   Eye, 
+  Printer,
   CheckCircle2, 
   Clock, 
   XCircle, 
@@ -41,6 +43,28 @@ export const OrdersPage: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<OrderItemRow | null>(null);
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
+
+  const handlePrintOrder = (order: OrderItemRow) => {
+    const sub = order.itemsDetail.reduce((s, i) => s + i.price * i.qty, 0);
+    const disc = Math.max(0, sub - order.finalAmount);
+
+    setReceiptData({
+      orderNumber: order.code,
+      orderTime: order.orderedAt,
+      cashierName: 'Phạm Quỳnh Như (Quầy POS Tòa G)',
+      canteenName: order.canteenName,
+      tableNumber: order.tableNumber,
+      customerName: order.customerName,
+      items: order.itemsDetail,
+      subtotal: sub,
+      discount: disc,
+      finalTotal: order.finalAmount,
+      paymentMethod: order.paymentMethod,
+    });
+    setShowReceipt(true);
+  };
 
   const [orders, setOrders] = useState<OrderItemRow[]>([
     {
@@ -264,7 +288,10 @@ export const OrdersPage: React.FC = () => {
                     </Badge>
                   </td>
                   <td className="py-3.5 px-4 text-muted-foreground">{formatDateTime(order.orderedAt)}</td>
-                  <td className="py-3.5 px-4 text-right">
+                  <td className="py-3.5 px-4 text-right flex items-center justify-end gap-1">
+                    <Button onClick={() => handlePrintOrder(order)} variant="ghost" size="sm" title="In Hóa Đơn K80">
+                      <Printer className="w-3.5 h-3.5 text-muted-foreground" />
+                    </Button>
                     <Button onClick={() => setSelectedOrder(order)} variant="ghost" size="sm">
                       <Eye className="w-3.5 h-3.5 mr-1" /> Chi Tiết
                     </Button>
@@ -294,39 +321,42 @@ export const OrdersPage: React.FC = () => {
             <div className="p-4 rounded-xl bg-muted/40 border border-border space-y-3">
               <h5 className="text-xs font-bold text-foreground">Hành Trình Đơn Hàng</h5>
               <div className="space-y-2 text-xs">
-                <div className="flex items-center gap-2 text-primary font-semibold">
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span>Đã đặt hàng ({selectedOrder.orderedAt.slice(-8)})</span>
+                <div className="flex items-center gap-3">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20" />
+                  <span className="font-semibold text-foreground">11:15 - Đã tạo đơn hàng thành công</span>
                 </div>
-                <div className="flex items-center gap-2 text-primary font-semibold">
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  <span>Đã xác nhận & thanh toán ({selectedOrder.paymentMethod})</span>
+                <div className="flex items-center gap-3">
+                  <span className="w-2.5 h-2.5 rounded-full bg-primary ring-4 ring-primary/20" />
+                  <span className="font-semibold text-foreground">11:16 - Bếp tiếp nhận và bắt đầu chế biến</span>
                 </div>
-                <div className="flex items-center gap-2 text-foreground font-medium">
-                  <Clock className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span>Đang nấu tại Bếp Căng tin Khu A</span>
+                <div className="flex items-center gap-3">
+                  <span className="w-2.5 h-2.5 rounded-full bg-muted-foreground/40" />
+                  <span className="text-muted-foreground">11:22 - Món sẵn sàng tại quầy nhận món</span>
                 </div>
               </div>
             </div>
 
-            {/* Items List */}
+            {/* Items Summary Table */}
             <div className="space-y-2">
-              <h5 className="text-xs font-bold text-foreground">Danh Sách Món Ăn</h5>
-              <div className="divide-y divide-border border border-border rounded-xl p-3 bg-card space-y-2">
+              <h5 className="text-xs font-bold text-foreground">Danh Sách Món</h5>
+              <div className="p-3 rounded-xl bg-muted/30 border border-border space-y-2 text-xs">
                 {selectedOrder.itemsDetail.map((item, idx) => (
-                  <div key={idx} className="pt-2 first:pt-0 flex items-start justify-between text-xs">
+                  <div key={idx} className="flex justify-between items-center py-1">
                     <div>
-                      <p className="font-bold text-foreground">{item.qty}× {item.name}</p>
-                      {item.note && <p className="text-[11px] text-muted-foreground italic">Ghi chú: {item.note}</p>}
+                      <p className="font-semibold text-foreground">{item.name}</p>
+                      {item.note && <p className="text-[11px] text-muted-foreground">Ghi chú: {item.note}</p>}
                     </div>
-                    <span className="font-semibold text-foreground">{formatCurrency(item.price * item.qty)}</span>
+                    <div className="text-right">
+                      <span className="font-mono text-muted-foreground mr-3">x{item.qty}</span>
+                      <span className="font-bold text-foreground">{formatCurrency(item.price * item.qty)}</span>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Payment & Location Info */}
-            <div className="space-y-2 text-xs">
+            {/* Payment Summary */}
+            <div className="space-y-1.5 text-xs">
               <div className="flex justify-between py-1 border-b border-border">
                 <span className="text-muted-foreground">Khách hàng:</span>
                 <span className="font-bold text-foreground">{selectedOrder.customerName}</span>
@@ -346,8 +376,8 @@ export const OrdersPage: React.FC = () => {
             </div>
 
             <div className="pt-4 flex gap-2">
-              <Button onClick={() => setSelectedOrder(null)} variant="default" className="flex-1">
-                In Hóa Đơn
+              <Button onClick={() => handlePrintOrder(selectedOrder)} variant="default" className="flex-1">
+                <Printer className="w-3.5 h-3.5 mr-1" /> In Hóa Đơn (K80)
               </Button>
               <Button onClick={() => setSelectedOrder(null)} variant="outline">
                 Đóng
