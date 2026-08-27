@@ -18,6 +18,8 @@ import {
   History
 } from 'lucide-react';
 
+import { dnuStore, StudentWallet } from '../../services/dnuStore.js';
+
 interface StudentWalletModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -25,27 +27,36 @@ interface StudentWalletModalProps {
 
 export const StudentWalletModal: React.FC<StudentWalletModalProps> = ({ open, onOpenChange }) => {
   const { user } = useAuth();
-  const [balance, setBalance] = useState(185000);
+  const studentMssv = user?.username ? user.username.replace(/\D/g, '') || '2110001' : '2110001';
+  const studentName = user?.fullName || 'Nguyễn Thành Nam';
+
+  const [wallet, setWallet] = useState<StudentWallet>(() => dnuStore.getStudentWallet(studentMssv));
   const [activeTab, setActiveTab] = useState<'CARD' | 'TOPUP' | 'HISTORY'>('CARD');
   const [selectedTopupAmount, setSelectedTopupAmount] = useState(100000);
   const [isTopupSuccess, setIsTopupSuccess] = useState(false);
 
-  const topupPackages = [50000, 100000, 200000, 500000];
+  React.useEffect(() => {
+    const handleSync = () => {
+      setWallet(dnuStore.getStudentWallet(studentMssv));
+    };
+    window.addEventListener('dnu_store_updated', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('dnu_store_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, [studentMssv]);
 
-  const transactions = [
-    { id: 1, type: 'PAYMENT', title: 'Ăn trưa Cơm Rang Dưa Bò + Trà Đào', amount: -45000, time: 'Hôm nay, 12:15', status: 'SUCCESS' },
-    { id: 2, type: 'TOPUP', title: 'Nạp tiền Ví qua VietQR MoMo', amount: 100000, time: 'Hôm nay, 10:30', status: 'SUCCESS' },
-    { id: 3, type: 'REFUND', title: 'Hoàn tiền Khuyến mãi mã DNUCHAO2026', amount: 15000, time: 'Hôm qua, 18:00', status: 'SUCCESS' },
-    { id: 4, type: 'PAYMENT', title: 'Ăn trưa Bún Chả Hà Nội Nướng Than', amount: -35000, time: 'Hôm qua, 11:45', status: 'SUCCESS' },
-  ];
+  const topupPackages = [50000, 100000, 200000, 500000];
 
   const handleConfirmTopup = () => {
     setIsTopupSuccess(true);
-    setBalance((prev) => prev + selectedTopupAmount);
+    const updated = dnuStore.topupStudentWallet(selectedTopupAmount, 'VietQR MoMo / DNU Pay', studentMssv, studentName);
+    setWallet(updated);
     setTimeout(() => {
       setIsTopupSuccess(false);
       setActiveTab('CARD');
-    }, 2000);
+    }, 1800);
   };
 
   return (
@@ -110,12 +121,12 @@ export const StudentWalletModal: React.FC<StudentWalletModalProps> = ({ open, on
 
               <div>
                 <p className="text-[10px] text-orange-100 uppercase">Số dư khả dụng</p>
-                <p className="text-2xl font-black font-mono tracking-tight">{formatCurrency(balance)}</p>
+                <p className="text-2xl font-black font-mono tracking-tight">{formatCurrency(wallet.balance)}</p>
               </div>
 
               <div className="flex items-center justify-between text-[11px] pt-2 border-t border-white/20 text-orange-100">
-                <span>SV: {user?.fullName || 'Nguyễn Thành Nam'}</span>
-                <span className="font-mono">MSSV: 2110001</span>
+                <span>SV: {studentName}</span>
+                <span className="font-mono">MSSV: {studentMssv}</span>
               </div>
             </div>
 
@@ -170,7 +181,7 @@ export const StudentWalletModal: React.FC<StudentWalletModalProps> = ({ open, on
                   </div>
                   <div className="text-[11px] text-muted-foreground space-y-0.5">
                     <p>Ngân hàng: <strong>MB Bank (Ngân Hàng Quân Đội)</strong></p>
-                    <p>Số tài khoản: <strong className="font-mono text-foreground">DNU2110001</strong></p>
+                    <p>Số tài khoản: <strong className="font-mono text-foreground">DNU{studentMssv}</strong></p>
                     <p>Số tiền: <strong className="text-orange-600">{formatCurrency(selectedTopupAmount)}</strong></p>
                   </div>
                 </div>
@@ -188,7 +199,7 @@ export const StudentWalletModal: React.FC<StudentWalletModalProps> = ({ open, on
         {/* TAB 3: History */}
         {activeTab === 'HISTORY' && (
           <div className="space-y-2 py-2 text-xs max-h-64 overflow-y-auto divide-y divide-border">
-            {transactions.map((tx) => (
+            {wallet.transactions.map((tx) => (
               <div key={tx.id} className="py-2.5 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div

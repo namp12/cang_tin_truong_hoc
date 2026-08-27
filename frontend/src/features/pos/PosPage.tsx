@@ -239,6 +239,26 @@ export const PosPage: React.FC = () => {
     // Save to orderStorage
     orderStorage.addOrder(orderData);
 
+    // If paid via DNU Pay Wallet, deduct student wallet balance
+    if (selectedPaymentMethod === 'DNUPAY') {
+      dnuStore.deductStudentWallet(finalTotal, orderNum, `Thanh toán quầy POS: ${cart.map((i) => `${i.quantity}x ${i.name}`).join(', ')}`);
+    }
+
+    // Record Inflow to Canteen Financial Treasury
+    dnuStore.addFinanceTransaction({
+      code: `PT-POS-${Date.now().toString().slice(-4)}`,
+      type: 'INCOME',
+      category: 'POS_ORDER',
+      categoryLabel: 'Doanh thu POS',
+      title: `Thu tiền đơn POS ${orderNum} (${cart.map((i) => `${i.quantity}x ${i.name}`).join(', ')})`,
+      amount: finalTotal,
+      paymentMethod: selectedPaymentMethod,
+      paymentMethodLabel: selectedPaymentMethod === 'CASH' ? 'Tiền mặt' : selectedPaymentMethod === 'DNUPAY' ? 'Ví DNU Pay' : 'QR MoMo/VNPAY',
+      counterpart: cName,
+      performedBy: 'Thu ngân Phạm Quỳnh Như',
+      canteenName: 'Căng tin Tòa G',
+    });
+
     // Increment soldToday for foods in catalog
     const allFoods = dnuStore.getFoods();
     const updatedFoods = allFoods.map((f) => {
@@ -321,25 +341,28 @@ export const PosPage: React.FC = () => {
               onClick={() => setSelectedCategory('ALL')}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                 selectedCategory === 'ALL'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  ? 'bg-primary text-primary-foreground shadow-sm font-bold'
                   : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
               🍽️ Tất cả ({foods.length})
             </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.name)}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                  selectedCategory === cat.name
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                {cat.icon} {cat.name}
-              </button>
-            ))}
+            {categories.map((cat) => {
+              const count = foods.filter((f) => f.category === cat.name || f.categoryId === cat.id).length;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.name)}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                    selectedCategory === cat.name
+                      ? 'bg-primary text-primary-foreground shadow-sm font-bold'
+                      : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  {cat.icon} {cat.name} ({count})
+                </button>
+              );
+            })}
           </div>
         </div>
 

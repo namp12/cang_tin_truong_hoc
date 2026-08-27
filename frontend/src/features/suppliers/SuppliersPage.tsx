@@ -207,16 +207,33 @@ export const SuppliersPage: React.FC = () => {
     const amount = Number(payAmount);
     if (!amount || amount <= 0) return;
 
-    setSuppliers((prev) =>
-      prev.map((s) =>
-        s.id === debtSupplier.id
-          ? {
-              ...s,
-              debtAmount: Math.max(0, s.debtAmount - amount),
-            }
-          : s
-      )
+    const updated = suppliers.map((s) =>
+      s.id === debtSupplier.id
+        ? {
+            ...s,
+            debtAmount: Math.max(0, s.debtAmount - amount),
+          }
+        : s
     );
+
+    setSuppliers(updated);
+    dnuStore.saveSuppliers(updated);
+
+    // Record Outflow to Canteen Financial Treasury
+    dnuStore.addFinanceTransaction({
+      code: `PC-NCC-${Date.now().toString().slice(-4)}`,
+      type: 'EXPENSE',
+      category: 'SUPPLIER_PAYMENT',
+      categoryLabel: 'Chi trả nhà cung cấp',
+      title: `Thanh toán công nợ tiền nguyên liệu cho ${debtSupplier.name}`,
+      amount: amount,
+      paymentMethod: 'BANK_TRANSFER',
+      paymentMethodLabel: 'Chuyển khoản Ngân hàng',
+      counterpart: debtSupplier.name,
+      performedBy: 'Kế toán / Quản lý Căng tin',
+      canteenName: 'Căng tin Tòa G',
+      notes: `Quyết toán nợ đối tác ${debtSupplier.code}`,
+    });
 
     setPaySuccess(true);
     setTimeout(() => {

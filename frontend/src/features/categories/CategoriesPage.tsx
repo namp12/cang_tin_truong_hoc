@@ -163,39 +163,42 @@ export const CategoriesPage: React.FC = () => {
       {/* TAB 1: Categories List */}
       {activeTab === 'CATEGORIES' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredCategories.map((cat) => (
-            <Card key={cat.id} className="hover:border-primary/50 transition-colors shadow-xs flex flex-col justify-between">
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-2xl p-2 rounded-xl bg-muted shrink-0">{cat.icon}</span>
-                    <div>
-                      <h3 className="font-bold text-sm text-foreground">{cat.name}</h3>
-                      <p className="text-[11px] text-muted-foreground font-mono">{cat.code}</p>
+          {filteredCategories.map((cat) => {
+            const count = dnuStore.getFoods().filter((f) => f.category === cat.name || f.categoryId === cat.id).length;
+            return (
+              <Card key={cat.id} className="hover:border-primary/50 transition-colors shadow-xs flex flex-col justify-between">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-2xl p-2 rounded-xl bg-muted shrink-0">{cat.icon}</span>
+                      <div>
+                        <h3 className="font-bold text-sm text-foreground">{cat.name}</h3>
+                        <p className="text-[11px] text-muted-foreground font-mono">{cat.code}</p>
+                      </div>
+                    </div>
+                    <Badge variant={cat.status === 'ACTIVE' ? 'success' : 'secondary'} className="text-[10px]">
+                      {cat.status === 'ACTIVE' ? 'Đang hiển thị' : 'Ẩn'}
+                    </Badge>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground line-clamp-2 min-h-[32px]">{cat.description}</p>
+
+                  <div className="pt-2 border-t border-border flex items-center justify-between text-xs">
+                    <span className="text-primary font-bold">{count} món ăn trong thực đơn</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleDeleteCategory(cat.id)}
+                        className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded"
+                        title="Xóa danh mục"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
-                  <Badge variant={cat.status === 'ACTIVE' ? 'success' : 'secondary'} className="text-[10px]">
-                    {cat.status === 'ACTIVE' ? 'Đang hiển thị' : 'Ẩn'}
-                  </Badge>
-                </div>
-
-                <p className="text-xs text-muted-foreground line-clamp-2 min-h-[32px]">{cat.description}</p>
-
-                <div className="pt-2 border-t border-border flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">{cat.foodCount} món ăn</span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleDeleteCategory(cat.id)}
-                      className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded"
-                      title="Xóa danh mục"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 

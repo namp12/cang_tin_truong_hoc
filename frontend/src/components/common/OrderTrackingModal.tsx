@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Badge } from '../ui/Badge.js';
 import { Button } from '../ui/Button.js';
 import { formatCurrency } from '../../utils/format.js';
+import { dnuStore } from '../../services/dnuStore.js';
 import { 
   Clock, 
   ChefHat, 
@@ -11,7 +12,8 @@ import {
   MapPin, 
   Store, 
   Bell, 
-  AlertCircle 
+  AlertCircle,
+  Star
 } from 'lucide-react';
 
 interface OrderTrackingModalProps {
@@ -146,7 +148,92 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ open, on
             ))}
           </ul>
         </div>
+
+        {/* Quick Review Section */}
+        <QuickOrderReview order={order} />
       </DialogContent>
     </Dialog>
   );
 };
+
+const QuickOrderReview: React.FC<{ order: NonNullable<OrderTrackingModalProps['order']> }> = ({ order }) => {
+  const [rating, setRating] = React.useState(5);
+  const [comment, setComment] = React.useState('');
+  const [selectedFood, setSelectedFood] = React.useState(order.items[0]?.name || '');
+  const [submitted, setSubmitted] = React.useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!comment.trim()) return;
+
+    dnuStore.addReview({
+      studentName: 'Nguyễn Thành Nam',
+      studentClass: 'K16 Khoa CNTT DNU',
+      foodName: selectedFood || order.items[0]?.name || 'Món ăn DNU',
+      rating,
+      comment,
+      sentiment: rating >= 4 ? 'POSITIVE' : rating === 3 ? 'NEUTRAL' : 'CRITICAL',
+      canteenName: order.canteenName,
+    });
+
+    setSubmitted(true);
+  };
+
+  if (submitted) {
+    return (
+      <div className="p-3 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-center space-y-1">
+        <p className="font-bold text-xs text-emerald-700 dark:text-emerald-300">🎉 Cảm ơn bạn đã gửi đánh giá món ăn!</p>
+        <p className="text-[10px] text-muted-foreground">Đánh giá của bạn đã được ghi nhận vào hệ thống Căng tin DNU.</p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-2 text-xs">
+      <div className="flex items-center justify-between">
+        <span className="font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
+          <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+          <span>Đánh giá món ăn vừa nhận:</span>
+        </span>
+        <div className="flex items-center gap-1">
+          {[1, 2, 3, 4, 5].map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setRating(s)}
+              className="p-0.5 hover:scale-110 transition-transform"
+            >
+              <Star className={`w-4 h-4 ${s <= rating ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground/30'}`} />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {order.items.length > 1 && (
+        <select
+          value={selectedFood}
+          onChange={(e) => setSelectedFood(e.target.value)}
+          className="w-full px-2 py-1 text-[11px] bg-background border border-input rounded-md"
+        >
+          {order.items.map((it, i) => (
+            <option key={i} value={it.name}>{it.name}</option>
+          ))}
+        </select>
+      )}
+
+      <div className="flex gap-1.5">
+        <input
+          type="text"
+          placeholder="Món ăn thế nào? (VD: Rất ngon, nóng hổi...)"
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          className="flex-1 px-2.5 py-1 text-xs bg-background border border-input rounded-lg"
+        />
+        <Button type="submit" size="sm" variant="default" className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shrink-0">
+          Gửi
+        </Button>
+      </div>
+    </form>
+  );
+};
+

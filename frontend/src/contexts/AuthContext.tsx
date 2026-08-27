@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, RoleCode } from '../types/index.js';
 import { authApi } from '../services/auth.service.js';
+import { dnuStore } from '../services/dnuStore.js';
 
 interface AuthContextType {
   user: User | null;
@@ -27,7 +28,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (token && savedUser) {
         try {
-          setUser(JSON.parse(savedUser));
+          const parsed = JSON.parse(savedUser);
+          const localUsers = dnuStore.getUsers();
+          const checkLocked = localUsers.find(
+            (u) => u.username.toLowerCase() === parsed.username?.toLowerCase()
+          );
+          if (checkLocked && checkLocked.status === 'LOCKED') {
+            console.warn('Current account is locked, logging out');
+            localStorage.removeItem('canteen_access_token');
+            localStorage.removeItem('canteen_refresh_token');
+            localStorage.removeItem('canteen_user');
+            setUser(null);
+            setIsLoading(false);
+            return;
+          }
+          setUser(parsed);
           // Refresh user profile in background
           const refreshedUser = await authApi.getMe();
           setUser(refreshedUser);
@@ -45,7 +60,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (credential: string, password: string) => {
     setIsLoading(true);
     try {
+      const cleanCred = credential.trim().toLowerCase();
+      // Check if user is locked in dnuStore
+      const localUsers = dnuStore.getUsers();
+      const localUser = localUsers.find(
+        (u) =>
+          u.username.toLowerCase() === cleanCred ||
+          u.email.toLowerCase() === cleanCred ||
+          u.phone === cleanCred
+      );
+      if (localUser && localUser.status === 'LOCKED') {
+        throw new Error('Tài khoản này đã bị khóa bởi Quản trị viên. Vui lòng liên hệ quản lý căng tin DNU.');
+      }
+
       const response = await authApi.login(credential, password);
+      
+      // Double check returned user against locked list
+      const checkReturned = localUsers.find(
+        (u) => u.username.toLowerCase() === response.user.username.toLowerCase()
+      );
+      if (checkReturned && checkReturned.status === 'LOCKED') {
+        throw new Error('Tài khoản này đã bị khóa bởi Quản trị viên. Vui lòng liên hệ quản lý căng tin DNU.');
+      }
+
       localStorage.setItem('canteen_access_token', response.tokens.accessToken);
       localStorage.setItem('canteen_refresh_token', response.tokens.refreshToken);
       localStorage.setItem('canteen_user', JSON.stringify(response.user));

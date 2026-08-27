@@ -13,13 +13,30 @@ import {
   LogOut,
   Wallet
 } from 'lucide-react';
+import { formatCurrency } from '../../utils/format.js';
+import { dnuStore } from '../../services/dnuStore.js';
 import { cn } from '../../utils/cn.js';
 
 export const StudentLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const studentMssv = user?.username ? user.username.replace(/\D/g, '') || '2110001' : '2110001';
+
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(() => dnuStore.getStudentWallet(studentMssv).balance);
+
+  React.useEffect(() => {
+    const handleSync = () => {
+      setWalletBalance(dnuStore.getStudentWallet(studentMssv).balance);
+    };
+    window.addEventListener('dnu_store_updated', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('dnu_store_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, [studentMssv]);
 
   const navItems = [
     { label: 'Trang chủ', path: '/student/home', icon: Home },
@@ -52,7 +69,7 @@ export const StudentLayout: React.FC = () => {
           >
             <Wallet className="w-3.5 h-3.5 text-orange-600" />
             <span className="hidden sm:inline">Ví:</span>
-            <span className="font-mono">185.000đ</span>
+            <span className="font-mono">{formatCurrency(walletBalance)}</span>
           </button>
 
           {user ? (

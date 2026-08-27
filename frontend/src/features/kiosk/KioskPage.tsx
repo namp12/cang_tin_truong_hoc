@@ -104,6 +104,22 @@ export const KioskPage: React.FC = () => {
     // Save to orderStorage
     orderStorage.addOrder(orderData);
 
+    // Deduct student wallet & record financial income
+    dnuStore.deductStudentWallet(totalAmount, orderNum, `Thanh toán Kiosk Tòa G: ${cart.map((i) => `${i.qty}x ${i.name}`).join(', ')}`);
+    dnuStore.addFinanceTransaction({
+      code: `PT-KSK-${Date.now().toString().slice(-4)}`,
+      type: 'INCOME',
+      category: 'KIOSK_ORDER',
+      categoryLabel: 'Doanh thu Kiosk',
+      title: `Thu tiền đơn Kiosk ${orderNum} (${cart.map((i) => `${i.qty}x ${i.name}`).join(', ')})`,
+      amount: totalAmount,
+      paymentMethod: 'DNUPAY',
+      paymentMethodLabel: 'Ví DNU Pay / QR Kiosk',
+      counterpart: 'Sinh Viên DNU (Kiosk Tòa G)',
+      performedBy: 'Smart Kiosk Sảnh Tòa G',
+      canteenName: 'Căng tin Tòa G',
+    });
+
     // Increment soldToday for foods in catalog
     const allFoods = dnuStore.getFoods();
     const updatedFoods = allFoods.map((f) => {
@@ -199,20 +215,25 @@ export const KioskPage: React.FC = () => {
             <span className="text-xl lg:text-3xl">🍽️</span>
             <span className="text-xs font-bold lg:font-semibold leading-tight whitespace-nowrap">TẤT CẢ MÓN ({foods.length})</span>
           </button>
-          {categories.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => setSelectedCat(c.name)}
-              className={`px-4 py-2 lg:p-4 rounded-full lg:rounded-2xl flex flex-row lg:flex-col items-center justify-center gap-2 text-center transition-all shrink-0 ${
-                selectedCat === c.name
-                  ? 'bg-gradient-to-tr from-orange-600 to-amber-600 text-white shadow-xl shadow-orange-600/30 scale-105 font-black'
-                  : 'bg-slate-800/60 text-slate-400 hover:bg-slate-800 hover:text-white font-semibold'
-              }`}
-            >
-              <span className="text-xl lg:text-3xl">{c.icon}</span>
-              <span className="text-xs font-bold lg:font-semibold leading-tight whitespace-nowrap">{c.name}</span>
-            </button>
-          ))}
+          {categories.map((c) => {
+            const count = foods.filter((f) => f.category === c.name || f.categoryId === c.id).length;
+            return (
+              <button
+                key={c.id}
+                onClick={() => setSelectedCat(c.name)}
+                className={`px-4 py-2 lg:p-4 rounded-full lg:rounded-2xl flex flex-row lg:flex-col items-center justify-center gap-2 text-center transition-all shrink-0 ${
+                  selectedCat === c.name
+                    ? 'bg-gradient-to-tr from-orange-600 to-amber-600 text-white shadow-xl shadow-orange-600/30 scale-105 font-black'
+                    : 'bg-slate-800/60 text-slate-400 hover:bg-slate-800 hover:text-white font-semibold'
+                }`}
+              >
+                <span className="text-xl lg:text-3xl">{c.icon}</span>
+                <span className="text-xs font-bold lg:font-semibold leading-tight whitespace-nowrap">
+                  {c.name} ({count})
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Middle Dishes Grid */}
