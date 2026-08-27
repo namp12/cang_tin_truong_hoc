@@ -4,7 +4,7 @@ import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog.js';
 import { formatCurrency, formatNumber } from '../../utils/format.js';
-import { dnuStore, StockItem, InboundReceipt, OutboundIssue, Supplier, FOOD_RECIPES } from '../../services/dnuStore.js';
+import { dnuStore, StockItem, InboundReceipt, OutboundIssue, Supplier, FOOD_RECIPES, KitchenRequisition, PurchaseSuggestion } from '../../services/dnuStore.js';
 import { 
   Package, 
   Search, 
@@ -26,13 +26,17 @@ import {
   DollarSign,
   Edit3,
   Trash2,
-  BookOpen
+  BookOpen,
+  Zap,
+  Check,
+  XCircle,
+  Clock
 } from 'lucide-react';
 
 export const InventoryPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('ALL');
-  const [activeTab, setActiveTab] = useState<'STOCKS' | 'INBOUND_LOGS' | 'OUTBOUND_LOGS' | 'RECIPES'>('STOCKS');
+  const [activeTab, setActiveTab] = useState<'STOCKS' | 'INBOUND_LOGS' | 'OUTBOUND_LOGS' | 'KITCHEN_REQS' | 'RECIPES'>('STOCKS');
 
   // Modals state
   const [showInboundModal, setShowInboundModal] = useState(false);
@@ -45,6 +49,9 @@ export const InventoryPage: React.FC = () => {
   const [stocks, setStocks] = useState<StockItem[]>(() => dnuStore.getStocks());
   const [inboundReceipts, setInboundReceipts] = useState<InboundReceipt[]>(() => dnuStore.getInboundReceipts());
   const [outboundIssues, setOutboundIssues] = useState<OutboundIssue[]>(() => dnuStore.getOutboundIssues());
+  const [kitchenRequisitions, setKitchenRequisitions] = useState<KitchenRequisition[]>(() => dnuStore.getKitchenRequisitions());
+  const [smartSuggestions, setSmartSuggestions] = useState<PurchaseSuggestion[]>(() => dnuStore.getSmartPurchaseSuggestions());
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
 
   const suppliersList = dnuStore.getSuppliers();
 
@@ -53,6 +60,8 @@ export const InventoryPage: React.FC = () => {
       setStocks(dnuStore.getStocks());
       setInboundReceipts(dnuStore.getInboundReceipts());
       setOutboundIssues(dnuStore.getOutboundIssues());
+      setKitchenRequisitions(dnuStore.getKitchenRequisitions());
+      setSmartSuggestions(dnuStore.getSmartPurchaseSuggestions());
     };
     window.addEventListener('dnu_store_updated', handleSync);
     window.addEventListener('storage', handleSync);
@@ -226,8 +235,46 @@ export const InventoryPage: React.FC = () => {
     setAdjustItem(null);
   };
 
+  // Handle Approve Kitchen Requisition (Duyệt xuất kho cho Bếp)
+  const handleApproveRequisition = (id: number) => {
+    const res = dnuStore.approveKitchenRequisition(id);
+    if (res.success) {
+      setActionNotice(`✅ Đã duyệt xuất kho cho Bếp thành công! Mã phiếu xuất: ${res.outboundCode}`);
+      setStocks(dnuStore.getStocks());
+      setOutboundIssues(dnuStore.getOutboundIssues());
+      setKitchenRequisitions(dnuStore.getKitchenRequisitions());
+      setTimeout(() => setActionNotice(null), 4000);
+    }
+  };
+
+  // Handle Reject Kitchen Requisition (Từ chối yêu cầu)
+  const handleRejectRequisition = (id: number) => {
+    const reason = prompt('Nhập lý do từ chối yêu cầu cấp nguyên liệu:', 'Kho tạm hết hoặc cần ưu tiên ca sau');
+    if (reason !== null) {
+      dnuStore.rejectKitchenRequisition(id, reason);
+      setKitchenRequisitions(dnuStore.getKitchenRequisitions());
+      setActionNotice(`❌ Đã từ chối yêu cầu cấp nguyên liệu.`);
+      setTimeout(() => setActionNotice(null), 3000);
+    }
+  };
+
+  // Handle Execute Smart Purchase Order (1-Click Tạo Đơn Mua Hàng)
+  const handleExecuteSmartPO = (suggestion: PurchaseSuggestion) => {
+    if (window.confirm(`Xác nhận 1-Click Tạo Đơn Mua Hàng & Nhập Kho từ đối tác ${suggestion.supplierName} (Tổng tiền: ${formatCurrency(suggestion.totalCost)})?`)) {
+      const res = dnuStore.executeSmartPurchaseOrder(suggestion);
+      if (res.success) {
+        setActionNotice(`⚡ Đã tạo Đơn Mua Hàng & Nhập Kho thành công! Mã phiếu nhập: ${res.inboundCode}`);
+        setStocks(dnuStore.getStocks());
+        setInboundReceipts(dnuStore.getInboundReceipts());
+        setSmartSuggestions(dnuStore.getSmartPurchaseSuggestions());
+        setTimeout(() => setActionNotice(null), 4000);
+      }
+    }
+  };
+
   // Metrics
   const lowStockCount = stocks.filter((s) => s.status === 'LOW_STOCK').length;
+  const pendingKitchenReqs = kitchenRequisitions.filter((r) => r.status === 'PENDING');
   const totalInventoryValue = stocks.reduce((sum, it) => sum + it.quantity * it.unitPrice, 0);
 
   const filteredStocks = stocks.filter((s) => {
@@ -326,6 +373,77 @@ export const InventoryPage: React.FC = () => {
         </Card>
       </div>
 
+      {/* ACTION NOTICE BANNER */}
+      {actionNotice && (
+        <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-900 dark:text-emerald-300 flex items-center justify-between text-xs font-semibold animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{actionNotice}</span>
+          </div>
+          <Badge variant="success" className="text-[10px]">Realtime Synced</Badge>
+        </div>
+      )}
+
+      {/* SMART PURCHASE ORDER RECOMMENDATION BANNER (GỢI Ý MUA HÀNG TỰ ĐỘNG) */}
+      {smartSuggestions.length > 0 && (
+        <div className="space-y-3">
+          {smartSuggestions.map((sug, idx) => (
+            <div
+              key={idx}
+              className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-transparent border border-amber-500/30 shadow-xs space-y-3"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                    <Zap className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <h4 className="font-bold text-xs text-foreground">
+                      Gợi Ý Đơn Mua Hàng Tự Động (Smart PO) — Đối tác: {sug.supplierName}
+                    </h4>
+                    <p className="text-[11px] text-muted-foreground">
+                      Phát hiện {sug.items.length} mặt hàng dưới ngưỡng an toàn (minStock). Gợi ý tạo đơn nhập hàng ngay để Bếp không bị thiếu nguyên liệu nấu ăn.
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => handleExecuteSmartPO(sug)}
+                  variant="default"
+                  size="sm"
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs shrink-0"
+                >
+                  <Zap className="w-3.5 h-3.5 mr-1 animate-pulse" />
+                  1-Click Đặt Hàng & Nhập Kho ({formatCurrency(sug.totalCost)})
+                </Button>
+              </div>
+
+              {/* Items List in Suggestion */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+                {sug.items.map((it) => (
+                  <div key={it.stockId} className="p-2.5 rounded-xl bg-card border border-border/80 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-foreground">{it.name}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        Tồn hiện tại: <strong className="text-red-600 font-mono">{it.currentAvailable} {it.unit}</strong> (Min: {it.minStock} {it.unit})
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold font-mono text-[11px]">
+                        + Nhập {it.suggestedBuyQty} {it.unit}
+                      </span>
+                      <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                        {formatCurrency(it.estimatedTotal)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Tab Switcher & Search Bar */}
       <Card>
         <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -350,6 +468,21 @@ export const InventoryPage: React.FC = () => {
               }`}
             >
               📦 Tồn Kho Thực Tế ({stocks.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('KITCHEN_REQS')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                activeTab === 'KITCHEN_REQS'
+                  ? 'bg-orange-600 text-white shadow-xs font-bold'
+                  : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              <span>📋 Yêu Cầu Cấp Bếp</span>
+              {pendingKitchenReqs.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-red-500 text-white text-[10px] font-mono animate-pulse">
+                  {pendingKitchenReqs.length}
+                </span>
+              )}
             </button>
             <button
               onClick={() => setActiveTab('INBOUND_LOGS')}
@@ -452,6 +585,102 @@ export const InventoryPage: React.FC = () => {
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* TAB: Kitchen Material Requisitions Approval Table */}
+      {activeTab === 'KITCHEN_REQS' && (
+        <Card className="border-border shadow-xs">
+          <CardHeader className="p-4 pb-2 border-b border-border flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+                <ChefHat className="w-5 h-5 text-orange-600" />
+                <span>Phiếu Yêu Cầu Cấp Nguyên Liệu Từ Nhà Bếp ({kitchenRequisitions.length})</span>
+              </CardTitle>
+              <CardDescription className="text-xs text-muted-foreground mt-0.5">
+                Xem xét và 1-click duyệt xuất kho trực tiếp cho Bếp trưởng khi sắp hết đồ nấu ca
+              </CardDescription>
+            </div>
+            <Badge variant="warning" className="text-xs font-mono font-bold">
+              {pendingKitchenReqs.length} Đang chờ cấp phát
+            </Badge>
+          </CardHeader>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border bg-muted/50 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  <th className="py-3.5 px-4">Mã Yêu Cầu</th>
+                  <th className="py-3.5 px-4">Đầu Bếp Yêu Cầu</th>
+                  <th className="py-3.5 px-4">Nguyên Liệu & Khối Lượng</th>
+                  <th className="py-3.5 px-4">Mức Độ Cấp Bách</th>
+                  <th className="py-3.5 px-4">Lý Do / Ca Nấu</th>
+                  <th className="py-3.5 px-4">Thời Gian Gửi</th>
+                  <th className="py-3.5 px-4 text-right">Thao Tác Thủ Kho</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border text-xs text-foreground">
+                {kitchenRequisitions.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                      Hiện chưa có yêu cầu cấp nguyên liệu nào từ Bếp.
+                    </td>
+                  </tr>
+                ) : (
+                  kitchenRequisitions.map((req) => (
+                    <tr key={req.id} className="hover:bg-muted/40 transition-colors">
+                      <td className="py-3.5 px-4 font-mono font-bold text-primary">{req.code}</td>
+                      <td className="py-3.5 px-4 font-semibold text-foreground">{req.chefName}</td>
+                      <td className="py-3.5 px-4">
+                        <span className="font-extrabold text-foreground text-sm">
+                          {req.qty} {req.unit}
+                        </span>{' '}
+                        — <span className="font-medium text-foreground">{req.ingredientName}</span>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {req.urgency === 'URGENT' ? (
+                          <Badge variant="danger" className="text-[10px] animate-pulse">🔴 Khẩn cấp</Badge>
+                        ) : req.urgency === 'HIGH' ? (
+                          <Badge variant="warning" className="text-[10px]">🟡 Ưu tiên cao</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px]">🟢 Thông thường</Badge>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-muted-foreground max-w-xs">{req.reason}</td>
+                      <td className="py-3.5 px-4 font-mono text-muted-foreground text-[11px]">{req.requestedAt}</td>
+                      <td className="py-3.5 px-4 text-right">
+                        {req.status === 'PENDING' ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              onClick={() => handleApproveRequisition(req.id)}
+                              variant="default"
+                              size="sm"
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs"
+                            >
+                              <Check className="w-3.5 h-3.5 mr-1" />
+                              Duyệt Xuất Kho
+                            </Button>
+                            <Button
+                              onClick={() => handleRejectRequisition(req.id)}
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 text-xs"
+                            >
+                              <XCircle className="w-3.5 h-3.5 mr-1" />
+                              Từ Chối
+                            </Button>
+                          </div>
+                        ) : req.status === 'APPROVED' ? (
+                          <Badge variant="success">Đã duyệt xuất kho ✅</Badge>
+                        ) : (
+                          <Badge variant="danger">Đã từ chối ❌</Badge>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog.js';
 import { useSocket } from '../../contexts/SocketContext.js';
 import { orderStorage, KitchenTicket } from '../../services/orderStorage.js';
+import { dnuStore, KitchenRequisition, StockItem } from '../../services/dnuStore.js';
 import { 
   ChefHat, 
   Clock, 
@@ -15,7 +17,10 @@ import {
   Sparkles,
   History,
   RotateCcw,
-  CheckCheck
+  CheckCheck,
+  PackagePlus,
+  Send,
+  ClipboardList
 } from 'lucide-react';
 
 export const KitchenPage: React.FC = () => {
@@ -24,10 +29,28 @@ export const KitchenPage: React.FC = () => {
   const [tickets, setTickets] = useState<KitchenTicket[]>(() => orderStorage.getKitchenTickets());
   const [showCompletedHistory, setShowCompletedHistory] = useState(false);
 
-  // Sync tickets whenever storage or store is updated
+  // Kitchen Requisition State
+  const [showRequisitionModal, setShowRequisitionModal] = useState(false);
+  const [showRequisitionHistory, setShowRequisitionHistory] = useState(false);
+  const [requisitions, setRequisitions] = useState<KitchenRequisition[]>(() => dnuStore.getKitchenRequisitions());
+  const [stocksList, setStocksList] = useState<StockItem[]>(() => dnuStore.getStocks());
+  const [reqSuccess, setReqSuccess] = useState<string | null>(null);
+
+  const [requisitionForm, setRequisitionForm] = useState({
+    chefName: 'Bếp trưởng Võ Hoàng Hải',
+    ingredientName: stocksList[0]?.name || 'Thịt thăn bò tươi loại 1',
+    qty: 10,
+    unit: 'kg',
+    urgency: 'HIGH' as 'NORMAL' | 'HIGH' | 'URGENT',
+    reason: 'Nguyên liệu sắp hết, cần cấp gấp cho ca nấu trưa',
+  });
+
+  // Sync tickets & requisitions whenever storage or store is updated
   useEffect(() => {
     const handleSync = () => {
       setTickets(orderStorage.getKitchenTickets());
+      setRequisitions(dnuStore.getKitchenRequisitions());
+      setStocksList(dnuStore.getStocks());
     };
     window.addEventListener('dnu_store_updated', handleSync);
     window.addEventListener('storage', handleSync);
@@ -100,10 +123,33 @@ export const KitchenPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-semibold">
+        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
           <Badge variant="warning">{waitingTickets.length} Chờ nấu</Badge>
           <Badge variant="info">{preparingTickets.length} Đang nấu</Badge>
           <Badge variant="success">{readyTickets.length} Sẵn sàng</Badge>
+
+          {/* Kitchen Material Requisition Button */}
+          <Button
+            onClick={() => setShowRequisitionModal(true)}
+            variant="default"
+            size="sm"
+            className="bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-xs"
+          >
+            <PackagePlus className="w-4 h-4 mr-1" />
+            Yêu Cầu Cấp Nguyên Liệu
+          </Button>
+
+          {/* Requisition Status Drawer Button */}
+          <Button
+            onClick={() => setShowRequisitionHistory(!showRequisitionHistory)}
+            variant="outline"
+            size="sm"
+            className="text-xs font-bold"
+          >
+            <ClipboardList className="w-3.5 h-3.5 mr-1 text-orange-600" />
+            Yêu Cầu Đã Gửi ({requisitions.length})
+          </Button>
+
           <Button
             onClick={() => setShowCompletedHistory(!showCompletedHistory)}
             variant="outline"
@@ -115,6 +161,59 @@ export const KitchenPage: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* SUCCESS ALERT */}
+      {reqSuccess && (
+        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 flex items-center justify-between text-xs animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{reqSuccess}</span>
+          </div>
+          <Badge variant="success" className="text-[10px]">Đã Bắn Ting-Ting Tới Kho</Badge>
+        </div>
+      )}
+
+      {/* REQUISITION HISTORY SECTION (Danh sách yêu cầu cấp nguyên liệu của bếp) */}
+      {showRequisitionHistory && (
+        <Card className="bg-orange-500/5 border-orange-500/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-bold text-orange-800 dark:text-orange-300 flex items-center gap-2">
+              <ClipboardList className="w-4 h-4 text-orange-600" />
+              <span>Tiến Độ Cấp Phát Nguyên Liệu Từ Kho Căng Tin ({requisitions.length})</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            {requisitions.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2">Bếp chưa gửi yêu cầu cấp nguyên liệu nào.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {requisitions.map((r) => (
+                  <div key={r.id} className="p-3.5 rounded-xl bg-card border border-border shadow-xs text-xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-extrabold text-foreground font-mono">{r.code}</span>
+                      {r.status === 'APPROVED' ? (
+                        <Badge variant="success" className="text-[9px]">Đã xuất kho ✅</Badge>
+                      ) : r.status === 'REJECTED' ? (
+                        <Badge variant="danger" className="text-[9px]">Từ chối ❌</Badge>
+                      ) : (
+                        <Badge variant="warning" className="text-[9px] animate-pulse">Chờ thủ kho cấp 🟡</Badge>
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-bold text-foreground text-sm">{r.qty} {r.unit} - {r.ingredientName}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">{r.reason}</p>
+                    </div>
+                    <div className="flex items-center justify-between pt-1.5 border-t border-border/60 text-[10px] text-muted-foreground">
+                      <span>Mức độ: <strong className={r.urgency === 'URGENT' ? 'text-red-600 font-bold' : r.urgency === 'HIGH' ? 'text-amber-600 font-bold' : 'text-foreground'}>{r.urgency === 'URGENT' ? 'Khẩn cấp 🔴' : r.urgency === 'HIGH' ? 'Ưu tiên cao 🟡' : 'Bình thường'}</strong></span>
+                      <span>{r.requestedAt?.slice(11, 16) || 'Vừa xong'}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* COMPLETED TICKETS SECTION (Lịch sử đã trả món) */}
       {showCompletedHistory && (
@@ -306,6 +405,137 @@ export const KitchenPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* MODAL: TẠO PHIẾU YÊU CẦU CẤP NGUYÊN LIỆU CHO BẾP */}
+      <Dialog open={showRequisitionModal} onOpenChange={setShowRequisitionModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-foreground">
+              <PackagePlus className="w-5 h-5 text-orange-600" />
+              <span>Phiếu Yêu Cầu Cấp Nguyên Liệu (Bếp $\rightarrow$ Kho)</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              Gửi yêu cầu xuất kho tức thì tới Thủ kho Căng tin Tòa G khi nguyên liệu tại bếp sắp cạn kiệt
+            </DialogDescription>
+          </DialogHeader>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!requisitionForm.ingredientName || !requisitionForm.qty) return;
+
+              dnuStore.addKitchenRequisition({
+                chefName: requisitionForm.chefName,
+                ingredientName: requisitionForm.ingredientName,
+                qty: Number(requisitionForm.qty),
+                unit: requisitionForm.unit,
+                urgency: requisitionForm.urgency,
+                reason: requisitionForm.reason,
+                canteenName: 'Căng tin Tòa G',
+              });
+
+              setReqSuccess(`Đã gửi yêu cầu cấp ${requisitionForm.qty} ${requisitionForm.unit} ${requisitionForm.ingredientName} tới Thủ kho thành công!`);
+              setShowRequisitionModal(false);
+              setTimeout(() => setReqSuccess(null), 4000);
+            }}
+            className="space-y-3.5 py-2 text-xs"
+          >
+            <div>
+              <label className="block text-xs font-semibold text-foreground mb-1">
+                Đầu Bếp / Người Lập Yêu Cầu
+              </label>
+              <input
+                type="text"
+                value={requisitionForm.chefName}
+                onChange={(e) => setRequisitionForm({ ...requisitionForm, chefName: e.target.value })}
+                className="w-full px-3 py-2 rounded-xl bg-background border border-input text-foreground text-xs focus:ring-1 focus:ring-orange-500"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-foreground mb-1">
+                Chọn Nguyên Liệu Cần Cấp Từ Kho
+              </label>
+              <select
+                value={requisitionForm.ingredientName}
+                onChange={(e) => {
+                  const selName = e.target.value;
+                  const found = stocksList.find((s) => s.name === selName);
+                  setRequisitionForm({
+                    ...requisitionForm,
+                    ingredientName: selName,
+                    unit: found?.unit || 'kg',
+                  });
+                }}
+                className="w-full px-3 py-2 rounded-xl bg-background border border-input text-foreground text-xs focus:ring-1 focus:ring-orange-500"
+              >
+                {stocksList.map((st) => (
+                  <option key={st.id} value={st.name}>
+                    {st.name} (Tồn khả dụng: {st.available} {st.unit})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1">
+                  Số Lượng Cần Cấp
+                </label>
+                <input
+                  type="number"
+                  min="0.1"
+                  step="0.1"
+                  value={requisitionForm.qty}
+                  onChange={(e) => setRequisitionForm({ ...requisitionForm, qty: Number(e.target.value) })}
+                  className="w-full px-3 py-2 rounded-xl bg-background border border-input text-foreground text-xs font-mono font-bold focus:ring-1 focus:ring-orange-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground mb-1">
+                  Mức Độ Cấp Bách
+                </label>
+                <select
+                  value={requisitionForm.urgency}
+                  onChange={(e) => setRequisitionForm({ ...requisitionForm, urgency: e.target.value as any })}
+                  className="w-full px-3 py-2 rounded-xl bg-background border border-input text-foreground text-xs font-semibold focus:ring-1 focus:ring-orange-500"
+                >
+                  <option value="NORMAL">🟢 Thông thường (Đầu ca)</option>
+                  <option value="HIGH">🟡 Ưu tiên cao (Sắp hết)</option>
+                  <option value="URGENT">🔴 Khẩn cấp (Đang nghẽn đơn)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-foreground mb-1">
+                Lý Do / Ghi Chú Ca Chế Biến
+              </label>
+              <textarea
+                rows={2}
+                value={requisitionForm.reason}
+                onChange={(e) => setRequisitionForm({ ...requisitionForm, reason: e.target.value })}
+                className="w-full px-3 py-2 rounded-xl bg-background border border-input text-foreground text-xs focus:ring-1 focus:ring-orange-500"
+                placeholder="Ví dụ: Bếp hết thịt bò, sinh viên đặt đông cần cấp gấp..."
+                required
+              />
+            </div>
+
+            <DialogFooter className="pt-2 gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowRequisitionModal(false)}>
+                Hủy Bỏ
+              </Button>
+              <Button type="submit" variant="default" size="sm" className="bg-orange-600 hover:bg-orange-700 text-white font-bold">
+                <Send className="w-4 h-4 mr-1" />
+                Gửi Yêu Cầu Sang Kho
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

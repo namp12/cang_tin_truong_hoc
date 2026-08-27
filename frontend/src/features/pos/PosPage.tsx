@@ -381,49 +381,70 @@ export const PosPage: React.FC = () => {
         {/* Food Items Grid (Scrollable) */}
         <div className="flex-1 overflow-y-auto pr-1">
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3.5">
-            {filteredFoods.map((food) => (
-              <div
-                key={food.id}
-                onClick={() => addToCart(food)}
-                className="group relative bg-card border border-border hover:border-primary/50 hover:shadow-card-hover rounded-xl p-2.5 flex flex-col justify-between cursor-pointer transition-all duration-200 active:scale-[0.98]"
-              >
-                <div>
-                  <div className="relative w-full h-24 rounded-lg overflow-hidden mb-2 bg-muted">
-                    <img
-                      src={food.imageUrl}
-                      alt={food.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
-                      }}
-                    />
-                    {food.isBest && (
-                      <Badge variant="warning" className="absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0 shadow-sm font-bold">
-                        HOT
-                      </Badge>
+            {filteredFoods.map((food) => {
+              const soldOutInfo = dnuStore.checkFoodSoldOutStatus(food.name);
+              const isSoldOut = soldOutInfo.isSoldOut;
+
+              return (
+                <div
+                  key={food.id}
+                  onClick={() => !isSoldOut && addToCart(food)}
+                  className={`group relative bg-card border rounded-xl p-2.5 flex flex-col justify-between transition-all duration-200 ${
+                    isSoldOut
+                      ? 'opacity-60 border-red-500/40 cursor-not-allowed bg-red-500/5'
+                      : 'border-border hover:border-primary/50 hover:shadow-card-hover cursor-pointer active:scale-[0.98]'
+                  }`}
+                >
+                  <div>
+                    <div className="relative w-full h-24 rounded-lg overflow-hidden mb-2 bg-muted">
+                      <img
+                        src={food.imageUrl}
+                        alt={food.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                      {isSoldOut ? (
+                        <span className="absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0.5 rounded-md bg-red-600 text-white font-bold shadow-sm">
+                          Hết Nguyên Liệu
+                        </span>
+                      ) : food.isBest ? (
+                        <Badge variant="warning" className="absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0 shadow-sm font-bold">
+                          HOT
+                        </Badge>
+                      ) : null}
+                    </div>
+
+                    <h4 className="font-bold text-xs text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+                      {food.name}
+                    </h4>
+                    {isSoldOut ? (
+                      <p className="text-[10px] text-red-600 font-semibold line-clamp-1 mt-0.5">
+                        Thiếu: {soldOutInfo.missingIngredient}
+                      </p>
+                    ) : food.desc ? (
+                      <p className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">
+                        {food.desc}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
+                    <span className="font-extrabold text-xs text-primary font-mono">
+                      {formatCurrency(food.price)}
+                    </span>
+                    {isSoldOut ? (
+                      <span className="text-[10px] text-red-600 font-bold">Khóa Món</span>
+                    ) : (
+                      <div className="w-6 h-6 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors">
+                        <Plus className="w-3.5 h-3.5" />
+                      </div>
                     )}
                   </div>
-
-                  <h4 className="font-bold text-xs text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
-                    {food.name}
-                  </h4>
-                  {food.desc && (
-                    <p className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">
-                      {food.desc}
-                    </p>
-                  )}
                 </div>
-
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
-                  <span className="font-extrabold text-xs text-primary font-mono">
-                    {formatCurrency(food.price)}
-                  </span>
-                  <div className="w-6 h-6 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors">
-                    <Plus className="w-3.5 h-3.5" />
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>

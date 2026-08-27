@@ -259,6 +259,38 @@ export interface SystemNotification {
   orderCode?: string;
 }
 
+export interface KitchenRequisition {
+  id: number;
+  code: string; // YCK-20260827-01
+  chefName: string; // Bếp trưởng Võ Hoàng Hải
+  ingredientName: string;
+  qty: number;
+  unit: string;
+  urgency: 'NORMAL' | 'HIGH' | 'URGENT';
+  reason: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  requestedAt: string;
+  resolvedAt?: string;
+  canteenName: string;
+}
+
+export interface PurchaseSuggestion {
+  supplierName: string;
+  supplierPhone: string;
+  items: {
+    stockId: number;
+    code: string;
+    name: string;
+    currentAvailable: number;
+    minStock: number;
+    suggestedBuyQty: number;
+    unit: string;
+    unitPrice: number;
+    estimatedTotal: number;
+  }[];
+  totalCost: number;
+}
+
 // Storage Keys
 const KEYS = {
   FOODS: 'dnu_canteen_foods_v2',
@@ -270,6 +302,7 @@ const KEYS = {
   STOCKS: 'dnu_canteen_stocks_v2',
   INBOUND: 'dnu_canteen_inbound_v2',
   OUTBOUND: 'dnu_canteen_outbound_v2',
+  KITCHEN_REQUISITIONS: 'dnu_canteen_kitchen_requisitions_v2',
   FINANCE: 'dnu_canteen_finance_ledger_v2',
   WALLET: 'dnu_canteen_student_wallet_v2',
   REVIEWS: 'dnu_canteen_reviews_v2',
@@ -923,6 +956,37 @@ const initialNotifications: SystemNotification[] = [
   },
 ];
 
+// Initial Kitchen Material Requisitions
+const initialKitchenRequisitions: KitchenRequisition[] = [
+  {
+    id: 1,
+    code: 'YCK-20260827-01',
+    chefName: 'Bếp trưởng Võ Hoàng Hải',
+    ingredientName: 'Sườn non heo tươi sạch CP',
+    qty: 15,
+    unit: 'kg',
+    urgency: 'URGENT',
+    reason: 'Sườn trong kho chỉ còn 1.2kg, cần cấp khẩn cấp để làm Cơm Sườn Nướng ca trưa',
+    status: 'PENDING',
+    requestedAt: '2026-08-27 10:45:00',
+    canteenName: 'Căng tin Tòa G',
+  },
+  {
+    id: 2,
+    code: 'YCK-20260827-02',
+    chefName: 'Bếp phó Lê Văn Tùng',
+    ingredientName: 'Trứng gà tươi Ba Huân loại A',
+    qty: 100,
+    unit: 'quả',
+    urgency: 'HIGH',
+    reason: 'Bổ sung trứng làm Bánh Mì Chảo và Cơm Chiên Dương Châu',
+    status: 'APPROVED',
+    requestedAt: '2026-08-27 08:30:00',
+    resolvedAt: '2026-08-27 08:45:00',
+    canteenName: 'Căng tin Tòa G',
+  },
+];
+
 export const dnuStore = {
   // 1. FOODS
   getFoods(): FoodCatalogItem[] {
@@ -1135,6 +1199,278 @@ export const dnuStore = {
     this.saveOutboundIssues([newOutbound, ...outbounds]);
 
     return { success: true, deductedItems, outboundCode: newOutbound.code };
+  },
+
+  // -------------------------------------------------------------
+  // 8B. KITCHEN MATERIAL REQUISITIONS (YÊU CẦU NGUYÊN LIỆU TỪ BẾP)
+  // -------------------------------------------------------------
+  getKitchenRequisitions(): KitchenRequisition[] {
+    try {
+      const stored = localStorage.getItem(KEYS.KITCHEN_REQUISITIONS);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return initialKitchenRequisitions;
+  },
+  saveKitchenRequisitions(reqs: KitchenRequisition[]) {
+    localStorage.setItem(KEYS.KITCHEN_REQUISITIONS, JSON.stringify(reqs));
+    window.dispatchEvent(new Event('dnu_store_updated'));
+    window.dispatchEvent(new Event('storage'));
+  },
+  addKitchenRequisition(req: {
+    chefName: string;
+    ingredientName: string;
+    qty: number;
+    unit: string;
+    urgency: 'NORMAL' | 'HIGH' | 'URGENT';
+    reason: string;
+    canteenName?: string;
+  }) {
+    const list = this.getKitchenRequisitions();
+    const created: KitchenRequisition = {
+      id: Date.now(),
+      code: `YCK-${Date.now().toString().slice(-4)}`,
+      chefName: req.chefName || 'Bếp trưởng Võ Hoàng Hải',
+      ingredientName: req.ingredientName,
+      qty: req.qty,
+      unit: req.unit,
+      urgency: req.urgency,
+      reason: req.reason,
+      status: 'PENDING',
+      requestedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+      canteenName: req.canteenName || 'Căng tin Tòa G',
+    };
+    const updated = [created, ...list];
+    this.saveKitchenRequisitions(updated);
+
+    // Broadcast system notification to Admin / Warehouse
+    this.addNotification({
+      title: `Bếp yêu cầu cấp nguyên liệu: ${req.ingredientName} (${req.qty} ${req.unit})`,
+      desc: `[${req.urgency === 'URGENT' ? 'Khẩn cấp 🔴' : req.urgency === 'HIGH' ? 'Ưu tiên cao 🟡' : 'Thông thường 🟢'}] ${req.reason} - Người yêu cầu: ${req.chefName}`,
+      type: 'STOCK_LOW',
+      targetRole: 'ADMIN',
+      linkUrl: '/admin/inventory',
+    });
+
+    return created;
+  },
+  approveKitchenRequisition(id: number) {
+    const list = this.getKitchenRequisitions();
+    const target = list.find((r) => r.id === id);
+    if (!target) return { success: false, message: 'Không tìm thấy yêu cầu' };
+
+    const stocks = this.getStocks();
+    // 1. Deduct stock
+    const updatedStocks = stocks.map((s) => {
+      if (s.name.toLowerCase().includes(target.ingredientName.toLowerCase()) || target.ingredientName.toLowerCase().includes(s.name.toLowerCase())) {
+        const newQty = Math.max(0, Number((s.quantity - target.qty).toFixed(2)));
+        const newAvail = Math.max(0, Number((s.available - target.qty).toFixed(2)));
+        return {
+          ...s,
+          quantity: newQty,
+          available: newAvail,
+          status: (newAvail <= 0 ? 'OUT_OF_STOCK' : newAvail <= s.minStock ? 'LOW_STOCK' : 'NORMAL') as StockItem['status'],
+        };
+      }
+      return s;
+    });
+    this.saveStocks(updatedStocks);
+
+    // 2. Generate Outbound Issue
+    const outbounds = this.getOutboundIssues();
+    const newOutbound: OutboundIssue = {
+      id: Date.now(),
+      code: `PXK-YCK-${Date.now().toString().slice(-4)}`,
+      reason: `Cấp phát nguyên liệu cho Bếp theo yêu cầu ${target.code} (${target.reason})`,
+      issuedDate: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      issuer: 'Thủ kho Căng tin Tòa G',
+      items: [{ name: target.ingredientName, qty: target.qty, unit: target.unit }],
+    };
+    this.saveOutboundIssues([newOutbound, ...outbounds]);
+
+    // 3. Mark Requisition as APPROVED
+    const updated = list.map((r) =>
+      r.id === id
+        ? {
+            ...r,
+            status: 'APPROVED' as const,
+            resolvedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+          }
+        : r
+    );
+    this.saveKitchenRequisitions(updated);
+
+    // 4. Notify Kitchen
+    this.addNotification({
+      title: `Yêu cầu cấp ${target.ingredientName} đã được duyệt & xuất kho!`,
+      desc: `Thủ kho đã xuất ${target.qty} ${target.unit} ${target.ingredientName} cho Bếp theo phiếu ${newOutbound.code}.`,
+      type: 'ORDER_READY',
+      targetRole: 'KITCHEN',
+      linkUrl: '/kitchen',
+    });
+
+    return { success: true, outboundCode: newOutbound.code };
+  },
+  rejectKitchenRequisition(id: number, reasonText?: string) {
+    const list = this.getKitchenRequisitions();
+    const updated = list.map((r) =>
+      r.id === id
+        ? {
+            ...r,
+            status: 'REJECTED' as const,
+            reason: reasonText ? `${r.reason} (Từ chối: ${reasonText})` : r.reason,
+            resolvedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+          }
+        : r
+    );
+    this.saveKitchenRequisitions(updated);
+    return { success: true };
+  },
+
+  // -------------------------------------------------------------
+  // 8C. SMART PURCHASE ORDER RECOMMENDATIONS (GỢI Ý MUA HÀNG TỰ ĐỘNG)
+  // -------------------------------------------------------------
+  getSmartPurchaseSuggestions(): PurchaseSuggestion[] {
+    const stocks = this.getStocks();
+    const suppliers = this.getSuppliers();
+    const lowStocks = stocks.filter((s) => s.available <= s.minStock);
+
+    if (lowStocks.length === 0) return [];
+
+    const grouped: Record<string, PurchaseSuggestion> = {};
+
+    lowStocks.forEach((st) => {
+      const suppName = st.supplierName || 'Công Ty CP Chế Biến Thực Phẩm Hà Nội';
+      const suppObj = suppliers.find((s) => s.name.toLowerCase() === suppName.toLowerCase());
+      const suppPhone = suppObj?.phone || '024 3822 5678';
+
+      // Suggested Buy Qty = Target Safety Stock (minStock * 2.5) - Current Available
+      const targetStock = Math.max(st.minStock * 2.5, 20);
+      const buyQty = Math.max(10, Math.ceil(targetStock - st.available));
+      const estTotal = buyQty * st.unitPrice;
+
+      if (!grouped[suppName]) {
+        grouped[suppName] = {
+          supplierName: suppName,
+          supplierPhone: suppPhone,
+          items: [],
+          totalCost: 0,
+        };
+      }
+
+      grouped[suppName].items.push({
+        stockId: st.id,
+        code: st.code,
+        name: st.name,
+        currentAvailable: st.available,
+        minStock: st.minStock,
+        suggestedBuyQty: buyQty,
+        unit: st.unit,
+        unitPrice: st.unitPrice,
+        estimatedTotal: estTotal,
+      });
+
+      grouped[suppName].totalCost += estTotal;
+    });
+
+    return Object.values(grouped);
+  },
+
+  executeSmartPurchaseOrder(suggestion: PurchaseSuggestion) {
+    const stocks = this.getStocks();
+    const inboundReceipts = this.getInboundReceipts();
+
+    // 1. Update stock levels
+    const updatedStocks = stocks.map((s) => {
+      const match = suggestion.items.find((it) => it.stockId === s.id || it.name.toLowerCase() === s.name.toLowerCase());
+      if (match) {
+        const newQty = Number((s.quantity + match.suggestedBuyQty).toFixed(2));
+        const newAvail = Number((s.available + match.suggestedBuyQty).toFixed(2));
+        return {
+          ...s,
+          quantity: newQty,
+          available: newAvail,
+          status: 'NORMAL' as StockItem['status'],
+        };
+      }
+      return s;
+    });
+    this.saveStocks(updatedStocks);
+
+    // 2. Create Inbound Receipt (PNK)
+    const newInbound: InboundReceipt = {
+      id: Date.now(),
+      code: `PNK-AUTO-${Date.now().toString().slice(-4)}`,
+      supplierName: suggestion.supplierName,
+      receivedDate: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      receiver: 'Thủ kho Căng tin Tòa G (Smart PO)',
+      items: suggestion.items.map((it) => ({
+        name: it.name,
+        qty: it.suggestedBuyQty,
+        unit: it.unit,
+        price: it.unitPrice,
+      })),
+      totalAmount: suggestion.totalCost,
+      status: 'COMPLETED',
+    };
+    this.saveInboundReceipts([newInbound, ...inboundReceipts]);
+
+    // 3. Record Outflow / Supplier Debt in Finance Ledger
+    this.addFinanceTransaction({
+      code: `PC-PO-${Date.now().toString().slice(-4)}`,
+      type: 'EXPENSE',
+      category: 'SUPPLIER_PAYMENT',
+      categoryLabel: 'Chi nhập nguyên liệu',
+      title: `Nhập bổ sung nguyên liệu thiếu từ ${suggestion.supplierName}`,
+      amount: suggestion.totalCost,
+      paymentMethod: 'BANK_TRANSFER',
+      paymentMethodLabel: 'Chuyển khoản VCB',
+      counterpart: suggestion.supplierName,
+      performedBy: 'Hệ thống Smart PO (Admin)',
+      canteenName: 'Căng tin Tòa G',
+      notes: `Nhập tự động bù tồn kho theo phiếu ${newInbound.code}`,
+    });
+
+    // 4. Send Notification
+    this.addNotification({
+      title: `Đã tạo Đơn Mua Hàng & Nhập Kho thành công (${suggestion.supplierName})`,
+      desc: `Đã nhập bù ${suggestion.items.length} mặt hàng, tổng tiền ${suggestion.totalCost.toLocaleString('vi-VN')}đ. Tồn kho đã được phục hồi mức an toàn!`,
+      type: 'PAYMENT_SUCCESS',
+      targetRole: 'ADMIN',
+      linkUrl: '/admin/inventory',
+    });
+
+    return { success: true, inboundCode: newInbound.code };
+  },
+
+  // -------------------------------------------------------------
+  // 8D. CHECK SOLD-OUT DISHES BY INGREDIENT SHORTAGE (KHÓA MÓN HẾT ĐỒ)
+  // -------------------------------------------------------------
+  checkFoodSoldOutStatus(foodName: string): { isSoldOut: boolean; missingIngredient?: string } {
+    const stocks = this.getStocks();
+    const foodNameLower = foodName.toLowerCase();
+
+    const matchEntry = Object.entries(FOOD_RECIPES).find(([key]) =>
+      foodNameLower.includes(key) || key.includes(foodNameLower)
+    );
+
+    if (!matchEntry) return { isSoldOut: false };
+
+    const recipe = matchEntry[1];
+    for (const ing of recipe.ingredients) {
+      const stockItem = stocks.find(
+        (s) =>
+          s.name.toLowerCase().includes(ing.ingredientName.toLowerCase()) ||
+          ing.ingredientName.toLowerCase().includes(s.name.toLowerCase())
+      );
+      if (stockItem && stockItem.available <= 0) {
+        return {
+          isSoldOut: true,
+          missingIngredient: stockItem.name,
+        };
+      }
+    }
+
+    return { isSoldOut: false };
   },
 
   // -------------------------------------------------------------

@@ -239,53 +239,77 @@ export const StudentHomePage: React.FC = () => {
 
       {/* Food List Cards with Image */}
       <div className="space-y-3">
-        {filteredFoods.map((food) => (
-          <div
-            key={food.id}
-            className="p-3 bg-white rounded-2xl border border-slate-200/70 shadow-sm flex items-start gap-3 hover:border-orange-500 transition-all cursor-pointer group"
-            onClick={() => navigate('/student/menu')}
-          >
-            <img
-              src={food.imageUrl}
-              alt={food.name}
-              className="w-20 h-20 rounded-xl object-cover shrink-0 border border-slate-100 shadow-xs group-hover:scale-105 transition-transform"
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
-              }}
-            />
+        {filteredFoods.map((food) => {
+          const soldOutInfo = dnuStore.checkFoodSoldOutStatus(food.name);
+          const isSoldOut = soldOutInfo.isSoldOut;
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-orange-700 bg-orange-50 px-2 py-0.5 rounded-full">
-                  {food.isBest ? 'Bán chạy số 1' : 'Đặc sản DNU'}
-                </span>
-                <div className="flex items-center gap-0.5 text-amber-500 text-[11px] font-bold">
-                  <Star className="w-3 h-3 fill-amber-400" />
-                  <span>4.9</span>
-                  <span className="text-slate-400 font-normal">(180)</span>
+          return (
+            <div
+              key={food.id}
+              className={`p-3 bg-white rounded-2xl border transition-all cursor-pointer group flex items-start gap-3 ${
+                isSoldOut
+                  ? 'opacity-65 border-red-200 bg-red-50/20'
+                  : 'border-slate-200/70 shadow-sm hover:border-orange-500'
+              }`}
+              onClick={() => navigate('/student/menu')}
+            >
+              <div className="relative w-20 h-20 shrink-0">
+                <img
+                  src={food.imageUrl}
+                  alt={food.name}
+                  className="w-full h-full rounded-xl object-cover border border-slate-100 shadow-xs group-hover:scale-105 transition-transform"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
+                {isSoldOut && (
+                  <span className="absolute inset-x-1 bottom-1 text-[8px] text-center py-0.5 rounded bg-red-600/90 text-white font-bold backdrop-blur-xs">
+                    Hết Đồ Nấu
+                  </span>
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    isSoldOut ? 'text-red-700 bg-red-100' : 'text-orange-700 bg-orange-50'
+                  }`}>
+                    {isSoldOut ? `Tạm hết (${soldOutInfo.missingIngredient})` : food.isBest ? 'Bán chạy số 1' : 'Đặc sản DNU'}
+                  </span>
+                  <div className="flex items-center gap-0.5 text-amber-500 text-[11px] font-bold">
+                    <Star className="w-3 h-3 fill-amber-400" />
+                    <span>4.9</span>
+                    <span className="text-slate-400 font-normal">(180)</span>
+                  </div>
+                </div>
+
+                <h4 className="text-xs font-bold text-slate-900 mt-1 truncate group-hover:text-orange-600 transition-colors">{food.name}</h4>
+                <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{food.desc}</p>
+
+                <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-100">
+                  <span className="text-xs font-extrabold text-orange-600 font-mono">{formatCurrency(food.price)}</span>
+                  {isSoldOut ? (
+                    <span className="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-400 text-[11px] font-bold">
+                      Tạm Hết
+                    </span>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        dnuStore.addToStudentCart(food);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm hover:scale-105 transition-transform"
+                      title="Thêm vào giỏ"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Thêm</span>
+                    </button>
+                  )}
                 </div>
               </div>
-
-              <h4 className="text-xs font-bold text-slate-900 mt-1 truncate group-hover:text-orange-600 transition-colors">{food.name}</h4>
-              <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{food.desc}</p>
-
-              <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-100">
-                <span className="text-xs font-extrabold text-orange-600 font-mono">{formatCurrency(food.price)}</span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    dnuStore.addToStudentCart(food);
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm hover:scale-105 transition-transform"
-                  title="Thêm vào giỏ"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Thêm</span>
-                </button>
-              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Floating Mini Cart Banner */}
