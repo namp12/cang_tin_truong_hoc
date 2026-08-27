@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.js';
+import { UserProfileModal } from '../common/UserProfileModal.js';
 import { 
   Home, 
   UtensilsCrossed, 
@@ -14,13 +15,13 @@ import { cn } from '../../utils/cn.js';
 export const StudentLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const navItems = [
     { label: 'Trang chủ', path: '/student/home', icon: Home },
     { label: 'Thực đơn', path: '/student/menu', icon: UtensilsCrossed },
     { label: 'Giỏ hàng', path: '/student/cart', icon: ShoppingBag, badge: '2' },
     { label: 'Đơn hàng', path: '/student/orders', icon: Receipt },
-    { label: 'Cá nhân', path: '/student/profile', icon: UserIcon },
   ];
 
   return (
@@ -40,7 +41,15 @@ export const StudentLayout: React.FC = () => {
         <div className="flex items-center gap-2">
           {user ? (
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-700 hidden sm:inline">{user.fullName}</span>
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition-colors"
+              >
+                <div className="w-5 h-5 rounded-full bg-orange-600 text-white text-[10px] flex items-center justify-center font-bold">
+                  {user.fullName?.charAt(0) || 'S'}
+                </div>
+                <span className="hidden sm:inline truncate max-w-[120px]">{user.fullName}</span>
+              </button>
               <button 
                 onClick={logout} 
                 className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-slate-100"
@@ -92,7 +101,20 @@ export const StudentLayout: React.FC = () => {
             </NavLink>
           );
         })}
+
+        {/* Profile Bottom Nav Item */}
+        <button
+          type="button"
+          onClick={() => setShowProfileModal(true)}
+          className="flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-medium text-slate-400 hover:text-slate-600 transition-all"
+        >
+          <UserIcon className="w-5 h-5 mb-0.5" />
+          <span>Cá nhân</span>
+        </button>
       </nav>
+
+      {/* Interactive User Profile Modal Dialog */}
+      <UserProfileModal open={showProfileModal} onOpenChange={setShowProfileModal} />
     </div>
   );
 };
