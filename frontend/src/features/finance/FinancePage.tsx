@@ -22,7 +22,13 @@ import {
   Filter,
   Search,
   Building2,
-  Send,
+  PieChart as PieIcon,
+  BarChart3,
+  Truck,
+  Zap,
+  Users,
+  Package,
+  Layers,
   Sparkles,
   ShieldCheck,
   AlertCircle
@@ -31,10 +37,16 @@ import {
   ResponsiveContainer, 
   AreaChart, 
   Area, 
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Tooltip 
+  Tooltip,
+  Legend
 } from 'recharts';
 
 export const FinancePage: React.FC = () => {
@@ -52,8 +64,8 @@ export const FinancePage: React.FC = () => {
   const [incomeForm, setIncomeForm] = useState({
     title: '',
     amount: '',
-    category: 'CAPITAL_INFLOW' as const,
-    paymentMethod: 'CASH' as const,
+    category: 'CAPITAL_INFLOW' as 'CAPITAL_INFLOW' | 'POS_ORDER' | 'WALLET_TOPUP' | 'OTHER',
+    paymentMethod: 'CASH' as 'CASH' | 'BANK_TRANSFER',
     counterpart: 'Phòng Kế Toán / Ban Quản Lý DNU',
     canteenName: 'Căng tin Tòa G',
     notes: '',
@@ -62,8 +74,8 @@ export const FinancePage: React.FC = () => {
   const [expenseForm, setExpenseForm] = useState({
     title: '',
     amount: '',
-    category: 'OPERATING_COST' as const,
-    paymentMethod: 'CASH' as const,
+    category: 'OPERATING_COST' as 'SUPPLIER_PAYMENT' | 'OPERATING_COST' | 'SALARY' | 'OTHER',
+    paymentMethod: 'CASH' as 'CASH' | 'BANK_TRANSFER',
     counterpart: 'Công Ty Điện Lực / Cung Ứng Dịch Vụ',
     canteenName: 'Căng tin Tòa G',
     notes: '',
@@ -98,21 +110,21 @@ export const FinancePage: React.FC = () => {
     if (!amountNum || amountNum <= 0) return;
 
     dnuStore.addFinanceTransaction({
-      code: `PT-${Date.now().toString().slice(-6)}`,
+      code: `PT-DNU-${Date.now().toString().slice(-4)}`,
       type: 'INCOME',
       category: incomeForm.category,
-      categoryLabel: incomeForm.category === 'CAPITAL_INFLOW' ? 'Bơm vốn quỹ' : 'Thu tiền khác',
-      title: incomeForm.title || 'Nạp vốn lưu động quỹ tiền mặt Căng tin',
+      categoryLabel: incomeForm.category === 'CAPITAL_INFLOW' ? 'Bổ sung vốn lưu động' : 'Thu tiền dịch vụ ngoài',
+      title: incomeForm.title || 'Thu tiền bổ sung quỹ căng tin',
       amount: amountNum,
       paymentMethod: incomeForm.paymentMethod,
-      paymentMethodLabel: incomeForm.paymentMethod === 'CASH' ? 'Tiền mặt' : 'Chuyển khoản',
+      paymentMethodLabel: incomeForm.paymentMethod === 'CASH' ? 'Tiền mặt' : 'Chuyển khoản / Ví',
       counterpart: incomeForm.counterpart,
-      performedBy: 'Admin Quản Trị Hệ Thống',
+      performedBy: 'Kế toán Phạm Quỳnh Như',
       canteenName: incomeForm.canteenName,
       notes: incomeForm.notes,
     });
 
-    setActionSuccess(`Tạo Phiếu Thu thành công: +${formatCurrency(amountNum)}`);
+    setActionSuccess(`Đã lập Phiếu Thu ${formatCurrency(amountNum)} thành công!`);
     setShowIncomeModal(false);
     setIncomeForm({
       title: '',
@@ -132,21 +144,26 @@ export const FinancePage: React.FC = () => {
     if (!amountNum || amountNum <= 0) return;
 
     dnuStore.addFinanceTransaction({
-      code: `PC-${Date.now().toString().slice(-6)}`,
+      code: `PC-DNU-${Date.now().toString().slice(-4)}`,
       type: 'EXPENSE',
       category: expenseForm.category,
-      categoryLabel: expenseForm.category === 'OPERATING_COST' ? 'Chi phí vận hành' : expenseForm.category === 'SALARY' ? 'Lương nhân sự' : 'Chi phí khác',
-      title: expenseForm.title || 'Chi phí vận hành Căng tin',
+      categoryLabel:
+        expenseForm.category === 'SUPPLIER_PAYMENT'
+          ? 'Chi trả Nhà Cung Cấp'
+          : expenseForm.category === 'OPERATING_COST'
+          ? 'Chi phí Điện Nước & Vận hành'
+          : 'Chi lương nhân sự & Phụ cấp',
+      title: expenseForm.title || 'Chi tiền hoạt động căng tin',
       amount: amountNum,
       paymentMethod: expenseForm.paymentMethod,
       paymentMethodLabel: expenseForm.paymentMethod === 'CASH' ? 'Tiền mặt' : 'Chuyển khoản',
       counterpart: expenseForm.counterpart,
-      performedBy: 'Admin Quản Trị Hệ Thống',
+      performedBy: 'Quản lý Nguyễn Hoàng Long',
       canteenName: expenseForm.canteenName,
       notes: expenseForm.notes,
     });
 
-    setActionSuccess(`Tạo Phiếu Chi thành công: -${formatCurrency(amountNum)}`);
+    setActionSuccess(`Đã lập Phiếu Chi ${formatCurrency(amountNum)} thành công!`);
     setShowExpenseModal(false);
     setExpenseForm({
       title: '',
@@ -184,19 +201,30 @@ export const FinancePage: React.FC = () => {
       tx.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tx.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tx.counterpart.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tx.performedBy.toLowerCase().includes(searchTerm.toLowerCase());
+      tx.performedBy.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tx.categoryLabel.toLowerCase().includes(searchTerm.toLowerCase());
     return matchType && matchSearch;
   });
 
+  // 7-day Cashflow Data for Bar/Area Chart
   const cashflowData = [
-    { day: 'T2', revenue: 24500000, cost: 13200000, profit: 11300000 },
-    { day: 'T3', revenue: 28200000, cost: 14800000, profit: 13400000 },
-    { day: 'T4', revenue: 31500000, cost: 16100000, profit: 15400000 },
-    { day: 'T5', revenue: 35800000, cost: 18200000, profit: 17600000 },
-    { day: 'T6', revenue: 29000000, cost: 15000000, profit: 14000000 },
-    { day: 'T7', revenue: 16500000, cost: 8900000, profit: 7600000 },
-    { day: 'Hôm nay', revenue: summary.totalIncome, cost: summary.totalExpense, profit: Math.max(0, summary.netBalance) },
+    { day: 'T2', thu: 24500000, chi: 13200000, lai: 11300000 },
+    { day: 'T3', thu: 28200000, chi: 14800000, lai: 13400000 },
+    { day: 'T4', thu: 31500000, chi: 16100000, lai: 15400000 },
+    { day: 'T5', thu: 35800000, chi: 18200000, lai: 17600000 },
+    { day: 'T6', thu: 29000000, chi: 15000000, lai: 14000000 },
+    { day: 'T7', thu: 16500000, chi: 8900000, lai: 7600000 },
+    { day: 'Hôm nay', thu: summary.totalIncome, chi: summary.totalExpense, lai: Math.max(0, summary.netBalance) },
   ];
+
+  // Detailed Expense Breakdown for Donut Chart
+  const expensePieData = [
+    { name: 'Thực Phẩm & NCC (Thịt, Rau, Sữa)', value: summary.supplierExpense || 12450000, color: '#EA580C', icon: Truck },
+    { name: 'Điện Nước & Mặt Bằng Tòa G', value: summary.operatingExpense || 3200000, color: '#3B82F6', icon: Zap },
+    { name: 'Lương Nhân Sự (Bếp, Thu Ngân)', value: 5500000, color: '#10B981', icon: Users },
+    { name: 'Bao Bì & Vật Tư Tiêu Hao', value: 1850000, color: '#8B5CF6', icon: Package },
+  ];
+  const totalCategorizedExpense = expensePieData.reduce((s, i) => s + i.value, 0);
 
   return (
     <div className="space-y-6">
@@ -217,17 +245,17 @@ export const FinancePage: React.FC = () => {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-foreground tracking-tight">Sổ Quỹ Dòng Tiền & Tài Chính Căng Tin</h2>
+            <h2 className="text-xl font-bold text-foreground tracking-tight">Sổ Quỹ & Quản Trị Tài Chính Căng Tin</h2>
             <Badge variant="primary" className="bg-orange-600 text-white font-mono text-[10px]">
               DNU TREASURY
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Quản trị dòng tiền thu chi tự động, đối soát POS/Kiosk, nạp ví sinh viên và quyết toán nhà cung cấp
+            Theo dõi dòng tiền thu chi minh bạch, phân tích cơ cấu chi phí vận hành và quản lý số dư khả dụng
           </p>
         </div>
 
-        {/* Action Buttons */}
+        {/* Quick Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
           <Button
             onClick={() => setShowIncomeModal(true)}
@@ -236,7 +264,7 @@ export const FinancePage: React.FC = () => {
             className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs"
             leftIcon={<Plus className="w-4 h-4" />}
           >
-            + Thu Tiền / Bơm Vốn
+            + Lập Phiếu Thu Tiền
           </Button>
 
           <Button
@@ -246,7 +274,7 @@ export const FinancePage: React.FC = () => {
             className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-xs"
             leftIcon={<Minus className="w-4 h-4" />}
           >
-            - Tạo Phiếu Chi Quỹ
+            - Lập Phiếu Chi Tiền
           </Button>
 
           <Button
@@ -256,154 +284,203 @@ export const FinancePage: React.FC = () => {
             className="border-orange-500/40 text-orange-600 dark:text-orange-400 hover:bg-orange-500/10 font-bold text-xs"
             leftIcon={<Wallet className="w-4 h-4 text-orange-600" />}
           >
-            ⚡ Nạp Ví Sinh Viên
+            ⚡ Trợ Cấp Ví Sinh Viên
           </Button>
         </div>
       </div>
 
       {/* 4 Financial KPIs Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Income */}
-        <Card className="p-4 bg-card border-border hover:border-primary/40 transition-colors">
+        {/* 1. Total Income */}
+        <Card className="p-4 bg-gradient-to-br from-emerald-500/5 via-card to-card border-emerald-500/30">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-muted-foreground">Tổng Thu (Tiền Vào)</p>
-            <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600">
-              <DollarSign className="w-4 h-4" />
-            </span>
-          </div>
-          <p className="text-2xl font-black text-foreground mt-2 font-mono tracking-tight">
-            {formatCurrency(summary.totalIncome)}
-          </p>
-          <p className="text-[11px] text-emerald-600 font-medium mt-1 flex items-center gap-1">
-            <ArrowUpRight className="w-3.5 h-3.5" />
-            <span>Gồm POS, Kiosk & Nạp Ví DNU Pay</span>
-          </p>
-        </Card>
-
-        {/* Total Expense */}
-        <Card className="p-4 bg-card border-border hover:border-rose-500/40 transition-colors">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-muted-foreground">Tổng Chi (Tiền Ra)</p>
-            <span className="p-2 rounded-xl bg-rose-500/10 text-rose-600">
-              <TrendingDown className="w-4 h-4" />
-            </span>
-          </div>
-          <p className="text-2xl font-black text-foreground mt-2 font-mono tracking-tight">
-            {formatCurrency(summary.totalExpense)}
-          </p>
-          <p className="text-[11px] text-rose-600 font-medium mt-1 flex items-center gap-1">
-            <ArrowDownRight className="w-3.5 h-3.5" />
-            <span>Gồm Tiền NCC & Chi phí vận hành</span>
-          </p>
-        </Card>
-
-        {/* Net Cash Balance */}
-        <Card className="p-4 bg-gradient-to-br from-emerald-500/10 via-card to-card border-emerald-500/30">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400">Số Dư Quỹ Khả Dụng (Net)</p>
-            <span className="p-2 rounded-xl bg-emerald-600 text-white shadow-xs">
-              <TrendingUp className="w-4 h-4" />
+            <span className="text-xs font-bold text-emerald-800 dark:text-emerald-400">1. TỔNG THU (TIỀN VÀO)</span>
+            <span className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600">
+              <ArrowUpRight className="w-4 h-4" />
             </span>
           </div>
           <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-2 font-mono tracking-tight">
-            {formatCurrency(summary.netBalance)}
+            {formatCurrency(summary.totalIncome)}
           </p>
-          <p className="text-[11px] text-muted-foreground mt-1">
-            = Tổng Thu trừ Tổng Chi thực tế
-          </p>
+          <div className="mt-2 pt-2 border-t border-border/50 text-[11px] text-muted-foreground flex justify-between">
+            <span>POS & Kiosk: <strong>{formatCurrency(summary.posIncome + summary.kioskIncome)}</strong></span>
+            <span>Nạp ví: <strong>{formatCurrency(summary.walletTopupIncome)}</strong></span>
+          </div>
         </Card>
 
-        {/* DNU Pay Wallet Share */}
+        {/* 2. Total Expense */}
+        <Card className="p-4 bg-gradient-to-br from-rose-500/5 via-card to-card border-rose-500/30">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-rose-800 dark:text-rose-400">2. TỔNG CHI (TIỀN RA)</span>
+            <span className="p-2 rounded-xl bg-rose-500/15 text-rose-600">
+              <ArrowDownRight className="w-4 h-4" />
+            </span>
+          </div>
+          <p className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-2 font-mono tracking-tight">
+            {formatCurrency(summary.totalExpense)}
+          </p>
+          <div className="mt-2 pt-2 border-t border-border/50 text-[11px] text-muted-foreground flex justify-between">
+            <span>Trả NCC: <strong>{formatCurrency(summary.supplierExpense)}</strong></span>
+            <span>Vận hành: <strong>{formatCurrency(summary.operatingExpense)}</strong></span>
+          </div>
+        </Card>
+
+        {/* 3. Net Cash Balance */}
+        <Card className="p-4 bg-gradient-to-br from-blue-500/10 via-card to-card border-blue-500/30">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-blue-800 dark:text-blue-400">3. SỐ DƯ QUỸ KHẢ DỤNG (NET)</span>
+            <span className="p-2 rounded-xl bg-blue-600 text-white shadow-xs">
+              <TrendingUp className="w-4 h-4" />
+            </span>
+          </div>
+          <p className="text-2xl font-black text-blue-600 dark:text-blue-400 mt-2 font-mono tracking-tight">
+            {formatCurrency(summary.netBalance)}
+          </p>
+          <div className="mt-2 pt-2 border-t border-border/50 text-[11px] text-muted-foreground">
+            <span>= Tổng Thu trừ đi Tổng Chi thực tế</span>
+          </div>
+        </Card>
+
+        {/* 4. DNU Pay Circulation */}
         <Card className="p-4 bg-gradient-to-br from-orange-500/10 via-card to-card border-orange-500/30">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-orange-700 dark:text-orange-400">Ví DNU Pay Chiếm</p>
+            <span className="text-xs font-bold text-orange-800 dark:text-orange-400">4. VÍ DNU PAY LƯU THÔNG</span>
             <span className="p-2 rounded-xl bg-orange-600 text-white shadow-xs">
               <Wallet className="w-4 h-4" />
             </span>
           </div>
           <p className="text-2xl font-black text-orange-600 dark:text-orange-400 mt-2 font-mono tracking-tight">
-            {formatCurrency(summary.walletTopupIncome + summary.posIncome * 0.4)}
+            {formatCurrency(summary.walletTopupIncome + 1250000)}
           </p>
-          <p className="text-[11px] text-muted-foreground mt-1">
-            Dòng tiền sinh viên luân chuyển qua Ví
-          </p>
+          <div className="mt-2 pt-2 border-t border-border/50 text-[11px] text-muted-foreground">
+            <span>Số dư sinh viên đang sẵn sàng thanh toán</span>
+          </div>
         </Card>
       </div>
 
-      {/* Cashflow Chart */}
-      <Card>
-        <CardHeader className="p-4 pb-0 flex flex-row items-center justify-between border-b border-border">
-          <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-primary" />
-            <span>Biểu Đồ Biến Động Doanh Thu & Dòng Tiền Tuần Này</span>
-          </CardTitle>
-          <Badge variant="outline" className="text-[10px] text-muted-foreground font-mono">
-            7 NGÀY GẦN NHẤT
-          </Badge>
-        </CardHeader>
-        <CardContent className="p-4">
-          <div className="h-60 w-full">
+      {/* Visual Charts Section: 2 Columns */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        {/* Left Chart: Phân Chia Cơ Cấu Chi Phí (Donut Chart - 5 Cols) */}
+        <Card className="lg:col-span-5 p-4 space-y-3">
+          <div className="flex items-center justify-between border-b border-border pb-2">
+            <div className="flex items-center gap-2">
+              <PieIcon className="w-4 h-4 text-orange-600" />
+              <h3 className="text-sm font-bold text-foreground">Phân Chia Cơ Cấu Chi Phí Căng Tin</h3>
+            </div>
+            <Badge variant="neutral" className="text-[10px]">THEO DANH MỤC</Badge>
+          </div>
+
+          <div className="h-52 w-full flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={cashflowData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#EA580C" stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor="#EA580C" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#EF4444" stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
+              <PieChart>
+                <Pie
+                  data={expensePieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={75}
+                  paddingAngle={4}
+                  dataKey="value"
+                >
+                  {expensePieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v: any) => formatCurrency(Number(v))} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Detailed breakdown list */}
+          <div className="space-y-2 pt-1 border-t border-border text-xs">
+            {expensePieData.map((item, idx) => {
+              const percent = Math.round((item.value / totalCategorizedExpense) * 100);
+              return (
+                <div key={idx} className="flex items-center justify-between p-1.5 rounded-lg hover:bg-muted/40 transition-colors">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                    <span className="text-muted-foreground truncate">{item.name}:</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 font-mono">
+                    <span className="font-bold text-foreground">{formatCurrency(item.value)}</span>
+                    <span className="font-semibold text-muted-foreground text-[11px] w-9 text-right">({percent}%)</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+
+        {/* Right Chart: Biểu Đồ Thu - Chi - Lãi 7 Ngày (Bar / Area Chart - 7 Cols) */}
+        <Card className="lg:col-span-7 p-4 space-y-3">
+          <div className="flex items-center justify-between border-b border-border pb-2">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-emerald-600" />
+              <h3 className="text-sm font-bold text-foreground">Biểu Đồ So Sánh Thu Nhập & Chi Phí (7 Ngày Gần Nhất)</h3>
+            </div>
+            <div className="flex items-center gap-2 text-[10px]">
+              <span className="flex items-center gap-1 font-bold text-emerald-600">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" /> Thu Vào
+              </span>
+              <span className="flex items-center gap-1 font-bold text-rose-600">
+                <span className="w-2 h-2 rounded-full bg-rose-500" /> Chi Ra
+              </span>
+            </div>
+          </div>
+
+          <div className="h-72 w-full pt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={cashflowData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                 <XAxis dataKey="day" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
                 <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `${v / 1000000}tr`} />
                 <Tooltip formatter={(value: any) => formatCurrency(Number(value))} />
-                <Area type="monotone" dataKey="revenue" name="Tiền Thu Vào" stroke="#EA580C" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" />
-                <Area type="monotone" dataKey="cost" name="Tiền Chi Ra" stroke="#EF4444" strokeWidth={2} fillOpacity={1} fill="url(#colorCost)" />
-              </AreaChart>
+                <Legend iconType="circle" wrapperStyle={{ fontSize: 11, paddingTop: 10 }} />
+                <Bar dataKey="thu" name="Tiền Thu Vào" fill="#10B981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="chi" name="Tiền Chi Ra" fill="#EF4444" radius={[4, 4, 0, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </div>
-        </CardContent>
-      </Card>
+        </Card>
+      </div>
 
-      {/* Sổ Quỹ Thu Chi Realtime (Live Cashflow Ledger Table) */}
+      {/* Sổ Quỹ Thu Chi Realtime (Live Cashbook Ledger Table) */}
       <Card className="overflow-hidden border-border">
         <CardHeader className="p-4 border-b border-border space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
               <Receipt className="w-4 h-4 text-primary" />
-              <CardTitle className="text-sm font-bold text-foreground">Sổ Quỹ Thu Chi Realtime (Live Ledger)</CardTitle>
-              <Badge variant="primary" className="text-[10px] bg-orange-600 text-white">
-                {filteredTxs.length} Bản Ghi
+              <CardTitle className="text-sm font-bold text-foreground">Sổ Quỹ Thu Chi Realtime (Live Financial Ledger)</CardTitle>
+              <Badge variant="primary" className="text-[10px] bg-orange-600 text-white font-mono">
+                {filteredTxs.length} Chứng Từ
               </Badge>
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-lg text-xs font-semibold">
+            <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl text-xs font-semibold">
               <button
                 onClick={() => setFilterType('ALL')}
-                className={`px-3 py-1 rounded-md transition-colors ${
+                className={`px-3 py-1 rounded-lg transition-all ${
                   filterType === 'ALL' ? 'bg-background text-foreground shadow-xs font-bold' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                Tất Cả
+                Tất Cả ({transactions.length})
               </button>
               <button
                 onClick={() => setFilterType('INCOME')}
-                className={`px-3 py-1 rounded-md transition-colors ${
+                className={`px-3 py-1 rounded-lg transition-all ${
                   filterType === 'INCOME' ? 'bg-emerald-600 text-white shadow-xs font-bold' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                + Thu Tiền ({transactions.filter((t) => t.type === 'INCOME').length})
+                + Thu Vào ({transactions.filter((t) => t.type === 'INCOME').length})
               </button>
               <button
                 onClick={() => setFilterType('EXPENSE')}
-                className={`px-3 py-1 rounded-md transition-colors ${
+                className={`px-3 py-1 rounded-lg transition-all ${
                   filterType === 'EXPENSE' ? 'bg-rose-600 text-white shadow-xs font-bold' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                - Chi Tiền ({transactions.filter((t) => t.type === 'EXPENSE').length})
+                - Chi Ra ({transactions.filter((t) => t.type === 'EXPENSE').length})
               </button>
             </div>
           </div>
@@ -415,8 +492,8 @@ export const FinancePage: React.FC = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Tìm kiếm theo mã chứng từ (PT-xxx, PC-xxx), nội dung, người nộp/nhận..."
-              className="w-full pl-9 pr-4 py-2 text-xs bg-muted/40 border border-input rounded-xl focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
+              placeholder="Tìm theo mã chứng từ (PT-xxx, PC-xxx), nội dung, người nộp/nhận hoặc danh mục..."
+              className="w-full pl-9 pr-4 py-2 text-xs bg-muted/40 border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
             />
           </div>
         </CardHeader>
@@ -427,18 +504,19 @@ export const FinancePage: React.FC = () => {
               <thead className="bg-muted/50 border-b border-border text-[11px] text-muted-foreground uppercase font-bold tracking-wider">
                 <tr>
                   <th className="p-3">Mã Chứng Từ</th>
-                  <th className="p-3">Loại Dòng Tiền</th>
-                  <th className="p-3">Nội Dung Thu / Chi</th>
+                  <th className="p-3">Loại Thu / Chi</th>
+                  <th className="p-3">Danh Mục</th>
+                  <th className="p-3">Nội Dung Chi Tiết</th>
                   <th className="p-3">Số Tiền</th>
                   <th className="p-3">Hình Thức</th>
-                  <th className="p-3">Đối Tác / Người Nộp-Nhận</th>
+                  <th className="p-3">Người Nộp / Nhận</th>
                   <th className="p-3">Thời Gian</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {filteredTxs.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-muted-foreground text-xs">
+                    <td colSpan={8} className="p-8 text-center text-muted-foreground text-xs">
                       Không tìm thấy bản ghi chứng từ nào phù hợp.
                     </td>
                   </tr>
@@ -452,46 +530,52 @@ export const FinancePage: React.FC = () => {
 
                       {/* Type Badge */}
                       <td className="p-3">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            tx.type === 'INCOME'
-                              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
-                              : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'
-                          }`}
-                        >
-                          {tx.type === 'INCOME' ? '+ THU' : '- CHI'} • {tx.categoryLabel}
-                        </span>
+                        {tx.type === 'INCOME' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-bold text-[10px] border border-emerald-500/20">
+                            <ArrowUpRight className="w-3 h-3" />
+                            <span>Thu Vào</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 font-bold text-[10px] border border-rose-500/20">
+                            <ArrowDownRight className="w-3 h-3" />
+                            <span>Chi Ra</span>
+                          </span>
+                        )}
                       </td>
 
-                      {/* Title & Notes */}
-                      <td className="p-3 max-w-[260px]">
-                        <p className="font-semibold text-foreground truncate">{tx.title}</p>
-                        {tx.notes && <p className="text-[10px] text-muted-foreground truncate">{tx.notes}</p>}
+                      {/* Category */}
+                      <td className="p-3 font-semibold text-muted-foreground">
+                        {tx.categoryLabel || tx.category}
+                      </td>
+
+                      {/* Title */}
+                      <td className="p-3 font-medium text-foreground max-w-xs truncate" title={tx.title}>
+                        {tx.title}
                       </td>
 
                       {/* Amount */}
-                      <td className="p-3 font-mono font-extrabold text-sm whitespace-nowrap">
+                      <td className="p-3 font-mono font-black text-sm whitespace-nowrap">
                         <span className={tx.type === 'INCOME' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
                           {tx.type === 'INCOME' ? `+${formatCurrency(tx.amount)}` : `-${formatCurrency(tx.amount)}`}
                         </span>
                       </td>
 
-                      {/* Method */}
-                      <td className="p-3 text-muted-foreground whitespace-nowrap">
-                        <Badge variant="outline" className="text-[10px]">
-                          {tx.paymentMethodLabel}
+                      {/* Payment Method */}
+                      <td className="p-3">
+                        <Badge variant="neutral" className="text-[10px]">
+                          {tx.paymentMethodLabel || tx.paymentMethod}
                         </Badge>
                       </td>
 
-                      {/* Counterpart & Performer */}
-                      <td className="p-3 whitespace-nowrap">
-                        <p className="font-medium text-foreground">{tx.counterpart}</p>
-                        <p className="text-[10px] text-muted-foreground">Thực hiện: {tx.performedBy}</p>
+                      {/* Counterpart */}
+                      <td className="p-3 text-muted-foreground">
+                        <p className="font-semibold text-foreground">{tx.counterpart}</p>
+                        <p className="text-[10px]">Thực hiện: {tx.performedBy}</p>
                       </td>
 
-                      {/* Created At */}
-                      <td className="p-3 text-[11px] text-muted-foreground whitespace-nowrap font-mono">
-                        {tx.createdAt}
+                      {/* Time */}
+                      <td className="p-3 text-muted-foreground font-mono text-[11px] whitespace-nowrap">
+                        {formatDateTime(tx.createdAt)}
                       </td>
                     </tr>
                   ))
@@ -503,85 +587,84 @@ export const FinancePage: React.FC = () => {
       </Card>
 
       {/* ========================================================= */}
-      {/* MODAL 1: TẠO PHIẾU THU / BƠM VỐN QUỸ                      */}
+      {/* MODAL 1: LẬP PHIẾU THU TIỀN                               */}
       {/* ========================================================= */}
       <Dialog open={showIncomeModal} onOpenChange={setShowIncomeModal}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-foreground">
-              <span className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600">
-                <Plus className="w-5 h-5" />
-              </span>
-              <span>Tạo Phiếu Thu / Bơm Vốn Quỹ Tiền Mặt</span>
+            <DialogTitle className="flex items-center gap-2 text-emerald-600">
+              <Plus className="w-5 h-5" />
+              <span>Lập Phiếu Thu Tiền / Bổ Sung Vốn</span>
             </DialogTitle>
             <DialogDescription>
-              Ghi nhận khoản thu nạp vốn lưu động hoặc thu khác vào quỹ Căng tin Đại Nam
+              Ghi nhận nguồn thu ngoài, vốn cấp từ nhà trường hoặc hoàn ứng vào sổ quỹ
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleCreateIncome} className="space-y-3.5 py-2 text-xs">
+          <form onSubmit={handleCreateIncome} className="space-y-3 text-xs py-2">
             <div>
-              <label className="block font-semibold text-foreground mb-1">Nội dung khoản thu *</label>
+              <label className="block font-semibold text-foreground mb-1">Danh mục thu *</label>
+              <select
+                value={incomeForm.category}
+                onChange={(e) => setIncomeForm({ ...incomeForm, category: e.target.value as any })}
+                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg"
+              >
+                <option value="CAPITAL_INFLOW">Bổ sung vốn lưu động / Cấp ngân sách</option>
+                <option value="POS_ORDER">Thu tiền dịch vụ ngoài POS</option>
+                <option value="WALLET_TOPUP">Thu nạp ví trực tiếp tại quầy</option>
+                <option value="OTHER">Thu thanh lý phế liệu / Thu khác</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-semibold text-foreground mb-1">Số tiền thu (VNĐ) *</label>
               <input
-                type="text"
+                type="number"
                 required
-                placeholder="VD: Bơm vốn lưu động đầu kỳ cho quầy thu ngân"
-                value={incomeForm.title}
-                onChange={(e) => setIncomeForm({ ...incomeForm, title: e.target.value })}
-                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg focus:ring-1 focus:ring-primary"
+                min={1000}
+                value={incomeForm.amount}
+                onChange={(e) => setIncomeForm({ ...incomeForm, amount: e.target.value })}
+                placeholder="Ví dụ: 5000000"
+                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg font-mono font-bold text-sm"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block font-semibold text-foreground mb-1">Số tiền (VNĐ) *</label>
-                <input
-                  type="number"
-                  required
-                  min="1000"
-                  placeholder="VD: 5000000"
-                  value={incomeForm.amount}
-                  onChange={(e) => setIncomeForm({ ...incomeForm, amount: e.target.value })}
-                  className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg font-mono font-bold text-emerald-600 focus:ring-1 focus:ring-primary"
-                />
-              </div>
+            <div>
+              <label className="block font-semibold text-foreground mb-1">Nội dung thu tiền *</label>
+              <input
+                type="text"
+                required
+                value={incomeForm.title}
+                onChange={(e) => setIncomeForm({ ...incomeForm, title: e.target.value })}
+                placeholder="Ví dụ: Cấp bổ sung quỹ chi tiêu đầu tháng 9"
+                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg"
+              />
+            </div>
 
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block font-semibold text-foreground mb-1">Hình thức thanh toán</label>
+                <label className="block font-semibold text-foreground mb-1">Hình thức *</label>
                 <select
                   value={incomeForm.paymentMethod}
                   onChange={(e) => setIncomeForm({ ...incomeForm, paymentMethod: e.target.value as any })}
                   className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg"
                 >
-                  <option value="CASH">Tiền mặt tại quỹ</option>
-                  <option value="BANK_TRANSFER">Chuyển khoản Ngân hàng</option>
-                  <option value="QRMOMO">QR MoMo / VNPAY</option>
+                  <option value="CASH">Tiền mặt</option>
+                  <option value="BANK_TRANSFER">Chuyển khoản</option>
                 </select>
+              </div>
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Người nộp tiền</label>
+                <input
+                  type="text"
+                  value={incomeForm.counterpart}
+                  onChange={(e) => setIncomeForm({ ...incomeForm, counterpart: e.target.value })}
+                  className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg"
+                />
               </div>
             </div>
 
-            <div>
-              <label className="block font-semibold text-foreground mb-1">Người / Đơn vị nộp tiền</label>
-              <input
-                type="text"
-                value={incomeForm.counterpart}
-                onChange={(e) => setIncomeForm({ ...incomeForm, counterpart: e.target.value })}
-                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block font-semibold text-foreground mb-1">Ghi chú chứng từ</label>
-              <textarea
-                rows={2}
-                placeholder="Ghi chú thêm về lý do thu..."
-                value={incomeForm.notes}
-                onChange={(e) => setIncomeForm({ ...incomeForm, notes: e.target.value })}
-                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg"
-              />
-            </div>
-
-            <DialogFooter>
+            <DialogFooter className="pt-2">
               <Button type="button" variant="outline" onClick={() => setShowIncomeModal(false)}>
                 Hủy
               </Button>
@@ -594,90 +677,89 @@ export const FinancePage: React.FC = () => {
       </Dialog>
 
       {/* ========================================================= */}
-      {/* MODAL 2: TẠO PHIẾU CHI VẬN HÀNH                           */}
+      {/* MODAL 2: LẬP PHIẾU CHI TIỀN                               */}
       {/* ========================================================= */}
       <Dialog open={showExpenseModal} onOpenChange={setShowExpenseModal}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-foreground">
-              <span className="p-2 rounded-xl bg-rose-500/15 text-rose-600">
-                <Minus className="w-5 h-5" />
-              </span>
-              <span>Tạo Phiếu Chi Tiền Mặt / Vận Hành</span>
+            <DialogTitle className="flex items-center gap-2 text-rose-600">
+              <Minus className="w-5 h-5" />
+              <span>Lập Phiếu Chi Quỹ / Thanh Toán</span>
             </DialogTitle>
             <DialogDescription>
-              Xuất quỹ chi trả tiền điện, nước, gas, mua thiết bị hoặc lương ca nhân viên
+              Chi trả tiền hàng cho Nhà Cung Cấp, thanh toán điện nước hoặc chi lương nhân sự
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleCreateExpense} className="space-y-3.5 py-2 text-xs">
+          <form onSubmit={handleCreateExpense} className="space-y-3 text-xs py-2">
             <div>
-              <label className="block font-semibold text-foreground mb-1">Nội dung khoản chi *</label>
+              <label className="block font-semibold text-foreground mb-1">Loại chi phí *</label>
+              <select
+                value={expenseForm.category}
+                onChange={(e) => setExpenseForm({ ...expenseForm, category: e.target.value as any })}
+                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg"
+              >
+                <option value="SUPPLIER_PAYMENT">Chi trả Nhà Cung Cấp thực phẩm</option>
+                <option value="OPERATING_COST">Chi phí Điện Nước & Mặt Bằng Tòa G</option>
+                <option value="SALARY">Chi Lương & Phụ Cấp Nhân Sự</option>
+                <option value="OTHER">Chi mua sắm vật tư tiêu hao / Bao bì</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-semibold text-foreground mb-1">Số tiền chi (VNĐ) *</label>
+              <input
+                type="number"
+                required
+                min={1000}
+                value={expenseForm.amount}
+                onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })}
+                placeholder="Ví dụ: 3500000"
+                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg font-mono font-bold text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-foreground mb-1">Lý do / Nội dung chi *</label>
               <input
                 type="text"
                 required
-                placeholder="VD: Chi tiền gas nấu ăn & tiền điện Căng tin Tòa G"
                 value={expenseForm.title}
                 onChange={(e) => setExpenseForm({ ...expenseForm, title: e.target.value })}
-                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg focus:ring-1 focus:ring-primary"
+                placeholder="Ví dụ: Quyết toán tiền thịt gà CP Foods đợt 2"
+                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block font-semibold text-foreground mb-1">Số tiền chi (VNĐ) *</label>
-                <input
-                  type="number"
-                  required
-                  min="1000"
-                  placeholder="VD: 2500000"
-                  value={expenseForm.amount}
-                  onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })}
-                  className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg font-mono font-bold text-rose-600 focus:ring-1 focus:ring-primary"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-foreground mb-1">Danh mục chi phí</label>
+                <label className="block font-semibold text-foreground mb-1">Hình thức *</label>
                 <select
-                  value={expenseForm.category}
-                  onChange={(e) => setExpenseForm({ ...expenseForm, category: e.target.value as any })}
+                  value={expenseForm.paymentMethod}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, paymentMethod: e.target.value as any })}
                   className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg"
                 >
-                  <option value="OPERATING_COST">Điện, Nước, Gas Căng tin</option>
-                  <option value="SALARY">Lương / Thưởng ca nhân viên</option>
-                  <option value="OTHER">Mua sắm công cụ dụng cụ bếp</option>
+                  <option value="CASH">Tiền mặt</option>
+                  <option value="BANK_TRANSFER">Chuyển khoản</option>
                 </select>
+              </div>
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Người / Đơn vị nhận</label>
+                <input
+                  type="text"
+                  value={expenseForm.counterpart}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, counterpart: e.target.value })}
+                  className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg"
+                />
               </div>
             </div>
 
-            <div>
-              <label className="block font-semibold text-foreground mb-1">Người / Đơn vị nhận tiền</label>
-              <input
-                type="text"
-                value={expenseForm.counterpart}
-                onChange={(e) => setExpenseForm({ ...expenseForm, counterpart: e.target.value })}
-                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label className="block font-semibold text-foreground mb-1">Ghi chú chứng từ</label>
-              <textarea
-                rows={2}
-                placeholder="Ghi chú hóa đơn VAT, số biên lai..."
-                value={expenseForm.notes}
-                onChange={(e) => setExpenseForm({ ...expenseForm, notes: e.target.value })}
-                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg"
-              />
-            </div>
-
-            <DialogFooter>
+            <DialogFooter className="pt-2">
               <Button type="button" variant="outline" onClick={() => setShowExpenseModal(false)}>
                 Hủy
               </Button>
               <Button type="submit" variant="default" className="bg-rose-600 hover:bg-rose-700 text-white font-bold">
-                Xác Nhận Xuất Quỹ Chi
+                Xác Nhận Chi Tiền
               </Button>
             </DialogFooter>
           </form>
@@ -685,64 +767,58 @@ export const FinancePage: React.FC = () => {
       </Dialog>
 
       {/* ========================================================= */}
-      {/* MODAL 3: ADMIN NẠP TIỀN TRỢ GIÁ VÍ SINH VIÊN             */}
+      {/* MODAL 3: ADMIN NẠP TRỢ CẤP VÍ SINH VIÊN                  */}
       {/* ========================================================= */}
       <Dialog open={showStudentTopupModal} onOpenChange={setShowStudentTopupModal}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-foreground">
-              <span className="p-2 rounded-xl bg-orange-500/15 text-orange-600">
-                <Wallet className="w-5 h-5" />
-              </span>
-              <span>Nạp Tiền Trợ Giá Ví Sinh Viên DNU Pay</span>
+            <DialogTitle className="flex items-center gap-2 text-orange-600">
+              <Wallet className="w-5 h-5" />
+              <span>Nạp Tiền Trợ Giá / Học Bổng Ví Sinh Viên</span>
             </DialogTitle>
             <DialogDescription>
-              Admin/Kế toán nạp tiền thưởng, học bổng hoặc tiền ăn vào ví DNU Pay của sinh viên
+              Cộng trực tiếp số dư vào Ví DNU Pay của sinh viên từ ngân sách căng tin
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleAdminTopupStudent} className="space-y-3.5 py-2 text-xs">
-            <div className="grid grid-cols-2 gap-3">
+          <form onSubmit={handleAdminTopupStudent} className="space-y-3 text-xs py-2">
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block font-semibold text-foreground mb-1">Mã Sinh Viên (MSSV) *</label>
+                <label className="block font-semibold text-foreground mb-1">Mã SV (MSSV) *</label>
                 <input
                   type="text"
                   required
-                  placeholder="VD: 2110001"
                   value={studentTopupForm.mssv}
                   onChange={(e) => setStudentTopupForm({ ...studentTopupForm, mssv: e.target.value })}
                   className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg font-mono font-bold"
                 />
               </div>
-
               <div>
-                <label className="block font-semibold text-foreground mb-1">Số tiền nạp (VNĐ) *</label>
+                <label className="block font-semibold text-foreground mb-1">Họ tên sinh viên *</label>
                 <input
-                  type="number"
+                  type="text"
                   required
-                  min="10000"
-                  step="10000"
-                  placeholder="VD: 100000"
-                  value={studentTopupForm.amount}
-                  onChange={(e) => setStudentTopupForm({ ...studentTopupForm, amount: e.target.value })}
-                  className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg font-mono font-bold text-orange-600"
+                  value={studentTopupForm.studentName}
+                  onChange={(e) => setStudentTopupForm({ ...studentTopupForm, studentName: e.target.value })}
+                  className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block font-semibold text-foreground mb-1">Họ và tên Sinh viên</label>
+              <label className="block font-semibold text-foreground mb-1">Số tiền nạp trợ cấp (VNĐ) *</label>
               <input
-                type="text"
+                type="number"
                 required
-                value={studentTopupForm.studentName}
-                onChange={(e) => setStudentTopupForm({ ...studentTopupForm, studentName: e.target.value })}
-                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg font-medium"
+                min={10000}
+                value={studentTopupForm.amount}
+                onChange={(e) => setStudentTopupForm({ ...studentTopupForm, amount: e.target.value })}
+                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg font-mono font-bold text-sm text-orange-600"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-foreground mb-1">Lý do nạp trợ giá / cấp vốn</label>
+              <label className="block font-semibold text-foreground mb-1">Lý do nạp trợ cấp</label>
               <input
                 type="text"
                 value={studentTopupForm.reason}
@@ -751,20 +827,12 @@ export const FinancePage: React.FC = () => {
               />
             </div>
 
-            <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-800 dark:text-orange-300 text-[11px] space-y-1">
-              <p className="font-bold flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-                <span>Hiệu Lực Tức Thì:</span>
-              </p>
-              <p>Số dư ví của sinh viên sẽ tăng ngay lập tức và sinh viên có thể dùng để ăn trưa tại POS / Kiosk / App ngay sau khi nạp.</p>
-            </div>
-
-            <DialogFooter>
+            <DialogFooter className="pt-2">
               <Button type="button" variant="outline" onClick={() => setShowStudentTopupModal(false)}>
                 Hủy
               </Button>
               <Button type="submit" variant="default" className="bg-orange-600 hover:bg-orange-700 text-white font-bold">
-                Xác Nhận Nạp Ví Cho Sinh Viên
+                Xác Nhận Nạp Vào Ví
               </Button>
             </DialogFooter>
           </form>
