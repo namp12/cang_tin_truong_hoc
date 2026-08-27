@@ -551,7 +551,17 @@ export const InventoryPage: React.FC = () => {
               <label className="block font-semibold text-foreground mb-1">Nhà cung cấp đối tác *</label>
               <select
                 value={inboundForm.supplierName}
-                onChange={(e) => setInboundForm({ ...inboundForm, supplierName: e.target.value })}
+                onChange={(e) => {
+                  const nextSupplier = e.target.value;
+                  const firstItem = stocks.find((s) => s.supplierName === nextSupplier);
+                  setInboundForm({
+                    ...inboundForm,
+                    supplierName: nextSupplier,
+                    ingredientName: firstItem ? firstItem.name : '',
+                    unit: firstItem ? firstItem.unit : 'kg',
+                    unitPrice: firstItem ? firstItem.unitPrice : 0,
+                  });
+                }}
                 aria-label="Chọn nhà cung cấp"
                 className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
               >
@@ -577,11 +587,16 @@ export const InventoryPage: React.FC = () => {
                 aria-label="Chọn nguyên liệu nhập kho"
                 className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
               >
-                {stocks.map((s) => (
-                  <option key={s.id} value={s.name}>
-                    {s.name} (Tồn hiện tại: {s.quantity} {s.unit})
-                  </option>
-                ))}
+                {stocks
+                  .filter((s) => s.supplierName === inboundForm.supplierName)
+                  .map((s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name} (Tồn hiện tại: {s.quantity} {s.unit})
+                    </option>
+                  ))}
+                {stocks.filter((s) => s.supplierName === inboundForm.supplierName).length === 0 && (
+                  <option value="">-- Chưa đăng ký mặt hàng cho nhà cung cấp này --</option>
+                )}
               </select>
             </div>
 
@@ -673,6 +688,29 @@ export const InventoryPage: React.FC = () => {
             </div>
 
             <div>
+              <label className="block font-semibold text-foreground mb-1">Nhà phân phối / Thương hiệu *</label>
+              <select
+                value={outboundForm.supplierName}
+                onChange={(e) => {
+                  const nextSupplier = e.target.value;
+                  const firstItem = stocks.find((s) => s.supplierName === nextSupplier);
+                  setOutboundForm({
+                    ...outboundForm,
+                    supplierName: nextSupplier,
+                    ingredientName: firstItem ? firstItem.name : '',
+                    unit: firstItem ? firstItem.unit : 'kg',
+                  });
+                }}
+                aria-label="Chọn nhà phân phối"
+                className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
+              >
+                {suppliersList.map((sup) => (
+                  <option key={sup.id} value={sup.name}>{sup.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label className="block font-semibold text-foreground mb-1">Chọn nguyên liệu xuất *</label>
               <select
                 value={outboundForm.ingredientName}
@@ -687,25 +725,16 @@ export const InventoryPage: React.FC = () => {
                 aria-label="Chọn nguyên liệu xuất kho"
                 className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
               >
-                {stocks.map((s) => (
-                  <option key={s.id} value={s.name}>
-                    {s.name} (Khả dụng: {s.available} {s.unit})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block font-semibold text-foreground mb-1">Nhà phân phối / Thương hiệu *</label>
-              <select
-                value={outboundForm.supplierName}
-                onChange={(e) => setOutboundForm({ ...outboundForm, supplierName: e.target.value })}
-                aria-label="Chọn nhà phân phối"
-                className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
-              >
-                {suppliersList.map((sup) => (
-                  <option key={sup.id} value={sup.name}>{sup.name}</option>
-                ))}
+                {stocks
+                  .filter((s) => s.supplierName === outboundForm.supplierName)
+                  .map((s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name} (Khả dụng: {s.available} {s.unit})
+                    </option>
+                  ))}
+                {stocks.filter((s) => s.supplierName === outboundForm.supplierName).length === 0 && (
+                  <option value="">-- Chưa đăng ký mặt hàng cho nhà cung cấp này --</option>
+                )}
               </select>
             </div>
 
