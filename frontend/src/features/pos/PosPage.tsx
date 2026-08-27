@@ -58,9 +58,11 @@ export const PosPage: React.FC = () => {
   const [voucherCode, setVoucherCode] = useState('');
   const [discount, setDiscount] = useState(0);
   const [voucherMessage, setVoucherMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'QRMOMO' | 'CASH' | 'DNUPAY'>('DNUPAY');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'QRMOMO' | 'CASH' | 'DNUPAY' | 'VIETQR'>('VIETQR');
+  const [pickupTime, setPickupTime] = useState<string>('Ăn ngay');
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [simulatingWebhook, setSimulatingWebhook] = useState(false);
 
   const [foods, setFoods] = useState<FoodCatalogItem[]>(() => dnuStore.getFoods());
   const [categories, setCategories] = useState(() => dnuStore.getCategories());
@@ -228,19 +230,29 @@ export const PosPage: React.FC = () => {
       ? 'Cán bộ DNU (Quầy POS)'
       : 'Khách vãng lai (Quầy POS)';
 
+    const payLabel =
+      selectedPaymentMethod === 'CASH'
+        ? 'Tiền mặt'
+        : selectedPaymentMethod === 'DNUPAY'
+        ? 'Ví DNU Pay'
+        : selectedPaymentMethod === 'VIETQR'
+        ? 'VietQR MB Bank'
+        : 'QR MoMo/VNPAY';
+
     const orderData = {
       id: newOrderId,
       code: orderNum,
       customerName: cName,
       canteenName: 'Căng tin Tòa G (Hà Đông)',
-      tableNumber: 'Bàn G1-02',
+      tableNumber: pickupTime !== 'Ăn ngay' ? `Hẹn lấy: ${pickupTime}` : 'Bàn G1-02',
       itemsSummary: cart.map((i) => `${i.quantity}× ${i.name}`).join(', '),
       itemsDetail: cart.map((i) => ({ name: i.name, qty: i.quantity, price: i.price, note: i.toppings?.join(', ') })),
       finalAmount: finalTotal,
       status: 'PREPARING' as const,
       paymentStatus: 'PAID' as const,
-      paymentMethod: selectedPaymentMethod === 'CASH' ? 'Tiền mặt' : selectedPaymentMethod === 'DNUPAY' ? 'Ví DNU Pay' : 'QR MoMo/VNPAY',
+      paymentMethod: payLabel,
       orderedAt: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      pickupTime: pickupTime,
     };
 
     // Save to orderStorage
@@ -264,11 +276,12 @@ export const PosPage: React.FC = () => {
       categoryLabel: 'Doanh thu POS',
       title: `Thu tiền đơn POS ${orderNum} (${cart.map((i) => `${i.quantity}x ${i.name}`).join(', ')})`,
       amount: finalTotal,
-      paymentMethod: selectedPaymentMethod,
-      paymentMethodLabel: selectedPaymentMethod === 'CASH' ? 'Tiền mặt' : selectedPaymentMethod === 'DNUPAY' ? 'Ví DNU Pay' : 'QR MoMo/VNPAY',
+      paymentMethod: selectedPaymentMethod === 'VIETQR' ? 'BANK_TRANSFER' : selectedPaymentMethod,
+      paymentMethodLabel: payLabel,
       counterpart: cName,
       performedBy: 'Thu ngân Phạm Quỳnh Như',
       canteenName: 'Căng tin Tòa G',
+      notes: pickupTime !== 'Ăn ngay' ? `Đơn hẹn lấy lúc ${pickupTime}` : undefined,
     });
 
     // Increment soldToday for foods in catalog
@@ -289,7 +302,7 @@ export const PosPage: React.FC = () => {
     emitNewOrder({
       orderId: newOrderId,
       orderNumber: orderNum,
-      tableNumber: 'Bàn G1-02',
+      tableNumber: pickupTime !== 'Ăn ngay' ? `⏰ Hẹn ${pickupTime}` : 'Bàn G1-02',
       canteenId: 1,
       customerName: cName,
       items: cart.map((i) => ({
@@ -308,13 +321,13 @@ export const PosPage: React.FC = () => {
       orderTime: new Date().toISOString().replace('T', ' ').slice(0, 19),
       cashierName: 'Phạm Quỳnh Như (Quầy POS Tòa G)',
       canteenName: 'Căng tin Trung Tâm (Tòa nhà G - Hà Đông)',
-      tableNumber: 'Bàn G1-02',
+      tableNumber: pickupTime !== 'Ăn ngay' ? `⏰ Khung giờ hẹn: ${pickupTime}` : 'Bàn G1-02',
       items: cart.map((i) => ({ name: i.name, qty: i.quantity, price: i.price })),
       subtotal,
       discount,
       voucherCode,
       finalTotal,
-      paymentMethod: selectedPaymentMethod === 'CASH' ? 'Tiền mặt' : selectedPaymentMethod === 'DNUPAY' ? 'Ví DNU Pay' : 'QR MoMo/VNPAY',
+      paymentMethod: payLabel,
     };
 
     setReceiptData(receipt);
@@ -509,24 +522,41 @@ export const PosPage: React.FC = () => {
 
         {/* Voucher & Calculations */}
         <div className="pt-3 border-t border-border space-y-2.5">
-          {/* Customer Role Selector */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Đối tượng khách hàng</label>
-            <select
-              value={customerRole}
-              onChange={(e) => {
-                setCustomerRole(e.target.value as any);
-                setDiscount(0);
-                setVoucherCode('');
-                setVoucherMessage(null);
-              }}
-              aria-label="Chọn đối tượng khách hàng"
-              className="w-full px-2.5 py-1.5 text-xs bg-muted/60 border border-input rounded-lg font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
-            >
-              <option value="STUDENT">🎓 Sinh viên DNU</option>
-              <option value="STAFF">🧑‍🏫 Cán bộ / Giảng viên</option>
-              <option value="GUEST">👤 Khách vãng lai</option>
-            </select>
+          {/* Customer Role & Scheduled Pickup Selector */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Đối tượng</label>
+              <select
+                value={customerRole}
+                onChange={(e) => {
+                  setCustomerRole(e.target.value as any);
+                  setDiscount(0);
+                  setVoucherCode('');
+                  setVoucherMessage(null);
+                }}
+                aria-label="Chọn đối tượng khách hàng"
+                className="w-full px-2 py-1.5 text-xs bg-muted/60 border border-input rounded-lg font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
+              >
+                <option value="STUDENT">🎓 Sinh viên</option>
+                <option value="STAFF">🧑‍🏫 Cán bộ/GV</option>
+                <option value="GUEST">👤 Khách vãng lai</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Giờ nhận món</label>
+              <select
+                value={pickupTime}
+                onChange={(e) => setPickupTime(e.target.value)}
+                aria-label="Chọn khung giờ nhận món"
+                className="w-full px-2 py-1.5 text-xs bg-muted/60 border border-input rounded-lg font-semibold focus:outline-none focus:ring-1 focus:ring-primary text-orange-600 dark:text-orange-400"
+              >
+                <option value="Ăn ngay">🍽️ Ăn ngay tại bàn</option>
+                <option value="11:45 (Tan tiết 4)">⏰ 11:45 (Tan tiết 4)</option>
+                <option value="12:15 (Tan tiết 5)">⏰ 12:15 (Tan tiết 5)</option>
+                <option value="17:30 (Tan ca chiều)">⏰ 17:30 (Tan ca chiều)</option>
+              </select>
+            </div>
           </div>
 
           {/* Voucher Input */}
@@ -648,44 +678,102 @@ export const PosPage: React.FC = () => {
                   <p className="text-2xl font-black text-primary mt-1">{formatCurrency(finalTotal)}</p>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <label className="block text-xs font-semibold text-muted-foreground">Chọn phương thức thanh toán:</label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-4 gap-1.5">
                     <button
-                      onClick={() => setSelectedPaymentMethod('DNUPAY')}
-                      className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 text-xs font-bold transition-all ${
-                        selectedPaymentMethod === 'DNUPAY'
-                          ? 'border-orange-500 bg-orange-500/10 text-orange-600 dark:text-orange-400'
+                      onClick={() => setSelectedPaymentMethod('VIETQR')}
+                      className={`p-2 rounded-xl border flex flex-col items-center gap-1 text-[11px] font-bold transition-all ${
+                        selectedPaymentMethod === 'VIETQR'
+                          ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400 ring-2 ring-blue-500/30'
                           : 'border-border hover:bg-muted text-muted-foreground'
                       }`}
                     >
-                      <CreditCard className="w-5 h-5" />
-                      <span>Ví DNU Pay</span>
+                      <QrCode className="w-4 h-4 text-blue-600" />
+                      <span>VietQR</span>
+                    </button>
+                    <button
+                      onClick={() => setSelectedPaymentMethod('DNUPAY')}
+                      className={`p-2 rounded-xl border flex flex-col items-center gap-1 text-[11px] font-bold transition-all ${
+                        selectedPaymentMethod === 'DNUPAY'
+                          ? 'border-orange-500 bg-orange-500/10 text-orange-600 dark:text-orange-400 ring-2 ring-orange-500/30'
+                          : 'border-border hover:bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      <CreditCard className="w-4 h-4 text-orange-600" />
+                      <span>Ví DNU</span>
                     </button>
                     <button
                       onClick={() => setSelectedPaymentMethod('QRMOMO')}
-                      className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 text-xs font-bold transition-all ${
+                      className={`p-2 rounded-xl border flex flex-col items-center gap-1 text-[11px] font-bold transition-all ${
                         selectedPaymentMethod === 'QRMOMO'
-                          ? 'border-pink-500 bg-pink-500/10 text-pink-600'
+                          ? 'border-pink-500 bg-pink-500/10 text-pink-600 ring-2 ring-pink-500/30'
                           : 'border-border hover:bg-muted text-muted-foreground'
                       }`}
                     >
-                      <QrCode className="w-5 h-5" />
-                      <span>QR MoMo</span>
+                      <QrCode className="w-4 h-4 text-pink-600" />
+                      <span>MoMo</span>
                     </button>
                     <button
                       onClick={() => setSelectedPaymentMethod('CASH')}
-                      className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 text-xs font-bold transition-all ${
+                      className={`p-2 rounded-xl border flex flex-col items-center gap-1 text-[11px] font-bold transition-all ${
                         selectedPaymentMethod === 'CASH'
-                          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600'
+                          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 ring-2 ring-emerald-500/30'
                           : 'border-border hover:bg-muted text-muted-foreground'
                       }`}
                     >
-                      <Banknote className="w-5 h-5" />
+                      <Banknote className="w-4 h-4 text-emerald-600" />
                       <span>Tiền Mặt</span>
                     </button>
                   </div>
                 </div>
+
+                {/* VIETQR DYNAMIC DISPLAY & WEBHOOK SIMULATION */}
+                {selectedPaymentMethod === 'VIETQR' && (
+                  <div className="p-3 bg-muted/40 rounded-xl border border-blue-500/30 space-y-2 text-center">
+                    <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground">
+                      <span className="text-blue-600 font-mono">MB Bank (Napas 247)</span>
+                      <span>STK: 0987654321</span>
+                    </div>
+
+                    <div className="w-32 h-32 mx-auto bg-white p-1.5 rounded-lg border border-border shadow-xs flex items-center justify-center">
+                      <img
+                        src={`https://api.vietqr.io/image/970422-0987654321-compact.png?amount=${finalTotal}&addInfo=DNU%20POS`}
+                        alt="VietQR MB Bank"
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+
+                    <div className="text-[10px] space-y-0.5">
+                      <p className="font-bold text-foreground">CAN TIN DAI HOC DAI NAM</p>
+                      <p className="text-muted-foreground font-mono">Nội dung: DNU POS (Khớp tự động)</p>
+                    </div>
+
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setSimulatingWebhook(true);
+                        setTimeout(() => {
+                          setSimulatingWebhook(false);
+                          handlePay();
+                        }, 900);
+                      }}
+                      disabled={simulatingWebhook}
+                      variant="outline"
+                      size="sm"
+                      className="w-full bg-blue-600/10 hover:bg-blue-600/20 text-blue-700 dark:text-blue-300 border-blue-500/40 text-xs font-bold shadow-xs"
+                    >
+                      {simulatingWebhook ? (
+                        <span>⏳ Đang nhận tiền từ ngân hàng...</span>
+                      ) : (
+                        <span>⚡ Giả Lập Tiền Về (Tự Động Khớp)</span>
+                      )}
+                    </Button>
+                  </div>
+                )}
 
                 <div className="flex gap-2 pt-2">
                   <Button onClick={handlePay} variant="primary" className="flex-1 py-2.5 font-bold">

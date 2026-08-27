@@ -13,6 +13,7 @@ export interface OrderItem {
   paymentStatus: 'PAID' | 'UNPAID' | 'REFUNDED';
   paymentMethod: string;
   orderedAt: string;
+  pickupTime?: string; // 'Ăn ngay' | '11:45 (Tan tiết 4)' | '12:15 (Tan tiết 5)' | '17:30'
 }
 
 export interface KitchenTicket {
@@ -26,6 +27,7 @@ export interface KitchenTicket {
   elapsedMinutes: number;
   completedAt?: string;
   isRealtimeNew?: boolean;
+  pickupTime?: string;
 }
 
 const STORAGE_ORDERS_KEY = 'dnu_canteen_orders_v2';
@@ -256,6 +258,7 @@ export const orderStorage = {
       orderTime: new Date().toLocaleTimeString().slice(0, 5),
       elapsedMinutes: 0,
       isRealtimeNew: true,
+      pickupTime: order.pickupTime,
     };
     const updatedTickets = [newTicket, ...tickets.filter((t) => t.id !== order.id)];
     this.saveKitchenTickets(updatedTickets);

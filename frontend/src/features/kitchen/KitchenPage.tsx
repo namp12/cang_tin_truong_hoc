@@ -278,7 +278,14 @@ export const KitchenPage: React.FC = () => {
                 <Card key={ticket.id} className="border-amber-200 dark:border-amber-900/40 shadow-sm hover:shadow-md transition-all">
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                      <span className="font-extrabold text-sm text-foreground">{ticket.orderNumber}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-extrabold text-sm text-foreground">{ticket.orderNumber}</span>
+                        {ticket.pickupTime && ticket.pickupTime !== 'Ăn ngay' && (
+                          <Badge variant="warning" className="text-[10px] bg-purple-600 text-white font-bold animate-pulse">
+                            ⏰ Hẹn: {ticket.pickupTime}
+                          </Badge>
+                        )}
+                      </div>
                       <Badge variant="neutral" size="sm">{ticket.table}</Badge>
                     </div>
 
@@ -325,7 +332,14 @@ export const KitchenPage: React.FC = () => {
                 <Card key={ticket.id} className="border-blue-300 dark:border-blue-900/40 shadow-sm ring-1 ring-blue-400/20">
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                      <span className="font-extrabold text-sm text-blue-600 dark:text-blue-400">{ticket.orderNumber}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-extrabold text-sm text-blue-600 dark:text-blue-400">{ticket.orderNumber}</span>
+                        {ticket.pickupTime && ticket.pickupTime !== 'Ăn ngay' && (
+                          <Badge variant="warning" className="text-[10px] bg-purple-600 text-white font-bold animate-pulse">
+                            ⏰ Hẹn: {ticket.pickupTime}
+                          </Badge>
+                        )}
+                      </div>
                       <Badge variant="info" size="sm">{ticket.table}</Badge>
                     </div>
 
