@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog.js';
+import { dnuStore, PromotionVoucher } from '../../services/dnuStore.js';
 import { formatCurrency } from '../../utils/format.js';
 import { 
   Gift, 
@@ -16,173 +17,159 @@ import {
   CheckCircle2, 
   Copy, 
   AlertCircle,
-  Sparkles
+  Sparkles,
+  Trash2
 } from 'lucide-react';
-
-interface PromotionVoucher {
-  id: number;
-  code: string;
-  title: string;
-  discountType: 'PERCENT' | 'FIXED_AMOUNT';
-  discountValue: number;
-  minOrderValue: number;
-  maxDiscount?: number;
-  usedCount: number;
-  maxUsage: number;
-  validFrom: string;
-  validTo: string;
-  targetStudents: string;
-  status: 'ACTIVE' | 'EXPIRED' | 'UPCOMING';
-}
 
 export const PromotionsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  const [vouchers, setVouchers] = useState<PromotionVoucher[]>([
-    {
-      id: 1,
-      code: 'DNUCHAO2026',
-      title: 'Chào đón Tân Sinh Viên Khóa K18 DNU',
-      discountType: 'PERCENT',
-      discountValue: 20,
-      minOrderValue: 30000,
-      maxDiscount: 15000,
-      usedCount: 245,
-      maxUsage: 500,
-      validFrom: '2026-08-01',
-      validTo: '2026-10-31',
-      targetStudents: 'Tất cả sinh viên DNU K18',
-      status: 'ACTIVE',
-    },
-    {
-      id: 2,
-      code: 'DNUK18',
-      title: 'Voucher Giảm 20.000đ Đơn Ăn Trưa Tòa G',
-      discountType: 'FIXED_AMOUNT',
-      discountValue: 20000,
-      minOrderValue: 50000,
-      usedCount: 180,
-      maxUsage: 300,
-      validFrom: '2026-08-15',
-      validTo: '2026-09-30',
-      targetStudents: 'Sinh viên CNTT, Dược, Y Khoa',
-      status: 'ACTIVE',
-    },
-    {
-      id: 3,
-      code: 'DNUFOOD',
-      title: 'Ưu đãi Giảm 10.000đ Combo Trưa',
-      discountType: 'FIXED_AMOUNT',
-      discountValue: 10000,
-      minOrderValue: 35000,
-      usedCount: 412,
-      maxUsage: 1000,
-      validFrom: '2026-08-01',
-      validTo: '2026-12-31',
-      targetStudents: 'Toàn trường Đại Học Đại Nam',
-      status: 'ACTIVE',
-    },
-    {
-      id: 4,
-      code: 'DNUGARDEN',
-      title: 'Giảm 15% Đồ Uống Căng Tin Garden & Coffee',
-      discountType: 'PERCENT',
-      discountValue: 15,
-      minOrderValue: 20000,
-      usedCount: 88,
-      maxUsage: 200,
-      validFrom: '2026-08-20',
-      validTo: '2026-09-20',
-      targetStudents: 'Khách hàng khu Thể Thao DNU',
-      status: 'ACTIVE',
-    },
-  ]);
+  const [vouchers, setVouchers] = useState<PromotionVoucher[]>(() => dnuStore.getVouchers());
 
-  const copyVoucher = (code: string) => {
+  const [voucherForm, setVoucherForm] = useState({
+    code: '',
+    title: '',
+    discountType: 'PERCENT' as PromotionVoucher['discountType'],
+    discountValue: '20',
+    minOrderValue: '30000',
+    maxDiscount: '15000',
+    maxUsage: '500',
+    validTo: '2026-10-31',
+    targetStudents: 'Tất cả sinh viên DNU',
+  });
+
+  const handleCopy = (code: string) => {
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
+  const handleSaveVoucher = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!voucherForm.code || !voucherForm.title) return;
+
+    const newVoucher: PromotionVoucher = {
+      id: Date.now(),
+      code: voucherForm.code.toUpperCase(),
+      title: voucherForm.title,
+      discountType: voucherForm.discountType,
+      discountValue: Number(voucherForm.discountValue) || 10,
+      minOrderValue: Number(voucherForm.minOrderValue) || 30000,
+      maxDiscount: Number(voucherForm.maxDiscount) || 15000,
+      usedCount: 0,
+      maxUsage: Number(voucherForm.maxUsage) || 500,
+      validFrom: new Date().toISOString().slice(0, 10),
+      validTo: voucherForm.validTo || '2026-12-31',
+      targetStudents: voucherForm.targetStudents,
+      status: 'ACTIVE',
+    };
+
+    const updated = [newVoucher, ...vouchers];
+    setVouchers(updated);
+    dnuStore.saveVouchers(updated);
+    setShowAddModal(false);
+  };
+
+  const handleDeleteVoucher = (id: number) => {
+    if (window.confirm('Bạn có chắc muốn xóa mã voucher này?')) {
+      const updated = vouchers.filter((v) => v.id !== id);
+      setVouchers(updated);
+      dnuStore.saveVouchers(updated);
+    }
+  };
+
+  const filteredVouchers = vouchers.filter(
+    (v) =>
+      v.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      v.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="space-y-5">
-      {/* Page Header */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-foreground tracking-tight">Khuyến Mãi & Voucher Sinh Viên DNU</h2>
-          <p className="text-xs text-muted-foreground">Thiết lập mã giảm giá, chương trình chào đón Tân sinh viên và voucher kích cầu căng tin</p>
+          <h2 className="text-xl font-bold text-foreground tracking-tight flex items-center gap-2">
+            <span>Khuyến Mãi & Mã Voucher DNU</span>
+            <Badge variant="primary" className="text-xs font-mono">{vouchers.length} mã</Badge>
+          </h2>
+          <p className="text-xs text-muted-foreground">Tạo mã giảm giá, voucher sinh viên và theo dõi số lượt sử dụng thực tế</p>
         </div>
         <Button onClick={() => setShowAddModal(true)} variant="default" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
           Tạo Voucher Mới
         </Button>
       </div>
 
+      {/* Filter and Search Bar */}
+      <Card>
+        <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Tìm theo mã voucher hoặc tên chương trình..."
+              className="w-full pl-9 pr-3.5 py-2 bg-muted/60 border border-input rounded-lg text-xs text-foreground focus:bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Vouchers Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {vouchers.map((v) => (
-          <Card key={v.id} className="relative overflow-hidden hover:border-orange-500/50 transition-all shadow-xs border-dashed border-2">
-            <div className="absolute top-0 right-0">
-              <Badge variant={v.status === 'ACTIVE' ? 'success' : 'outline'} className="rounded-none rounded-bl-lg text-[10px]">
-                {v.status === 'ACTIVE' ? 'Đang hiệu lực' : 'Hết hạn'}
-              </Badge>
-            </div>
-            <CardContent className="p-5 space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="p-3 rounded-2xl bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
-                  <Gift className="w-6 h-6" />
-                </div>
-                <div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredVouchers.map((voucher) => (
+          <Card key={voucher.id} className="hover:border-primary/50 transition-colors shadow-xs flex flex-col justify-between group">
+            <CardContent className="p-5 space-y-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-black text-base text-foreground tracking-wider bg-muted/60 px-2 py-0.5 rounded border border-border">
-                      {v.code}
+                    <span className="font-mono font-extrabold text-sm px-2.5 py-1 rounded-lg bg-primary/10 text-primary border border-primary/20 tracking-wider">
+                      {voucher.code}
                     </span>
                     <button
-                      onClick={() => copyVoucher(v.code)}
-                      className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors"
-                      title="Sao chép mã"
+                      onClick={() => handleCopy(voucher.code)}
+                      className="p-1 hover:bg-muted rounded text-muted-foreground transition-colors"
+                      title="Copy mã"
                     >
-                      {copiedCode === v.code ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                      {copiedCode === voucher.code ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                     </button>
                   </div>
-                  <h3 className="font-bold text-xs text-foreground mt-1">{v.title}</h3>
+                  <h3 className="font-bold text-xs text-foreground leading-snug">{voucher.title}</h3>
                 </div>
+                <Badge variant={voucher.status === 'ACTIVE' ? 'success' : 'secondary'} className="text-[10px] shrink-0">
+                  {voucher.status === 'ACTIVE' ? 'Đang chạy' : 'Hết hạn'}
+                </Badge>
               </div>
 
-              <div className="bg-muted/40 p-3 rounded-lg border border-border/60 text-xs space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Mức giảm giá:</span>
-                  <span className="font-bold text-orange-600 dark:text-orange-400">
-                    {v.discountType === 'PERCENT' ? `Giảm ${v.discountValue}%` : `Giảm ${formatCurrency(v.discountValue)}`}
+              <div className="p-3 bg-muted/40 rounded-xl border border-border/60 text-xs space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Mức giảm:</span>
+                  <span className="font-bold text-orange-600 dark:text-orange-400 font-mono">
+                    {voucher.discountType === 'PERCENT' ? `Giảm ${voucher.discountValue}%` : `Giảm ${formatCurrency(voucher.discountValue)}`}
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Đơn tối thiểu:</span>
-                  <span className="font-semibold text-foreground">{formatCurrency(v.minOrderValue)}</span>
+                  <span className="font-semibold text-foreground font-mono">{formatCurrency(voucher.minOrderValue)}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Đối tượng áp dụng:</span>
-                  <span className="font-medium text-foreground">{v.targetStudents}</span>
-                </div>
-              </div>
-
-              <div className="space-y-1 pt-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Lượt sử dụng:</span>
-                  <span className="font-bold text-foreground">{v.usedCount} / {v.maxUsage}</span>
-                </div>
-                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-orange-500 rounded-full" 
-                    style={{ width: `${(v.usedCount / v.maxUsage) * 100}%` }}
-                  />
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Đã sử dụng:</span>
+                  <span className="font-bold text-primary font-mono">{voucher.usedCount} / {voucher.maxUsage} lượt</span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 border-t border-border">
-                <span>Hạn dùng: {v.validFrom} ➔ {v.validTo}</span>
-                <span className="font-semibold text-primary">Áp dụng quầy & app</span>
+              <div className="pt-2 border-t border-border flex items-center justify-between text-xs">
+                <span className="text-muted-foreground text-[11px]">Hạn đến: {voucher.validTo}</span>
+                <button
+                  onClick={() => handleDeleteVoucher(voucher.id)}
+                  className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded"
+                  title="Xóa voucher"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
             </CardContent>
           </Card>
@@ -193,51 +180,93 @@ export const PromotionsPage: React.FC = () => {
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Tạo Mã Khuyến Mãi / Voucher Mới</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Gift className="w-5 h-5 text-primary" />
+              <span>Tạo Mã Khuyến Mãi / Voucher Mới</span>
+            </DialogTitle>
             <DialogDescription>
-              Cấu hình mã giảm giá áp dụng trên Quầy POS và Cổng Đặt Món Sinh Viên DNU
+              Cấu hình mã giảm giá áp dụng trên Quầy POS, Kiosk và Cổng Đặt Món Sinh Viên DNU
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 py-2 text-xs">
+
+          <form onSubmit={handleSaveVoucher} className="space-y-3 py-2 text-xs">
             <div>
               <label className="block font-semibold text-foreground mb-1">Mã Voucher (In hoa) *</label>
               <input
                 type="text"
+                required
+                value={voucherForm.code}
+                onChange={(e) => setVoucherForm({ ...voucherForm, code: e.target.value.toUpperCase() })}
                 placeholder="VD: DNU2026"
                 className="w-full px-3 py-2 bg-background border border-input rounded-lg font-mono font-bold uppercase focus:ring-2 focus:ring-ring"
               />
             </div>
+
             <div>
               <label className="block font-semibold text-foreground mb-1">Tiêu đề chương trình *</label>
               <input
                 type="text"
-                placeholder="VD: Giảm 15% Đơn Đầu Tiên"
+                required
+                value={voucherForm.title}
+                onChange={(e) => setVoucherForm({ ...voucherForm, title: e.target.value })}
+                placeholder="VD: Giảm 20% Cho Đơn Ăn Trưa"
                 className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
               />
             </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block font-semibold text-foreground mb-1">Loại giảm giá</label>
-                <select className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring">
-                  <option value="PERCENT">Giảm theo %</option>
-                  <option value="FIXED">Giảm số tiền cố định (VNĐ)</option>
+                <select
+                  value={voucherForm.discountType}
+                  onChange={(e) => setVoucherForm({ ...voucherForm, discountType: e.target.value as any })}
+                  aria-label="Chọn loại giảm giá"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
+                >
+                  <option value="PERCENT">Giảm theo % (Phần trăm)</option>
+                  <option value="FIXED_AMOUNT">Giảm số tiền cố định (VNĐ)</option>
                 </select>
               </div>
               <div>
-                <label className="block font-semibold text-foreground mb-1">Giá trị giảm</label>
+                <label className="block font-semibold text-foreground mb-1">Giá trị giảm *</label>
                 <input
                   type="number"
-                  placeholder="VD: 20 hoặc 15000"
+                  required
+                  value={voucherForm.discountValue}
+                  onChange={(e) => setVoucherForm({ ...voucherForm, discountValue: e.target.value })}
+                  placeholder="20 hoặc 15000"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-lg font-mono font-bold focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Đơn tối thiểu (VNĐ)</label>
+                <input
+                  type="number"
+                  value={voucherForm.minOrderValue}
+                  onChange={(e) => setVoucherForm({ ...voucherForm, minOrderValue: e.target.value })}
+                  className="w-full px-3 py-2 bg-background border border-input rounded-lg font-mono focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Hạn áp dụng</label>
+                <input
+                  type="date"
+                  value={voucherForm.validTo}
+                  onChange={(e) => setVoucherForm({ ...voucherForm, validTo: e.target.value })}
                   className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
                 />
               </div>
             </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={() => setShowAddModal(false)} variant="default" className="w-full">
-              Kích Hoạt & Phát Hành Voucher
-            </Button>
-          </DialogFooter>
+
+            <DialogFooter className="pt-2">
+              <Button type="submit" variant="default" className="w-full font-bold">
+                Kích Hoạt & Phát Hành Voucher
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

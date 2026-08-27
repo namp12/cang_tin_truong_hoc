@@ -3,7 +3,8 @@ import { Card, CardContent } from '../../components/ui/Card.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '../../components/ui/dialog.js';
-import { initialFoodCatalog, FoodCatalogItem } from '../../data/foodCatalog.js';
+import { dnuStore } from '../../services/dnuStore.js';
+import { FoodCatalogItem } from '../../data/foodCatalog.js';
 import { formatCurrency } from '../../utils/format.js';
 import { 
   Search, 
@@ -25,7 +26,7 @@ export const FoodsPage: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingFood, setEditingFood] = useState<FoodCatalogItem | null>(null);
 
-  const [foods, setFoods] = useState<FoodCatalogItem[]>(initialFoodCatalog);
+  const [foods, setFoods] = useState<FoodCatalogItem[]>(() => dnuStore.getFoods());
 
   const [formState, setFormState] = useState({
     name: '',
@@ -76,22 +77,21 @@ export const FoodsPage: React.FC = () => {
     e.preventDefault();
     if (!formState.name || !formState.basePrice) return;
 
+    let updatedList: FoodCatalogItem[];
     if (editingFood) {
       // Edit existing
-      setFoods((prev) =>
-        prev.map((f) =>
-          f.id === editingFood.id
-            ? {
-                ...f,
-                name: formState.name,
-                category: formState.category,
-                price: Number(formState.basePrice),
-                costPrice: Number(formState.costPrice) || Number(formState.basePrice) * 0.5,
-                desc: formState.desc,
-                imageUrl: formState.imageUrl,
-              }
-            : f
-        )
+      updatedList = foods.map((f) =>
+        f.id === editingFood.id
+          ? {
+              ...f,
+              name: formState.name,
+              category: formState.category,
+              price: Number(formState.basePrice),
+              costPrice: Number(formState.costPrice) || Number(formState.basePrice) * 0.5,
+              desc: formState.desc,
+              imageUrl: formState.imageUrl,
+            }
+          : f
       );
     } else {
       // Create new
@@ -108,15 +108,19 @@ export const FoodsPage: React.FC = () => {
         status: 'ACTIVE',
         isBest: false,
       };
-      setFoods([created, ...foods]);
+      updatedList = [created, ...foods];
     }
 
+    setFoods(updatedList);
+    dnuStore.saveFoods(updatedList);
     setShowAddModal(false);
   };
 
   const handleDelete = (id: number) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa món ăn này khỏi thực đơn?')) {
-      setFoods((prev) => prev.filter((f) => f.id !== id));
+      const updated = foods.filter((f) => f.id !== id);
+      setFoods(updated);
+      dnuStore.saveFoods(updated);
     }
   };
 

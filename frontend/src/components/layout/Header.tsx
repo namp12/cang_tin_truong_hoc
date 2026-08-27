@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext.js';
 import { useTheme } from '../../contexts/ThemeContext.js';
 import { UserProfileModal } from '../common/UserProfileModal.js';
+import { SystemDiagnosticsModal } from '../common/SystemDiagnosticsModal.js';
 import { 
   Menu, 
   Search, 
@@ -13,7 +14,8 @@ import {
   AlertTriangle,
   UserCheck,
   Sun,
-  Moon
+  Moon,
+  Activity
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -27,6 +29,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileSidebar }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showDiagnosticsModal, setShowDiagnosticsModal] = useState(false);
   const [selectedCanteen, setSelectedCanteen] = useState('1');
 
   const notifications = [
@@ -76,6 +79,16 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileSidebar }) => {
 
         {/* Right Area: Dark Mode Toggle, Notifications & Profile */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* System Diagnostics Trigger */}
+          <button
+            onClick={() => setShowDiagnosticsModal(true)}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-bold transition-all shadow-2xs"
+            title="Kiểm thử và chuẩn đoán kết nối hệ thống"
+          >
+            <Activity className="w-3.5 h-3.5 animate-pulse" />
+            <span className="text-[11px]">Test Sync DB</span>
+          </button>
+
           {/* Dark Mode Toggle */}
           <button
             onClick={() => setTheme(isDark ? 'light' : 'dark')}
@@ -166,6 +179,16 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileSidebar }) => {
                     <UserCheck className="w-3.5 h-3.5 text-primary" />
                     <span>Hồ sơ & Tài khoản DNU</span>
                   </div>
+                  <div 
+                    onClick={() => {
+                      setShowDiagnosticsModal(true);
+                      setShowUserMenu(false);
+                    }}
+                    className="px-4 py-2 hover:bg-muted/60 cursor-pointer flex items-center gap-2.5 text-emerald-600 font-medium transition-colors"
+                  >
+                    <Activity className="w-3.5 h-3.5" />
+                    <span>Kiểm thử & Chuẩn đoán DB</span>
+                  </div>
                   <div className="px-4 py-2 hover:bg-muted/60 cursor-pointer flex items-center gap-2.5 text-foreground transition-colors">
                     <Store className="w-3.5 h-3.5 text-orange-500" />
                     <span>Căng tin: Tòa G Hà Đông</span>
@@ -189,6 +212,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileSidebar }) => {
 
       {/* Interactive User Profile Modal Dialog */}
       <UserProfileModal open={showProfileModal} onOpenChange={setShowProfileModal} />
+
+      {/* Interactive System Diagnostics & Test Suite Modal */}
+      <SystemDiagnosticsModal open={showDiagnosticsModal} onOpenChange={setShowDiagnosticsModal} />
     </>
   );
 };
