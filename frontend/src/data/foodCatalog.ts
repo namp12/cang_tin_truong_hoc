@@ -5,7 +5,9 @@ export interface FoodCatalogItem {
   category: string;
   categoryId: number;
   price: number;
-  costPrice: number;
+  costPrice?: number;
+  soldToday?: number;
+  soldYesterday?: number;
   desc: string;
   imageUrl: string;
   isBest?: boolean;

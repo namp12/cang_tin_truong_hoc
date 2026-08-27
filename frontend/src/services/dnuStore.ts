@@ -303,6 +303,7 @@ export const dnuStore = {
   },
   saveFoods(foods: FoodCatalogItem[]) {
     localStorage.setItem(KEYS.FOODS, JSON.stringify(foods));
+    window.dispatchEvent(new Event('dnu_store_updated'));
   },
 
   // 2. CATEGORIES & COMBOS
@@ -315,6 +316,7 @@ export const dnuStore = {
   },
   saveCategories(cats: CategoryItem[]) {
     localStorage.setItem(KEYS.CATEGORIES, JSON.stringify(cats));
+    window.dispatchEvent(new Event('dnu_store_updated'));
   },
   getCombos(): ComboItem[] {
     try {
@@ -325,6 +327,7 @@ export const dnuStore = {
   },
   saveCombos(combos: ComboItem[]) {
     localStorage.setItem(KEYS.COMBOS, JSON.stringify(combos));
+    window.dispatchEvent(new Event('dnu_store_updated'));
   },
 
   // 3. VOUCHERS
@@ -337,6 +340,7 @@ export const dnuStore = {
   },
   saveVouchers(vouchers: PromotionVoucher[]) {
     localStorage.setItem(KEYS.VOUCHERS, JSON.stringify(vouchers));
+    window.dispatchEvent(new Event('dnu_store_updated'));
   },
 
   // 4. USERS
@@ -349,6 +353,7 @@ export const dnuStore = {
   },
   saveUsers(users: StaffUser[]) {
     localStorage.setItem(KEYS.USERS, JSON.stringify(users));
+    window.dispatchEvent(new Event('dnu_store_updated'));
   },
 
   // 5. SUPPLIERS
@@ -361,6 +366,7 @@ export const dnuStore = {
   },
   saveSuppliers(suppliers: Supplier[]) {
     localStorage.setItem(KEYS.SUPPLIERS, JSON.stringify(suppliers));
+    window.dispatchEvent(new Event('dnu_store_updated'));
   },
 
   // 6. INVENTORY
@@ -373,6 +379,7 @@ export const dnuStore = {
   },
   saveStocks(stocks: StockItem[]) {
     localStorage.setItem(KEYS.STOCKS, JSON.stringify(stocks));
+    window.dispatchEvent(new Event('dnu_store_updated'));
   },
 
   // DIAGNOSTIC CHECK

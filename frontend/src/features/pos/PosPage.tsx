@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card.js';
 import { Button } from '../../components/ui/Button.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { ReceiptModal, ReceiptData } from '../../components/common/ReceiptModal.js';
-import { initialFoodCatalog, FoodCatalogItem } from '../../data/foodCatalog.js';
+import { FoodCatalogItem } from '../../data/foodCatalog.js';
 import { orderStorage } from '../../services/orderStorage.js';
+import { dnuStore } from '../../services/dnuStore.js';
 import { useSocket } from '../../contexts/SocketContext.js';
 import { formatCurrency } from '../../utils/format.js';
 import { 
@@ -32,32 +33,38 @@ interface CartItem {
 }
 
 export const PosPage: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = useState<number>(0);
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
-  const [cart, setCart] = useState<CartItem[]>([
-    { id: 31, name: 'Cơm Rang Dưa Bò Hà Nội', price: 35000, quantity: 2, toppings: ['Trứng ốp la (+6k)'] },
-    { id: 13, name: 'Trà Đào Cam Sả Hà Đông', price: 25000, quantity: 1 },
-  ]);
-  const [voucherCode, setVoucherCode] = useState('DNUCHAO2026');
-  const [discount, setDiscount] = useState(15000);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [voucherCode, setVoucherCode] = useState('');
+  const [discount, setDiscount] = useState(0);
+  const [voucherMessage, setVoucherMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'QRMOMO' | 'CASH' | 'DNUPAY'>('DNUPAY');
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
-  const categories = [
-    { id: 0, name: 'Tất cả món (40+)' },
-    { id: 1, name: 'Cơm Phần & Cơm Đĩa DNU' },
-    { id: 2, name: 'Bún - Phở - Mì Hà Nội' },
-    { id: 3, name: 'Bánh Mì & Đồ Ăn Vặt' },
-    { id: 4, name: 'Đồ Uống & Trà Sữa DNU' },
-    { id: 5, name: 'Tráng Miệng & Chè' },
-    { id: 10, name: 'Combo Tiết Kiệm DNU' },
-  ];
+  const [foods, setFoods] = useState<FoodCatalogItem[]>(() => dnuStore.getFoods());
+  const [categories, setCategories] = useState(() => dnuStore.getCategories());
+  const [vouchers, setVouchers] = useState(() => dnuStore.getVouchers());
 
-  const foods = initialFoodCatalog;
+  useEffect(() => {
+    const handleSync = () => {
+      setFoods(dnuStore.getFoods());
+      setCategories(dnuStore.getCategories());
+      setVouchers(dnuStore.getVouchers());
+    };
+    window.addEventListener('dnu_store_updated', handleSync);
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('focus', handleSync);
+    return () => {
+      window.removeEventListener('dnu_store_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('focus', handleSync);
+    };
+  }, []);
 
   const filteredFoods = foods.filter((f) => {
-    const matchCategory = selectedCategory === 0 || f.categoryId === selectedCategory;
+    const matchCategory = selectedCategory === 'ALL' || f.category === selectedCategory || f.categoryId.toString() === selectedCategory;
     const matchSearch = f.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchCategory && matchSearch;
   });
@@ -96,19 +103,50 @@ export const PosPage: React.FC = () => {
     );
   };
 
-  const handleApplyVoucher = () => {
-    if (voucherCode.toUpperCase() === 'DNUCHAO2026') {
-      setDiscount(15000);
-    } else if (voucherCode.toUpperCase() === 'DNUK18') {
-      setDiscount(20000);
-    } else if (voucherCode.toUpperCase() === 'DNUFOOD') {
-      setDiscount(10000);
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  const handleApplyVoucher = (codeToApply?: string) => {
+    const code = (codeToApply || voucherCode).trim().toUpperCase();
+    if (!code) {
+      setDiscount(0);
+      setVoucherMessage(null);
+      return;
+    }
+    const allVouchers = dnuStore.getVouchers();
+    const found = allVouchers.find((v) => v.code.toUpperCase() === code && v.status === 'ACTIVE');
+    if (found) {
+      if (subtotal < found.minOrderValue) {
+        setVoucherMessage({
+          type: 'error',
+          text: `Đơn tối thiểu ${formatCurrency(found.minOrderValue)} để áp dụng mã ${found.code}`,
+        });
+        setDiscount(0);
+        return;
+      }
+      let calculatedDiscount = 0;
+      if (found.discountType === 'PERCENT') {
+        calculatedDiscount = Math.round((subtotal * found.discountValue) / 100);
+        if (found.maxDiscount && calculatedDiscount > found.maxDiscount) {
+          calculatedDiscount = found.maxDiscount;
+        }
+      } else {
+        calculatedDiscount = found.discountValue;
+      }
+      setVoucherCode(found.code);
+      setDiscount(calculatedDiscount);
+      setVoucherMessage({
+        type: 'success',
+        text: `Đã áp dụng ${found.code}: Giảm -${formatCurrency(calculatedDiscount)}`,
+      });
     } else {
       setDiscount(0);
+      setVoucherMessage({
+        type: 'error',
+        text: `Mã "${code}" không hợp lệ hoặc đã hết hạn`,
+      });
     }
   };
 
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const finalTotal = Math.max(0, subtotal - discount);
 
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
@@ -123,7 +161,7 @@ export const PosPage: React.FC = () => {
     const orderNum = `#${Math.floor(1000 + Math.random() * 9000)}`;
     const newOrderId = Date.now();
 
-    orderStorage.addOrder({
+    const orderData = {
       id: newOrderId,
       code: orderNum,
       customerName: 'Khách Quầy POS Tòa G',
@@ -132,11 +170,29 @@ export const PosPage: React.FC = () => {
       itemsSummary: cart.map((i) => `${i.quantity}× ${i.name}`).join(', '),
       itemsDetail: cart.map((i) => ({ name: i.name, qty: i.quantity, price: i.price, note: i.toppings?.join(', ') })),
       finalAmount: finalTotal,
-      status: 'PREPARING',
-      paymentStatus: 'PAID',
+      status: 'PREPARING' as const,
+      paymentStatus: 'PAID' as const,
       paymentMethod: selectedPaymentMethod === 'CASH' ? 'Tiền mặt' : selectedPaymentMethod === 'DNUPAY' ? 'Ví DNU Pay' : 'QR MoMo/VNPAY',
       orderedAt: new Date().toISOString().replace('T', ' ').slice(0, 19),
+    };
+
+    // Save to orderStorage
+    orderStorage.addOrder(orderData);
+
+    // Increment soldToday for foods in catalog
+    const allFoods = dnuStore.getFoods();
+    const updatedFoods = allFoods.map((f) => {
+      const inCart = cart.find((c) => c.id === f.id || c.name === f.name);
+      if (inCart) {
+        return {
+          ...f,
+          soldToday: (f.soldToday || 0) + inCart.quantity,
+        };
+      }
+      return f;
     });
+    dnuStore.saveFoods(updatedFoods);
+    setFoods(updatedFoods);
 
     emitNewOrder({
       orderId: newOrderId,
@@ -172,10 +228,13 @@ export const PosPage: React.FC = () => {
     setReceiptData(receipt);
 
     setTimeout(() => {
-      setPaymentSuccess(false);
       setShowCheckoutModal(false);
+      setPaymentSuccess(false);
       setShowReceipt(true);
       setCart([]);
+      setVoucherCode('');
+      setDiscount(0);
+      setVoucherMessage(null);
     }, 1200);
   };
 
@@ -191,24 +250,34 @@ export const PosPage: React.FC = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="🔍 Tìm nhanh trong 40+ món ăn, bún chả, phở bò, trà đào DNU..."
+              placeholder="🔍 Tìm nhanh trong thực đơn món ăn, bún chả, phở bò, trà đào DNU..."
               className="w-full pl-10 pr-4 py-2.5 bg-muted/50 border border-input rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:bg-background transition-all"
             />
           </div>
 
           {/* Category Tabs */}
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+            <button
+              onClick={() => setSelectedCategory('ALL')}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                selectedCategory === 'ALL'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+            >
+              🍽️ Tất cả ({foods.length})
+            </button>
             {categories.map((cat) => (
               <button
                 key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
+                onClick={() => setSelectedCategory(cat.name)}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                  selectedCategory === cat.id
+                  selectedCategory === cat.name
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
-                {cat.name}
+                {cat.icon} {cat.name}
               </button>
             ))}
           </div>
@@ -325,20 +394,58 @@ export const PosPage: React.FC = () => {
         {/* Voucher & Calculations */}
         <div className="pt-3 border-t border-border space-y-2.5">
           {/* Voucher Input */}
-          <div className="flex gap-1.5">
-            <div className="relative flex-1">
-              <TicketPercent className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                value={voucherCode}
-                onChange={(e) => setVoucherCode(e.target.value)}
-                placeholder="Mã voucher DNU (DNUCHAO2026)"
-                className="w-full pl-8 pr-2 py-1.5 text-xs bg-muted/50 border border-input rounded-lg uppercase font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
-              />
+          <div className="space-y-1.5">
+            <div className="flex gap-1.5">
+              <div className="relative flex-1">
+                <TicketPercent className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={voucherCode}
+                  onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => e.key === 'Enter' && handleApplyVoucher()}
+                  placeholder="Nhập mã voucher (VD: DNU2026, DNUK18...)"
+                  className="w-full pl-8 pr-2 py-1.5 text-xs bg-muted/50 border border-input rounded-lg uppercase font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+              <Button onClick={() => handleApplyVoucher()} variant="secondary" size="sm" className="text-xs font-bold">
+                Áp Dụng
+              </Button>
             </div>
-            <Button onClick={handleApplyVoucher} variant="secondary" size="sm" className="text-xs">
-              Áp Dụng
-            </Button>
+
+            {/* Quick voucher chips from database */}
+            {vouchers.filter((v) => v.status === 'ACTIVE').length > 0 && (
+              <div className="flex flex-wrap gap-1 items-center">
+                <span className="text-[10px] text-muted-foreground">Gợi ý mã:</span>
+                {vouchers
+                  .filter((v) => v.status === 'ACTIVE')
+                  .slice(0, 3)
+                  .map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => handleApplyVoucher(v.code)}
+                      className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border transition-colors ${
+                        voucherCode === v.code && discount > 0
+                          ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'
+                          : 'bg-muted/70 text-muted-foreground hover:text-foreground border-border'
+                      }`}
+                    >
+                      {v.code} ({v.discountType === 'PERCENT' ? `-${v.discountValue}%` : `-${formatCurrency(v.discountValue)}`})
+                    </button>
+                  ))}
+              </div>
+            )}
+
+            {/* Voucher feedback message */}
+            {voucherMessage && (
+              <p
+                className={`text-[11px] font-medium ${
+                  voucherMessage.type === 'success' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                }`}
+              >
+                {voucherMessage.text}
+              </p>
+            )}
           </div>
 
           <div className="space-y-1.5 text-xs">
@@ -369,7 +476,12 @@ export const PosPage: React.FC = () => {
               Thanh Toán
             </Button>
             <Button
-              onClick={() => setCart([])}
+              onClick={() => {
+                setCart([]);
+                setVoucherCode('');
+                setDiscount(0);
+                setVoucherMessage(null);
+              }}
               disabled={cart.length === 0}
               variant="outline"
               className="w-full text-destructive border-destructive/20 hover:bg-destructive/10"
