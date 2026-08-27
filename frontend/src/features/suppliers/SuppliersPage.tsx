@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog.js';
 import { Sheet, SheetHeader, SheetTitle, SheetClose } from '../../components/ui/sheet.js';
 import { formatCurrency, formatDateTime } from '../../utils/format.js';
+import { dnuStore, Supplier } from '../../services/dnuStore.js';
 import { 
   Truck, 
   Plus, 
@@ -29,24 +30,6 @@ import {
   Send
 } from 'lucide-react';
 
-export interface Supplier {
-  id: number;
-  name: string;
-  code: string;
-  category: string;
-  contactPerson: string;
-  phone: string;
-  email: string;
-  address: string;
-  deliveryTime: string;
-  certVsattp: string;
-  monthlySpend: number;
-  debtAmount: number;
-  rating: number;
-  status: 'ACTIVE' | 'PAUSED';
-  deliveriesCount: number;
-}
-
 export const SuppliersPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('ALL');
@@ -69,76 +52,21 @@ export const SuppliersPage: React.FC = () => {
   // Supplier History Sheet State
   const [historySupplier, setHistorySupplier] = useState<Supplier | null>(null);
 
-  const [suppliers, setSuppliers] = useState<Supplier[]>([
-    {
-      id: 1,
-      name: 'Công Ty CP Chế Biến Thực Phẩm Hà Nội',
-      code: 'NCC-HANOIFOOD',
-      category: 'Thực Phẩm Tươi Sống',
-      contactPerson: 'Nguyễn Văn Hùng',
-      phone: '0912 345 678',
-      email: 'sales@hanoifood.vn',
-      address: 'KCN Quang Minh, Mê Linh, Hà Nội',
-      deliveryTime: '05:30 Sáng hàng ngày',
-      certVsattp: 'ISO 22000:2018 / VietGAP #0812-HN',
-      monthlySpend: 48500000,
-      debtAmount: 0,
-      rating: 5.0,
-      status: 'ACTIVE',
-      deliveriesCount: 28,
-    },
-    {
-      id: 2,
-      name: 'Hợp Tác Xã Nông Sản Sạch Chương Mỹ',
-      code: 'NCC-CHUONGMY',
-      category: 'Nông Sản Rau Củ',
-      contactPerson: 'Lê Thị Mai',
-      phone: '0988 765 432',
-      email: 'mai.nongsan@chuongmy.vn',
-      address: 'Thị trấn Chúc Sơn, Chương Mỹ, Hà Nội (Gần DNU)',
-      deliveryTime: '05:00 Sáng hàng ngày',
-      certVsattp: 'Chứng nhận ATTP Hà Nội #124/2025',
-      monthlySpend: 32000000,
-      debtAmount: 5200000,
-      rating: 4.9,
-      status: 'ACTIVE',
-      deliveriesCount: 30,
-    },
-    {
-      id: 3,
-      name: 'Công Ty Cổ Phần Chăn Nuôi C.P. Việt Nam',
-      code: 'NCC-CPFOOD',
-      category: 'Thực Phẩm Tươi Sống',
-      contactPerson: 'Trần Đình Trọng',
-      phone: '0903 112 233',
-      email: 'orders.hn@cp.com.vn',
-      address: 'KCN Phú Nghĩa, Chương Mỹ, Hà Nội',
-      deliveryTime: '06:00 Sáng hàng ngày',
-      certVsattp: 'HACCP Codex Alimentarius #CP-2026',
-      monthlySpend: 28000000,
-      debtAmount: 0,
-      rating: 4.8,
-      status: 'ACTIVE',
-      deliveriesCount: 26,
-    },
-    {
-      id: 4,
-      name: 'Nhà Phân Phối Nước Giải Khát & Sữa Hà Đông',
-      code: 'NCC-BEVERAGE-HD',
-      category: 'Đồ Uống & Sữa',
-      contactPerson: 'Vũ Minh Tuấn',
-      phone: '0977 889 900',
-      email: 'beverage.hadong@gmail.com',
-      address: 'Phường Vạn Phúc, Hà Đông, Hà Nội',
-      deliveryTime: 'Thứ 2 & Thứ 5 hàng tuần',
-      certVsattp: 'Đầy đủ CO/CQ từ Coca-Cola, Vinamilk',
-      monthlySpend: 21500000,
-      debtAmount: 1800000,
-      rating: 4.9,
-      status: 'ACTIVE',
-      deliveriesCount: 12,
-    },
-  ]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>(() => dnuStore.getSuppliers());
+
+  useEffect(() => {
+    dnuStore.saveSuppliers(suppliers);
+  }, [suppliers]);
+
+  useEffect(() => {
+    const handleSync = () => {
+      setSuppliers(dnuStore.getSuppliers());
+    };
+    window.addEventListener('dnu_store_updated', handleSync);
+    return () => {
+      window.removeEventListener('dnu_store_updated', handleSync);
+    };
+  }, []);
 
   // Form State for Add / Edit
   const [formData, setFormData] = useState({

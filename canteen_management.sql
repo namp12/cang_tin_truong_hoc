@@ -669,6 +669,7 @@ CREATE TABLE suppliers (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
+    category VARCHAR(100) NULL COMMENT 'Nhóm hàng cung cấp',
     tax_code VARCHAR(50) NULL,
     phone VARCHAR(20) NOT NULL,
     email VARCHAR(100) NULL,

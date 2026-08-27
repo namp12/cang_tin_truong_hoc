@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/Card.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog.js';
 import { formatCurrency, formatNumber } from '../../utils/format.js';
+import { dnuStore, StockItem, InboundReceipt, OutboundIssue, Supplier } from '../../services/dnuStore.js';
 import { 
   Package, 
   Search, 
@@ -27,41 +28,6 @@ import {
   Trash2
 } from 'lucide-react';
 
-export interface StockItem {
-  id: number;
-  code: string;
-  name: string;
-  category: string;
-  quantity: number;
-  reserved: number;
-  available: number;
-  unit: string;
-  minStock: number;
-  unitPrice: number;
-  expiryDate: string;
-  status: 'NORMAL' | 'LOW_STOCK' | 'OUT_OF_STOCK';
-}
-
-export interface InboundReceipt {
-  id: number;
-  code: string;
-  supplierName: string;
-  receivedDate: string;
-  receiver: string;
-  items: { name: string; qty: number; unit: string; price: number }[];
-  totalAmount: number;
-  status: 'COMPLETED' | 'PENDING';
-}
-
-export interface OutboundIssue {
-  id: number;
-  code: string;
-  reason: string;
-  issuedDate: string;
-  issuer: string;
-  items: { name: string; qty: number; unit: string }[];
-}
-
 export const InventoryPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('ALL');
@@ -75,72 +41,44 @@ export const InventoryPage: React.FC = () => {
   const [adjustQty, setAdjustQty] = useState<string>('');
 
   // Stock Items State
-  const [stocks, setStocks] = useState<StockItem[]>([
-    { id: 1, code: 'ING-GAO', name: 'Gạo thơm lài ST25', category: 'Ngũ Cốc & Tinh Bột', quantity: 450, reserved: 20, available: 430, unit: 'kg', minStock: 50, unitPrice: 22000, expiryDate: '15/12/2026', status: 'NORMAL' },
-    { id: 2, code: 'ING-THIT-GA', name: 'Thịt đùi gà phi lê', category: 'Thịt Tươi Sống', quantity: 8.5, reserved: 2, available: 6.5, unit: 'kg', minStock: 20, unitPrice: 75000, expiryDate: '29/08/2026', status: 'LOW_STOCK' },
-    { id: 3, code: 'ING-SUON-HEO', name: 'Sườn non heo tươi', category: 'Thịt Tươi Sống', quantity: 60, reserved: 10, available: 50, unit: 'kg', minStock: 15, unitPrice: 125000, expiryDate: '30/08/2026', status: 'NORMAL' },
-    { id: 4, code: 'ING-THIT-BO', name: 'Thịt thăn bò tươi', category: 'Thịt Tươi Sống', quantity: 40, reserved: 5, available: 35, unit: 'kg', minStock: 10, unitPrice: 210000, expiryDate: '28/08/2026', status: 'NORMAL' },
-    { id: 5, code: 'ING-TRUNG-GA', name: 'Trứng gà tươi Ba Huân', category: 'Gia Cầm & Trứng', quantity: 800, reserved: 50, available: 750, unit: 'quả', minStock: 100, unitPrice: 2800, expiryDate: '10/09/2026', status: 'NORMAL' },
-    { id: 6, code: 'ING-RAU-XA-LACH', name: 'Xà lách & Dưa chuột', category: 'Rau Củ Tươi', quantity: 4, reserved: 1, available: 3, unit: 'kg', minStock: 5, unitPrice: 18000, expiryDate: '28/08/2026', status: 'LOW_STOCK' },
-    { id: 13, code: 'ING-SIRO-DAO', name: 'Đào ngâm & Sả tươi', category: 'Pha Chế Đồ Uống', quantity: 25, reserved: 2, available: 23, unit: 'hộp', minStock: 8, unitPrice: 42000, expiryDate: '30/11/2026', status: 'NORMAL' },
-    { id: 18, code: 'ING-COCA', name: 'Coca Cola Lon 320ml', category: 'Đồ Uống Đóng Lon', quantity: 350, reserved: 20, available: 330, unit: 'lon', minStock: 50, unitPrice: 8500, expiryDate: '20/01/2027', status: 'NORMAL' },
-    { id: 20, code: 'ING-AQUAFINA', name: 'Nước Suối Aquafina 500ml', category: 'Đồ Uống Đóng Chai', quantity: 500, reserved: 30, available: 470, unit: 'chai', minStock: 100, unitPrice: 4500, expiryDate: '15/06/2027', status: 'NORMAL' },
-  ]);
+  const [stocks, setStocks] = useState<StockItem[]>(() => dnuStore.getStocks());
+  const [inboundReceipts, setInboundReceipts] = useState<InboundReceipt[]>(() => dnuStore.getInboundReceipts());
+  const [outboundIssues, setOutboundIssues] = useState<OutboundIssue[]>(() => dnuStore.getOutboundIssues());
 
-  // Inbound Receipts History
-  const [inboundReceipts, setInboundReceipts] = useState<InboundReceipt[]>([
-    {
-      id: 1,
-      code: 'PNK-20260827-01',
-      supplierName: 'Công Ty CP Chế Biến Thực Phẩm Hà Nội',
-      receivedDate: '27/08/2026 05:30',
-      receiver: 'Thủ kho Bùi Văn Quân',
-      items: [
-        { name: 'Thịt thăn bò tươi', qty: 20, unit: 'kg', price: 210000 },
-        { name: 'Sườn non heo tươi', qty: 30, unit: 'kg', price: 125000 },
-      ],
-      totalAmount: 7950000,
-      status: 'COMPLETED',
-    },
-    {
-      id: 2,
-      code: 'PNK-20260826-02',
-      supplierName: 'Hợp Tác Xã Nông Sản Sạch Chương Mỹ',
-      receivedDate: '26/08/2026 05:00',
-      receiver: 'Thủ kho Bùi Văn Quân',
-      items: [
-        { name: 'Gạo thơm lài ST25', qty: 200, unit: 'kg', price: 22000 },
-        { name: 'Rau củ xà lách sạch', qty: 25, unit: 'kg', price: 18000 },
-      ],
-      totalAmount: 4850000,
-      status: 'COMPLETED',
-    },
-  ]);
+  const suppliersList = dnuStore.getSuppliers();
 
-  // Outbound Issues History
-  const [outboundIssues, setOutboundIssues] = useState<OutboundIssue[]>([
-    {
-      id: 1,
-      code: 'PXK-20260827-01',
-      reason: 'Xuất nguyên liệu cho Bếp Căng tin Tòa G chế biến ca trưa',
-      issuedDate: '27/08/2026 09:30',
-      issuer: 'Bếp trưởng Nguyễn Văn Bếp',
-      items: [
-        { name: 'Thịt thăn bò tươi', qty: 10, unit: 'kg' },
-        { name: 'Gạo thơm lài ST25', qty: 35, unit: 'kg' },
-        { name: 'Trứng gà tươi Ba Huân', qty: 60, unit: 'quả' },
-      ],
-    },
-  ]);
+  useEffect(() => {
+    dnuStore.saveStocks(stocks);
+  }, [stocks]);
+
+  useEffect(() => {
+    dnuStore.saveInboundReceipts(inboundReceipts);
+  }, [inboundReceipts]);
+
+  useEffect(() => {
+    dnuStore.saveOutboundIssues(outboundIssues);
+  }, [outboundIssues]);
+
+  useEffect(() => {
+    const handleSync = () => {
+      setStocks(dnuStore.getStocks());
+      setInboundReceipts(dnuStore.getInboundReceipts());
+      setOutboundIssues(dnuStore.getOutboundIssues());
+    };
+    window.addEventListener('dnu_store_updated', handleSync);
+    return () => {
+      window.removeEventListener('dnu_store_updated', handleSync);
+    };
+  }, []);
 
   // Forms State
   const [inboundForm, setInboundForm] = useState({
-    supplierName: 'Công Ty CP Chế Biến Thực Phẩm Hà Nội',
+    supplierName: suppliersList[0]?.name || 'Công Ty CP Chế Biến Thực Phẩm Hà Nội',
     ingredientName: 'Thịt đùi gà phi lê',
     qty: 25,
     unit: 'kg',
     unitPrice: 75000,
-    expiryDate: '05/09/2026',
+    expiryDate: '2026-09-05',
   });
 
   const [outboundForm, setOutboundForm] = useState({
@@ -148,6 +86,7 @@ export const InventoryPage: React.FC = () => {
     ingredientName: 'Thịt đùi gà phi lê',
     qty: 5,
     unit: 'kg',
+    supplierName: suppliersList[0]?.name || 'Công Ty CP Chế Biến Thực Phẩm Hà Nội',
   });
 
   const [newItemForm, setNewItemForm] = useState({
@@ -157,6 +96,7 @@ export const InventoryPage: React.FC = () => {
     minStock: '10',
     unitPrice: '50000',
     quantity: '20',
+    supplierName: suppliersList[0]?.name || 'Công Ty CP Chế Biến Thực Phẩm Hà Nội',
   });
 
   // Handle Create Inbound Receipt (Nhập kho)
@@ -216,6 +156,7 @@ export const InventoryPage: React.FC = () => {
       issuedDate: new Date().toLocaleDateString('vi-VN') + ' ' + new Date().toLocaleTimeString().slice(0, 5),
       issuer: 'Bếp Căng tin Tòa G',
       items: [{ name: outboundForm.ingredientName, qty: Number(outboundForm.qty), unit: outboundForm.unit }],
+      supplierName: outboundForm.supplierName,
     };
     setOutboundIssues([newIssue, ...outboundIssues]);
 
@@ -258,8 +199,9 @@ export const InventoryPage: React.FC = () => {
       unit: newItemForm.unit,
       minStock: minS,
       unitPrice: Number(newItemForm.unitPrice) || 20000,
-      expiryDate: '30/12/2026',
+      expiryDate: '2026-12-30',
       status: initialQty <= minS ? 'LOW_STOCK' : 'NORMAL',
+      supplierName: newItemForm.supplierName,
     };
 
     setStocks([created, ...stocks]);
@@ -445,6 +387,7 @@ export const InventoryPage: React.FC = () => {
                 <tr className="border-b border-border bg-muted/50 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                   <th className="py-3.5 px-4">Mã</th>
                   <th className="py-3.5 px-4">Tên Nguyên Liệu</th>
+                  <th className="py-3.5 px-4">Nhà phân phối</th>
                   <th className="py-3.5 px-4">Nhóm Hàng</th>
                   <th className="py-3.5 px-4">Tồn Thực Tế</th>
                   <th className="py-3.5 px-4">Khả Dụng</th>
@@ -460,6 +403,7 @@ export const InventoryPage: React.FC = () => {
                   <tr key={item.id} className="hover:bg-muted/40 transition-colors">
                     <td className="py-3.5 px-4 font-mono font-bold">{item.code}</td>
                     <td className="py-3.5 px-4 font-bold text-foreground">{item.name}</td>
+                    <td className="py-3.5 px-4 font-semibold text-muted-foreground">{item.supplierName || 'Chưa phân loại'}</td>
                     <td className="py-3.5 px-4 text-muted-foreground">{item.category}</td>
                     <td className="py-3.5 px-4 font-bold font-mono">
                       {formatNumber(item.quantity)} {item.unit}
@@ -560,6 +504,7 @@ export const InventoryPage: React.FC = () => {
                 <tr className="border-b border-border bg-muted/50 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
                   <th className="py-3.5 px-4">Mã Phiếu Xuất</th>
                   <th className="py-3.5 px-4">Mục Đích Xuất Kho</th>
+                  <th className="py-3.5 px-4">Nhà phân phối</th>
                   <th className="py-3.5 px-4">Nguyên Liệu Xuất Cho Bếp</th>
                   <th className="py-3.5 px-4">Người Đề Xuất</th>
                   <th className="py-3.5 px-4 text-right">Thời Gian Xuất</th>
@@ -570,6 +515,7 @@ export const InventoryPage: React.FC = () => {
                   <tr key={iss.id} className="hover:bg-muted/40 transition-colors">
                     <td className="py-3.5 px-4 font-mono font-bold text-orange-600">{iss.code}</td>
                     <td className="py-3.5 px-4 font-semibold">{iss.reason}</td>
+                    <td className="py-3.5 px-4 font-semibold text-muted-foreground">{iss.supplierName || 'Chưa phân loại'}</td>
                     <td className="py-3.5 px-4">
                       {iss.items.map((i, idx) => (
                         <div key={idx} className="font-bold text-foreground">
@@ -609,10 +555,9 @@ export const InventoryPage: React.FC = () => {
                 aria-label="Chọn nhà cung cấp"
                 className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
               >
-                <option value="Công Ty CP Chế Biến Thực Phẩm Hà Nội">Công Ty CP Chế Biến Thực Phẩm Hà Nội</option>
-                <option value="Hợp Tác Xã Nông Sản Sạch Chương Mỹ">Hợp Tác Xã Nông Sản Sạch Chương Mỹ</option>
-                <option value="Công Ty Cổ Phần Chăn Nuôi C.P. Việt Nam">Công Ty Cổ Phần Chăn Nuôi C.P. Việt Nam</option>
-                <option value="Nhà Phân Phối Nước Giải Khát & Sữa Hà Đông">Nhà Phân Phối Nước Giải Khát & Sữa Hà Đông</option>
+                {suppliersList.map((sup) => (
+                  <option key={sup.id} value={sup.name}>{sup.name}</option>
+                ))}
               </select>
             </div>
 
@@ -750,6 +695,20 @@ export const InventoryPage: React.FC = () => {
               </select>
             </div>
 
+            <div>
+              <label className="block font-semibold text-foreground mb-1">Nhà phân phối / Thương hiệu *</label>
+              <select
+                value={outboundForm.supplierName}
+                onChange={(e) => setOutboundForm({ ...outboundForm, supplierName: e.target.value })}
+                aria-label="Chọn nhà phân phối"
+                className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
+              >
+                {suppliersList.map((sup) => (
+                  <option key={sup.id} value={sup.name}>{sup.name}</option>
+                ))}
+              </select>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block font-semibold text-foreground mb-1">Số lượng xuất *</label>
@@ -852,6 +811,20 @@ export const InventoryPage: React.FC = () => {
                 placeholder="VD: Cốt dừa đóng lon Bến Tre"
                 className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
               />
+            </div>
+
+            <div>
+              <label className="block font-semibold text-foreground mb-1">Nhà phân phối mặc định *</label>
+              <select
+                value={newItemForm.supplierName}
+                onChange={(e) => setNewItemForm({ ...newItemForm, supplierName: e.target.value })}
+                aria-label="Chọn nhà phân phối"
+                className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
+              >
+                {suppliersList.map((sup) => (
+                  <option key={sup.id} value={sup.name}>{sup.name}</option>
+                ))}
+              </select>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

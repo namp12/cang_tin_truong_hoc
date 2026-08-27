@@ -36,6 +36,7 @@ export const PosPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [customerRole, setCustomerRole] = useState<'STUDENT' | 'STAFF' | 'GUEST'>('STUDENT');
   const [voucherCode, setVoucherCode] = useState('');
   const [discount, setDiscount] = useState(0);
   const [voucherMessage, setVoucherMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -115,6 +116,26 @@ export const PosPage: React.FC = () => {
     const allVouchers = dnuStore.getVouchers();
     const found = allVouchers.find((v) => v.code.toUpperCase() === code && v.status === 'ACTIVE');
     if (found) {
+      // Role validation
+      if (found.targetRole && found.targetRole !== 'ALL') {
+        if (found.targetRole === 'STUDENT' && customerRole !== 'STUDENT') {
+          setVoucherMessage({
+            type: 'error',
+            text: `Voucher ${found.code} chỉ áp dụng riêng cho Sinh viên DNU!`,
+          });
+          setDiscount(0);
+          return;
+        }
+        if (found.targetRole === 'STAFF' && customerRole !== 'STAFF') {
+          setVoucherMessage({
+            type: 'error',
+            text: `Voucher ${found.code} chỉ áp dụng riêng cho Cán bộ / Giảng viên!`,
+          });
+          setDiscount(0);
+          return;
+        }
+      }
+
       if (subtotal < found.minOrderValue) {
         setVoucherMessage({
           type: 'error',
@@ -160,11 +181,12 @@ export const PosPage: React.FC = () => {
     // Broadcast order to Kitchen (KDS) realtime via WebSocket & Save to DB/Storage
     const orderNum = `#${Math.floor(1000 + Math.random() * 9000)}`;
     const newOrderId = Date.now();
+    const cName = customerRole === 'STUDENT' ? 'Sinh viên DNU (Quầy POS)' : customerRole === 'STAFF' ? 'Cán bộ DNU (Quầy POS)' : 'Khách vãng lai (Quầy POS)';
 
     const orderData = {
       id: newOrderId,
       code: orderNum,
-      customerName: 'Khách Quầy POS Tòa G',
+      customerName: cName,
       canteenName: 'Căng tin Tòa G (Hà Đông)',
       tableNumber: 'Bàn G1-02',
       itemsSummary: cart.map((i) => `${i.quantity}× ${i.name}`).join(', '),
@@ -199,7 +221,7 @@ export const PosPage: React.FC = () => {
       orderNumber: orderNum,
       tableNumber: 'Bàn G1-02',
       canteenId: 1,
-      customerName: 'Khách Quầy POS Tòa G',
+      customerName: cName,
       items: cart.map((i) => ({
         name: i.name,
         qty: i.quantity,
@@ -393,6 +415,26 @@ export const PosPage: React.FC = () => {
 
         {/* Voucher & Calculations */}
         <div className="pt-3 border-t border-border space-y-2.5">
+          {/* Customer Role Selector */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Đối tượng khách hàng</label>
+            <select
+              value={customerRole}
+              onChange={(e) => {
+                setCustomerRole(e.target.value as any);
+                setDiscount(0);
+                setVoucherCode('');
+                setVoucherMessage(null);
+              }}
+              aria-label="Chọn đối tượng khách hàng"
+              className="w-full px-2.5 py-1.5 text-xs bg-muted/60 border border-input rounded-lg font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
+            >
+              <option value="STUDENT">🎓 Sinh viên DNU</option>
+              <option value="STAFF">🧑‍🏫 Cán bộ / Giảng viên</option>
+              <option value="GUEST">👤 Khách vãng lai</option>
+            </select>
+          </div>
+
           {/* Voucher Input */}
           <div className="space-y-1.5">
             <div className="flex gap-1.5">

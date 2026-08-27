@@ -1,6 +1,4 @@
 import { initialFoodCatalog, FoodCatalogItem } from '../data/foodCatalog.js';
-import { Supplier } from '../features/suppliers/SuppliersPage.js';
-import { StockItem, InboundReceipt, OutboundIssue } from '../features/inventory/InventoryPage.js';
 
 export interface CategoryItem {
   id: number;
@@ -38,6 +36,7 @@ export interface PromotionVoucher {
   validTo: string;
   targetStudents: string;
   status: 'ACTIVE' | 'EXPIRED' | 'UPCOMING';
+  targetRole?: string;
 }
 
 export interface StaffUser {
@@ -73,6 +72,61 @@ export interface DishReview {
   comment: string;
   createdAt: string;
   likes: number;
+}
+
+export interface Supplier {
+  id: number;
+  name: string;
+  code: string;
+  category: string;
+  contactPerson: string;
+  phone: string;
+  email: string;
+  address: string;
+  deliveryTime: string;
+  certVsattp: string;
+  monthlySpend: number;
+  debtAmount: number;
+  rating: number;
+  status: 'ACTIVE' | 'PAUSED';
+  deliveriesCount: number;
+}
+
+export interface StockItem {
+  id: number;
+  code: string;
+  name: string;
+  category: string;
+  quantity: number;
+  reserved: number;
+  available: number;
+  unit: string;
+  minStock: number;
+  unitPrice: number;
+  expiryDate: string;
+  status: 'NORMAL' | 'LOW_STOCK' | 'OUT_OF_STOCK';
+  supplierName?: string;
+}
+
+export interface InboundReceipt {
+  id: number;
+  code: string;
+  supplierName: string;
+  receivedDate: string;
+  receiver: string;
+  items: { name: string; qty: number; unit: string; price: number }[];
+  totalAmount: number;
+  status: 'COMPLETED' | 'PENDING';
+}
+
+export interface OutboundIssue {
+  id: number;
+  code: string;
+  reason: string;
+  issuedDate: string;
+  issuer: string;
+  items: { name: string; qty: number; unit: string }[];
+  supplierName?: string;
 }
 
 // Storage Keys
@@ -148,31 +202,21 @@ const initialCombos: ComboItem[] = [
   {
     id: 101,
     name: 'Combo Trưa Đầy Đủ: Cơm Gà + Trà Đào Sả',
-    originalPrice: 60000,
-    comboPrice: 50000,
-    discount: '-17%',
-    items: ['1 Cơm gà xối mỡ giòn da', '1 Trà đào cam sả Hà Đông', '1 Canh rau cải thịt băm'],
-    tag: 'Tiết kiệm 10k',
+    originalPrice: 53000,
+    comboPrice: 45000,
+    discount: '15%',
+    items: ['Cơm Gà Xối Mỡ Giòn Da', 'Trà Đào Cam Sả Hà Đông'],
+    tag: 'Bestseller',
     isPopular: true,
   },
   {
     id: 102,
-    name: 'Combo Hà Nội: Bún Chả + Trà Quất Mật Ong',
-    originalPrice: 50000,
+    name: 'Combo Bữa Sáng Năng Lượng: Bánh Mì Chảo + Cafe Muối',
+    originalPrice: 52000,
     comboPrice: 42000,
-    discount: '-16%',
-    items: ['1 Suất bún chả than hoa', '1 Trà quất mật ong hoa nhài', 'Nem rán giòn kèm'],
-    tag: 'Đặc sản DNU',
-    isPopular: true,
-  },
-  {
-    id: 103,
-    name: 'Combo Bữa Sáng: Bánh Mì Chảo + Cafe Sữa',
-    originalPrice: 48000,
-    comboPrice: 40000,
-    discount: '-17%',
-    items: ['1 Chảo pate 2 trứng xúc xích', '1 Bánh mì giòn rụm', '1 Cà phê sữa đá phin'],
-    tag: 'Năng lượng ca sáng',
+    discount: '19%',
+    items: ['Bánh Mì Chảo Đặc Biệt DNU', 'Cà Phê Muối Béo Ngậy'],
+    tag: 'Ăn Sáng',
     isPopular: true,
   },
 ];
@@ -192,6 +236,7 @@ const initialVouchers: PromotionVoucher[] = [
     validTo: '2026-10-31',
     targetStudents: 'Tất cả sinh viên DNU K18',
     status: 'ACTIVE',
+    targetRole: 'STUDENT',
   },
   {
     id: 2,
@@ -206,6 +251,7 @@ const initialVouchers: PromotionVoucher[] = [
     validTo: '2026-09-30',
     targetStudents: 'Sinh viên CNTT, Dược, Y Khoa',
     status: 'ACTIVE',
+    targetRole: 'STUDENT',
   },
   {
     id: 3,
@@ -220,6 +266,7 @@ const initialVouchers: PromotionVoucher[] = [
     validTo: '2026-12-31',
     targetStudents: 'Toàn trường Đại Học Đại Nam',
     status: 'ACTIVE',
+    targetRole: 'ALL',
   },
 ];
 
@@ -289,6 +336,134 @@ const initialUsers: StaffUser[] = [
     canteenName: 'Căng tin Tòa G',
     status: 'ACTIVE',
     createdAt: '2026-08-01 08:00:00',
+  },
+];
+
+const initialSuppliers: Supplier[] = [
+  {
+    id: 1,
+    name: 'Công Ty CP Chế Biến Thực Phẩm Hà Nội',
+    code: 'NCC-HANOIFOOD',
+    category: 'Thực Phẩm Tươi Sống',
+    contactPerson: 'Nguyễn Văn Hùng',
+    phone: '0912 345 678',
+    email: 'sales@hanoifood.vn',
+    address: 'KCN Quang Minh, Mê Linh, Hà Nội',
+    deliveryTime: '05:30 Sáng hàng ngày',
+    certVsattp: 'ISO 22000:2018 / VietGAP #0812-HN',
+    monthlySpend: 48500000,
+    debtAmount: 0,
+    rating: 5.0,
+    status: 'ACTIVE',
+    deliveriesCount: 28,
+  },
+  {
+    id: 2,
+    name: 'Hợp Tác Xã Nông Sản Sạch Chương Mỹ',
+    code: 'NCC-CHUONGMY',
+    category: 'Nông Sản Rau Củ',
+    contactPerson: 'Lê Thị Mai',
+    phone: '0988 765 432',
+    email: 'mai.nongsan@chuongmy.vn',
+    address: 'Thị trấn Chúc Sơn, Chương Mỹ, Hà Nội (Gần DNU)',
+    deliveryTime: '05:00 Sáng hàng ngày',
+    certVsattp: 'Chứng nhận ATTP Hà Nội #124/2025',
+    monthlySpend: 32000000,
+    debtAmount: 5200000,
+    rating: 4.9,
+    status: 'ACTIVE',
+    deliveriesCount: 30,
+  },
+  {
+    id: 3,
+    name: 'Công Ty Cổ Phần Chăn Nuôi C.P. Việt Nam',
+    code: 'NCC-CPFOOD',
+    category: 'Thực Phẩm Tươi Sống',
+    contactPerson: 'Trần Đình Trọng',
+    phone: '0903 112 233',
+    email: 'orders.hn@cp.com.vn',
+    address: 'KCN Phú Nghĩa, Chương Mỹ, Hà Nội',
+    deliveryTime: '06:00 Sáng hàng ngày',
+    certVsattp: 'HACCP Codex Alimentarius #CP-2026',
+    monthlySpend: 28000000,
+    debtAmount: 0,
+    rating: 4.8,
+    status: 'ACTIVE',
+    deliveriesCount: 20,
+  },
+  {
+    id: 4,
+    name: 'Nhà Phân Phối Nước Giải Khát & Sữa Hà Đông',
+    code: 'NCC-BEVERAGE-HD',
+    category: 'Đồ Uống & Sữa',
+    contactPerson: 'Vũ Minh Tuấn',
+    phone: '0977 889 900',
+    email: 'beverage.hadong@gmail.com',
+    address: 'Phường Vạn Phúc, Hà Đông, Hà Nội',
+    deliveryTime: 'Thứ 2 & Thứ 5 hàng tuần',
+    certVsattp: 'Đầy đủ CO/CQ từ Coca-Cola, Vinamilk',
+    monthlySpend: 21500000,
+    debtAmount: 1800000,
+    rating: 4.9,
+    status: 'ACTIVE',
+    deliveriesCount: 12,
+  },
+];
+
+const initialStocks: StockItem[] = [
+  { id: 1, code: 'ING-GAO', name: 'Gạo thơm lài ST25', category: 'Ngũ Cốc & Tinh Bột', quantity: 450, reserved: 20, available: 430, unit: 'kg', minStock: 50, unitPrice: 22000, expiryDate: '2026-12-15', status: 'NORMAL', supplierName: 'Hợp Tác Xã Nông Sản Sạch Chương Mỹ' },
+  { id: 2, code: 'ING-THIT-GA', name: 'Thịt đùi gà phi lê', category: 'Thịt Tươi Sống', quantity: 8.5, reserved: 2, available: 6.5, unit: 'kg', minStock: 20, unitPrice: 75000, expiryDate: '2026-08-29', status: 'LOW_STOCK', supplierName: 'Công Ty Cổ Phần Chăn Nuôi C.P. Việt Nam' },
+  { id: 3, code: 'ING-SUON-HEO', name: 'Sườn non heo tươi', category: 'Thịt Tươi Sống', quantity: 60, reserved: 10, available: 50, unit: 'kg', minStock: 15, unitPrice: 125000, expiryDate: '2026-08-30', status: 'NORMAL', supplierName: 'Công Ty Cổ Phần Chăn Nuôi C.P. Việt Nam' },
+  { id: 4, code: 'ING-THIT-BO', name: 'Thịt thăn bò tươi', category: 'Thịt Tươi Sống', quantity: 40, reserved: 5, available: 35, unit: 'kg', minStock: 10, unitPrice: 210000, expiryDate: '2026-08-28', status: 'NORMAL', supplierName: 'Công Ty CP Chế Biến Thực Phẩm Hà Nội' },
+  { id: 5, code: 'ING-TRUNG-GA', name: 'Trứng gà tươi Ba Huân', category: 'Gia Cầm & Trứng', quantity: 800, reserved: 50, available: 750, unit: 'quả', minStock: 100, unitPrice: 2800, expiryDate: '2026-09-10', status: 'NORMAL', supplierName: 'Công Ty Cổ Phần Chăn Nuôi C.P. Việt Nam' },
+  { id: 6, code: 'ING-RAU-XA-LACH', name: 'Xà lách & Dưa chuột', category: 'Rau Củ Tươi', quantity: 4, reserved: 1, available: 3, unit: 'kg', minStock: 5, unitPrice: 18000, expiryDate: '2026-08-28', status: 'LOW_STOCK', supplierName: 'Hợp Tác Xã Nông Sản Sạch Chương Mỹ' },
+  { id: 13, code: 'ING-SIRO-DAO', name: 'Đào ngâm & Sả tươi', category: 'Pha Chế Đồ Uống', quantity: 25, reserved: 2, available: 23, unit: 'hộp', minStock: 8, unitPrice: 42000, expiryDate: '2026-11-30', status: 'NORMAL', supplierName: 'Nhà Phân Phối Nước Giải Khát & Sữa Hà Đông' },
+  { id: 18, code: 'ING-COCA', name: 'Coca Cola Lon 320ml', category: 'Đồ Uống Đóng Lon', quantity: 350, reserved: 20, available: 330, unit: 'lon', minStock: 50, unitPrice: 8500, expiryDate: '2027-01-20', status: 'NORMAL', supplierName: 'Nhà Phân Phối Nước Giải Khát & Sữa Hà Đông' },
+  { id: 20, code: 'ING-AQUAFINA', name: 'Nước Suối Aquafina 500ml', category: 'Đồ Uống Đóng Chai', quantity: 500, reserved: 30, available: 470, unit: 'chai', minStock: 100, unitPrice: 4500, expiryDate: '2027-06-15', status: 'NORMAL', supplierName: 'Nhà Phân Phối Nước Giải Khát & Sữa Hà Đông' },
+];
+
+const initialInboundReceipts: InboundReceipt[] = [
+  {
+    id: 1,
+    code: 'PNK-20260827-01',
+    supplierName: 'Công Ty CP Chế Biến Thực Phẩm Hà Nội',
+    receivedDate: '2026-08-27 05:30',
+    receiver: 'Thủ kho Đặng Minh Quân',
+    items: [
+      { name: 'Thịt thăn bò tươi', qty: 20, unit: 'kg', price: 210000 },
+      { name: 'Sườn non heo tươi', qty: 30, unit: 'kg', price: 125000 },
+    ],
+    totalAmount: 7950000,
+    status: 'COMPLETED',
+  },
+  {
+    id: 2,
+    code: 'PNK-20260826-02',
+    supplierName: 'Hợp Tác Xã Nông Sản Sạch Chương Mỹ',
+    receivedDate: '2026-08-26 05:00',
+    receiver: 'Thủ kho Đặng Minh Quân',
+    items: [
+      { name: 'Gạo thơm lài ST25', qty: 200, unit: 'kg', price: 22000 },
+      { name: 'Rau củ xà lách sạch', qty: 25, unit: 'kg', price: 18000 },
+    ],
+    totalAmount: 4850000,
+    status: 'COMPLETED',
+  },
+];
+
+const initialOutboundIssues: OutboundIssue[] = [
+  {
+    id: 1,
+    code: 'PXK-20260827-01',
+    reason: 'Xuất nguyên liệu cho Bếp Căng tin Tòa G chế biến ca trưa',
+    issuedDate: '2026-08-27 09:30',
+    issuer: 'Bếp trưởng Võ Hoàng Hải',
+    items: [
+      { name: 'Thịt thăn bò tươi', qty: 10, unit: 'kg' },
+      { name: 'Gạo thơm lài ST25', qty: 35, unit: 'kg' },
+      { name: 'Trứng gà tươi Ba Huân', qty: 60, unit: 'quả' },
+    ],
+    supplierName: 'Công Ty CP Chế Biến Thực Phẩm Hà Nội',
   },
 ];
 
@@ -362,7 +537,7 @@ export const dnuStore = {
       const stored = localStorage.getItem(KEYS.SUPPLIERS);
       if (stored) return JSON.parse(stored);
     } catch (e) {}
-    return [];
+    return initialSuppliers;
   },
   saveSuppliers(suppliers: Supplier[]) {
     localStorage.setItem(KEYS.SUPPLIERS, JSON.stringify(suppliers));
@@ -375,10 +550,36 @@ export const dnuStore = {
       const stored = localStorage.getItem(KEYS.STOCKS);
       if (stored) return JSON.parse(stored);
     } catch (e) {}
-    return [];
+    return initialStocks;
   },
   saveStocks(stocks: StockItem[]) {
     localStorage.setItem(KEYS.STOCKS, JSON.stringify(stocks));
+    window.dispatchEvent(new Event('dnu_store_updated'));
+  },
+
+  // 7. INBOUND RECEIPTS
+  getInboundReceipts(): InboundReceipt[] {
+    try {
+      const stored = localStorage.getItem(KEYS.INBOUND);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return initialInboundReceipts;
+  },
+  saveInboundReceipts(receipts: InboundReceipt[]) {
+    localStorage.setItem(KEYS.INBOUND, JSON.stringify(receipts));
+    window.dispatchEvent(new Event('dnu_store_updated'));
+  },
+
+  // 8. OUTBOUND ISSUES
+  getOutboundIssues(): OutboundIssue[] {
+    try {
+      const stored = localStorage.getItem(KEYS.OUTBOUND);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return initialOutboundIssues;
+  },
+  saveOutboundIssues(issues: OutboundIssue[]) {
+    localStorage.setItem(KEYS.OUTBOUND, JSON.stringify(issues));
     window.dispatchEvent(new Event('dnu_store_updated'));
   },
 

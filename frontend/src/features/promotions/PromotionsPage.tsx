@@ -38,6 +38,7 @@ export const PromotionsPage: React.FC = () => {
     maxUsage: '500',
     validTo: '2026-10-31',
     targetStudents: 'Tất cả sinh viên DNU',
+    targetRole: 'STUDENT',
   });
 
   const handleCopy = (code: string) => {
@@ -64,6 +65,7 @@ export const PromotionsPage: React.FC = () => {
       validTo: voucherForm.validTo || '2026-12-31',
       targetStudents: voucherForm.targetStudents,
       status: 'ACTIVE',
+      targetRole: voucherForm.targetRole,
     };
 
     const updated = [newVoucher, ...vouchers];
@@ -236,6 +238,32 @@ export const PromotionsPage: React.FC = () => {
                   onChange={(e) => setVoucherForm({ ...voucherForm, discountValue: e.target.value })}
                   placeholder="20 hoặc 15000"
                   className="w-full px-3 py-2 bg-background border border-input rounded-lg font-mono font-bold focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Đối tượng áp dụng</label>
+                <select
+                  value={voucherForm.targetRole}
+                  onChange={(e) => setVoucherForm({ ...voucherForm, targetRole: e.target.value })}
+                  aria-label="Chọn đối tượng áp dụng"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
+                >
+                  <option value="STUDENT">🎓 Sinh viên DNU</option>
+                  <option value="STAFF">🧑‍🏫 Cán bộ / Giảng viên</option>
+                  <option value="ALL">🌐 Tất cả người dùng</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Mô tả đối tượng</label>
+                <input
+                  type="text"
+                  value={voucherForm.targetStudents}
+                  onChange={(e) => setVoucherForm({ ...voucherForm, targetStudents: e.target.value })}
+                  placeholder="VD: Sinh viên năm nhất, K18"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
                 />
               </div>
             </div>
