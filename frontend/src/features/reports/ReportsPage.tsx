@@ -101,7 +101,7 @@ export const ReportsPage: React.FC = () => {
       const res = await fetch(queryUrl);
       if (res.ok) {
         const json = await res.json();
-        if (json.success && json.data && json.data.summary.totalOrders > 0) {
+        if (json.success && json.data) {
           setReportData(json.data);
           setIsLoading(false);
           return;
