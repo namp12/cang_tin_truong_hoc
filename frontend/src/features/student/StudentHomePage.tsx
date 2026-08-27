@@ -4,6 +4,7 @@ import { Card, CardContent } from '../../components/ui/Card.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
 import { OrderTrackingModal } from '../../components/common/OrderTrackingModal.js';
+import { initialFoodCatalog } from '../../data/foodCatalog.js';
 import { formatCurrency } from '../../utils/format.js';
 import { 
   Search, 
@@ -45,68 +46,7 @@ export const StudentHomePage: React.FC = () => {
     { id: 'FAST', name: 'Bánh Mì', icon: '🥖' },
   ];
 
-  const popularFoods = [
-    {
-      id: 31,
-      name: 'Cơm Rang Dưa Bò Hà Nội',
-      category: 'COM',
-      price: 35000,
-      rating: 4.9,
-      reviews: 185,
-      tag: 'Bán chạy số 1',
-      desc: 'Hạt cơm chiên vàng giòn, bò xào mềm thơm đậm đà, dưa cải chua muối giòn rụm.',
-    },
-    {
-      id: 32,
-      name: 'Bún Chả Hà Nội Nướng Than Hoa',
-      category: 'PHO',
-      price: 35000,
-      rating: 4.9,
-      reviews: 160,
-      tag: 'Đặc sản',
-      desc: 'Chả miếng chả băm nướng than hoa thơm lừng, bún tươi và nước chấm đu đủ cà rốt.',
-    },
-    {
-      id: 33,
-      name: 'Phở Bò Tái Lăn DNU',
-      category: 'PHO',
-      price: 40000,
-      rating: 4.8,
-      reviews: 120,
-      tag: 'Món nước',
-      desc: 'Bò tái lăn xào tỏi thơm lừng, nước dùng hầm xương 12h đậm đà kèm quẩy giòn.',
-    },
-    {
-      id: 13,
-      name: 'Trà Đào Cam Sả Hà Đông',
-      category: 'DRINK',
-      price: 25000,
-      rating: 4.9,
-      reviews: 240,
-      tag: 'Giải nhiệt',
-      desc: 'Trà đen thanh mát kết hợp đào miếng giòn ngọt và sả tươi thơm nức mũi.',
-    },
-    {
-      id: 36,
-      name: 'Cà Phê Cốt Dừa Hà Nội',
-      category: 'DRINK',
-      price: 25000,
-      rating: 4.8,
-      reviews: 110,
-      tag: 'Best Seller',
-      desc: 'Cà phê phin đậm đà kết hợp cốt dừa béo ngậy xay đá tuyết mát lạnh.',
-    },
-    {
-      id: 39,
-      name: 'Bánh Mì Chảo Đặc Biệt DNU',
-      category: 'FAST',
-      price: 30000,
-      rating: 4.9,
-      reviews: 95,
-      tag: 'Năng lượng',
-      desc: 'Pate cột đèn, 2 trứng ốp la lòng đào, xúc xích Đức và sốt cà chua sánh mịn.',
-    },
-  ];
+  const popularFoods = initialFoodCatalog.slice(0, 10);
 
   return (
     <div className="space-y-4">
@@ -163,10 +103,10 @@ export const StudentHomePage: React.FC = () => {
           <button
             key={c.id}
             onClick={() => setSelectedCat(c.id)}
-            className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition-all shadow-xs ${
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
               selectedCat === c.id
-                ? 'bg-emerald-600 text-white'
-                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                ? 'bg-orange-600 text-white shadow-xs font-bold'
+                : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50'
             }`}
           >
             <span>{c.icon}</span>
@@ -175,50 +115,55 @@ export const StudentHomePage: React.FC = () => {
         ))}
       </div>
 
-      {/* Food Section Header */}
+      {/* Section Title */}
       <div className="flex items-center justify-between pt-1">
         <div className="flex items-center gap-1.5">
           <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
-          <h3 className="text-sm font-bold text-slate-900">Món Ăn Nổi Bật</h3>
+          <h3 className="text-sm font-bold text-slate-900">Món Ăn Nổi Bật DNU</h3>
         </div>
-        <span className="text-xs font-semibold text-emerald-600 cursor-pointer">Xem tất cả</span>
+        <span className="text-xs font-semibold text-orange-600 cursor-pointer">Xem tất cả</span>
       </div>
 
-      {/* Food List Cards */}
+      {/* Food List Cards with Image */}
       <div className="space-y-3">
         {popularFoods.map((food) => (
           <div
             key={food.id}
-            className="p-3 bg-white rounded-2xl border border-slate-200/70 shadow-sm flex items-start gap-3 hover:border-emerald-500 transition-all cursor-pointer"
+            className="p-3 bg-white rounded-2xl border border-slate-200/70 shadow-sm flex items-start gap-3 hover:border-orange-500 transition-all cursor-pointer group"
             onClick={() => navigate('/student/menu')}
           >
-            <div className="w-20 h-20 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
-              <UtensilsCrossed className="w-8 h-8" />
-            </div>
+            <img
+              src={food.imageUrl}
+              alt={food.name}
+              className="w-20 h-20 rounded-xl object-cover shrink-0 border border-slate-100 shadow-xs group-hover:scale-105 transition-transform"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = 'none';
+              }}
+            />
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
-                  {food.tag}
+                <span className="text-[10px] font-bold text-orange-700 bg-orange-50 px-2 py-0.5 rounded-full">
+                  {food.isBest ? 'Bán chạy số 1' : 'Đặc sản DNU'}
                 </span>
                 <div className="flex items-center gap-0.5 text-amber-500 text-[11px] font-bold">
                   <Star className="w-3 h-3 fill-amber-400" />
-                  <span>{food.rating}</span>
-                  <span className="text-slate-400 font-normal">({food.reviews})</span>
+                  <span>4.9</span>
+                  <span className="text-slate-400 font-normal">(180)</span>
                 </div>
               </div>
 
-              <h4 className="text-xs font-bold text-slate-900 mt-1 truncate">{food.name}</h4>
+              <h4 className="text-xs font-bold text-slate-900 mt-1 truncate group-hover:text-orange-600 transition-colors">{food.name}</h4>
               <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{food.desc}</p>
 
               <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-100">
-                <span className="text-xs font-extrabold text-emerald-700">{formatCurrency(food.price)}</span>
+                <span className="text-xs font-extrabold text-orange-600 font-mono">{formatCurrency(food.price)}</span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setCartCount(cartCount + 1);
                   }}
-                  className="w-7 h-7 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shadow-sm"
+                  className="w-7 h-7 rounded-lg bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center shadow-sm"
                   title="Thêm vào giỏ"
                 >
                   <Plus className="w-4 h-4" />

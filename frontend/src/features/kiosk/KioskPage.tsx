@@ -4,6 +4,7 @@ import { Card, CardContent } from '../../components/ui/Card.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
 import { ReceiptModal, ReceiptData } from '../../components/common/ReceiptModal.js';
+import { initialFoodCatalog, FoodCatalogItem } from '../../data/foodCatalog.js';
 import { useSocket } from '../../contexts/SocketContext.js';
 import { formatCurrency } from '../../utils/format.js';
 import { 
@@ -40,22 +41,11 @@ export const KioskPage: React.FC = () => {
     { id: 10, name: 'COMBO TIẾT KIỆM', icon: '🍱' },
   ];
 
-  const foods = [
-    { id: 31, catId: 1, name: 'Cơm Rang Dưa Bò Hà Nội', price: 35000, isHot: true, desc: 'Bò mềm đậm đà, dưa cải chua giòn rụm' },
-    { id: 1, catId: 1, name: 'Cơm Gà Xối Mỡ Giòn Da', price: 35000, isHot: true, desc: 'Đùi gà chiên giòn, cơm vàng hoàng bào' },
-    { id: 2, catId: 1, name: 'Cơm Sườn Nướng Mật Ong', price: 35000, isHot: false, desc: 'Sườn non ướp mật ong than hoa' },
-    { id: 32, catId: 2, name: 'Bún Chả Hà Nội Nướng Than', price: 35000, isHot: true, desc: 'Chả miếng chả băm than hoa, bún tươi' },
-    { id: 33, catId: 2, name: 'Phở Bò Tái Lăn DNU', price: 40000, isHot: true, desc: 'Bò tái xào tỏi thơm nức, ninh xương 12h' },
-    { id: 13, catId: 4, name: 'Trà Đào Cam Sả Hà Đông', price: 25000, isHot: true, desc: 'Đào miếng giòn ngọt, sả thanh mát' },
-    { id: 36, catId: 4, name: 'Cà Phê Cốt Dừa Hà Nội', price: 25000, isHot: false, desc: 'Cốt dừa béo ngậy xay đá tuyết mát lạnh' },
-    { id: 39, catId: 3, name: 'Bánh Mì Chảo Đặc Biệt DNU', price: 30000, isHot: true, desc: 'Pate cột đèn, 2 trứng lòng đào, xúc xích' },
-    { id: 101, catId: 10, name: 'Combo Cơm Gà + Trà Đào', price: 50000, isHot: true, desc: 'Tiết kiệm 10k cho sinh viên DNU' },
-    { id: 102, catId: 10, name: 'Combo Bún Chả + Trà Quất', price: 42000, isHot: true, desc: 'Tiết kiệm 8k cho sinh viên DNU' },
-  ];
+  const foods = initialFoodCatalog;
 
-  const filteredFoods = selectedCat === 0 ? foods : foods.filter((f) => f.catId === selectedCat);
+  const filteredFoods = selectedCat === 0 ? foods : foods.filter((f) => f.categoryId === selectedCat);
 
-  const addToCart = (food: (typeof foods)[0]) => {
+  const addToCart = (food: FoodCatalogItem) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === food.id);
       if (existing) {
@@ -174,23 +164,34 @@ export const KioskPage: React.FC = () => {
               <div
                 key={f.id}
                 onClick={() => addToCart(f)}
-                className="p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-orange-500/60 hover:bg-slate-850 cursor-pointer transition-all shadow-lg hover:scale-102 flex flex-col justify-between group"
+                className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 hover:border-orange-500/60 hover:bg-slate-850 cursor-pointer transition-all shadow-lg hover:scale-102 flex flex-col justify-between group"
               >
                 <div>
+                  <div className="relative w-full h-32 rounded-xl overflow-hidden mb-2.5 bg-slate-800">
+                    <img
+                      src={f.imageUrl}
+                      alt={f.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
+                    {f.isBest && (
+                      <Badge variant="warning" className="absolute top-2 right-2 bg-orange-500 text-white font-bold text-[10px] shadow-md">
+                        HOT
+                      </Badge>
+                    )}
+                  </div>
+
                   <div className="flex items-start justify-between">
                     <h3 className="font-extrabold text-sm text-white leading-snug group-hover:text-orange-400 transition-colors">
                       {f.name}
                     </h3>
-                    {f.isHot && (
-                      <Badge variant="warning" className="bg-orange-500/20 text-orange-400 text-[9px] shrink-0">
-                        Hot
-                      </Badge>
-                    )}
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">{f.desc}</p>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
+                <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between">
                   <span className="text-base font-black text-orange-400 font-mono">
                     {formatCurrency(f.price)}
                   </span>

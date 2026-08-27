@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import { Button } from '../../components/ui/Button.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { ReceiptModal, ReceiptData } from '../../components/common/ReceiptModal.js';
+import { initialFoodCatalog, FoodCatalogItem } from '../../data/foodCatalog.js';
 import { useSocket } from '../../contexts/SocketContext.js';
 import { formatCurrency } from '../../utils/format.js';
 import { 
@@ -52,59 +53,7 @@ export const PosPage: React.FC = () => {
     { id: 10, name: 'Combo Tiết Kiệm DNU' },
   ];
 
-  const foods = [
-    // 1. Cơm Phần & Cơm Đĩa
-    { id: 31, categoryId: 1, name: 'Cơm Rang Dưa Bò Hà Nội', price: 35000, isBest: true, desc: 'Bò xào mềm, dưa chua giòn rụm' },
-    { id: 1, categoryId: 1, name: 'Cơm Gà Xối Mỡ Giòn Da', price: 35000, isBest: true, desc: 'Đùi gà góc tư da giòn rụm' },
-    { id: 2, categoryId: 1, name: 'Cơm Sườn Nướng Mật Ong', price: 35000, isBest: true, desc: 'Sườn non ướp mật ong than hoa' },
-    { id: 4, categoryId: 1, name: 'Cơm Bò Lúc Lắc Sốt Tiêu', price: 45000, desc: 'Thịt bò xào ớt chuông đậm đà' },
-    { id: 3, categoryId: 1, name: 'Cơm Tấm Sườn Bì Chả DNU', price: 40000, isBest: true, desc: 'Đầy đủ sườn bì chả ốp la' },
-    { id: 5, categoryId: 1, name: 'Cơm Thịt Kho Trứng Cút', price: 30000, desc: 'Thịt ba chỉ mềm thơm béo ngậy' },
-    { id: 6, categoryId: 1, name: 'Cơm Cá Hú Kho Tộ', price: 30000, desc: 'Cá kho tộ đậm vị ăn kèm rau luộc' },
-    { id: 25, categoryId: 1, name: 'Cơm Chiên Dương Châu', price: 30000, desc: 'Lạp xưởng, đậu Hà Lan, trứng' },
-    { id: 30, categoryId: 1, name: 'Cơm Chay Nấm Đậu Phụ', price: 25000, desc: 'Thanh đạm, bổ dưỡng' },
-
-    // 2. Bún - Phở - Mì Hà Nội
-    { id: 32, categoryId: 2, name: 'Bún Chả Hà Nội Nướng Than', price: 35000, isBest: true, desc: 'Chả nướng than hoa, bún tươi, rau sống' },
-    { id: 33, categoryId: 2, name: 'Phở Bò Tái Lăn DNU', price: 40000, isBest: true, desc: 'Bò xào tỏi thơm phức, nước ninh xương' },
-    { id: 7, categoryId: 2, name: 'Phở Bò Tái Hà Nội', price: 35000, isBest: true, desc: 'Thịt bò tươi mềm, nước dùng ngọt thanh' },
-    { id: 34, categoryId: 2, name: 'Phở Gà Ta Lá Chanh', price: 35000, desc: 'Gà ta da giòn, lá chanh thơm ngát' },
-    { id: 35, categoryId: 2, name: 'Bún Đậu Mắm Tôm Thập Cẩm', price: 40000, isBest: true, desc: 'Đậu mơ rán, chả cốm, nem rán, chân giò' },
-    { id: 9, categoryId: 2, name: 'Bún Bò Huế Đặc Biệt', price: 40000, desc: 'Sa tế cay nồng kèm chả cua' },
-    { id: 11, categoryId: 2, name: 'Bún Riêu Cua Bắp Bò', price: 35000, desc: 'Riêu cua đồng, bắp bò tươi' },
-    { id: 10, categoryId: 2, name: 'Bún Trộn Thịt Nướng DNU', price: 32000, desc: 'Thịt nướng mè rang, đậu phộng giòn' },
-    { id: 12, categoryId: 2, name: 'Mì Quảng Gà Trứng Cút', price: 35000, desc: 'Mì vàng óng, bánh tráng giòn rụm' },
-
-    // 3. Bánh Mì & Đồ Ăn Vặt
-    { id: 39, categoryId: 3, name: 'Bánh Mì Chảo Đặc Biệt DNU', price: 30000, isBest: true, desc: 'Pate, 2 trứng ốp la, xúc xích, sốt cà' },
-    { id: 21, categoryId: 3, name: 'Bánh Mì Pate Chả Lụa Hà Nội', price: 20000, isBest: true, desc: 'Bánh mì giòn rụm, pate béo' },
-    { id: 22, categoryId: 3, name: 'Bánh Mì Xíu Mại Ốp La', price: 22000, desc: 'Trứng ốp la lòng đào kèm xíu mại' },
-    { id: 40, categoryId: 3, name: 'Nem Chua Rán Phố Cổ (5c)', price: 25000, isBest: true, desc: 'Chiên xù nóng giòn chấm tương ớt' },
-    { id: 23, categoryId: 3, name: 'Bánh Bao Trứng Cút Nóng Hổi', price: 15000, desc: 'Nhân thịt mộc nhĩ trứng cút' },
-    { id: 24, categoryId: 3, name: 'Xôi Gà Xé Nấm Hương', price: 25000, desc: 'Nếp dẻo thơm, gà xé xào nấm' },
-
-    // 4. Đồ Uống & Trà Sữa DNU
-    { id: 13, categoryId: 4, name: 'Trà Đào Cam Sả Hà Đông', price: 25000, isBest: true, desc: 'Đào miếng giòn ngọt, sả thơm ngát' },
-    { id: 36, categoryId: 4, name: 'Cà Phê Cốt Dừa Hà Nội', price: 25000, isBest: true, desc: 'Cốt dừa béo ngậy xay tuyết mát lạnh' },
-    { id: 37, categoryId: 4, name: 'Cà Phê Muối Béo Ngậy', price: 22000, isBest: true, desc: 'Kem muối mặn mà, cà phê đậm đà' },
-    { id: 38, categoryId: 4, name: 'Trà Chanh Giã Tay DNU', price: 18000, desc: 'Chanh thơm nồng, thanh mát' },
-    { id: 15, categoryId: 4, name: 'Trà Sữa Trân Châu Hoàng Kim', price: 25000, isBest: true, desc: 'Trà sữa đậm vị kèm trân châu hoàng kim' },
-    { id: 14, categoryId: 4, name: 'Trà Quất Mật Ong Hoa Nhài', price: 15000, desc: 'Giải khát thanh lọc cổ họng mùa thi' },
-    { id: 17, categoryId: 4, name: 'Cà Phê Sữa Đá Phin', price: 18000, desc: 'Robusta đậm đà pha phin truyền thống' },
-    { id: 16, categoryId: 4, name: 'Cà Phê Đen Đá', price: 15000, desc: 'Nguyên chất không đường/ít đường' },
-    { id: 18, categoryId: 4, name: 'Coca Cola Lon 320ml', price: 12000, desc: 'Ướp lạnh' },
-    { id: 20, categoryId: 4, name: 'Nước Suối Aquafina 500ml', price: 8000, desc: 'Ướp lạnh' },
-
-    // 5. Tráng Miệng & Chè
-    { id: 28, categoryId: 5, name: 'Chè Thái Sầu Riêng', price: 25000, desc: 'Trái cây sữa tươi thơm lừng' },
-    { id: 27, categoryId: 5, name: 'Chè Dưỡng Nhan Tuyết Yến', price: 20000, desc: 'Thanh mát bổ dưỡng' },
-    { id: 29, categoryId: 5, name: 'Sữa Chua Trái Cây Tươi DNU', price: 18000, desc: 'Sữa chua nhà làm mix dưa hấu' },
-
-    // 6. Combo Tiết Kiệm DNU
-    { id: 101, categoryId: 10, name: 'Combo Cơm Gà + Trà Đào Cam Sả', price: 50000, isBest: true, desc: 'Tiết kiệm 10.000đ cho sinh viên' },
-    { id: 102, categoryId: 10, name: 'Combo Bún Chả + Trà Quất Mật Ong', price: 42000, isBest: true, desc: 'Tiết kiệm 8.000đ cho sinh viên' },
-    { id: 103, categoryId: 10, name: 'Combo Bánh Mì Chảo + Cafe Sữa', price: 40000, isBest: true, desc: 'Bữa sáng đầy năng lượng DNU' },
-  ];
+  const foods = initialFoodCatalog;
 
   const filteredFoods = foods.filter((f) => {
     const matchCategory = selectedCategory === 0 || f.categoryId === selectedCategory;
@@ -254,28 +203,37 @@ export const PosPage: React.FC = () => {
               <div
                 key={food.id}
                 onClick={() => addToCart(food)}
-                className="group relative bg-card border border-border hover:border-primary/50 hover:shadow-card-hover rounded-xl p-3 flex flex-col justify-between cursor-pointer transition-all duration-200 active:scale-[0.98]"
+                className="group relative bg-card border border-border hover:border-primary/50 hover:shadow-card-hover rounded-xl p-2.5 flex flex-col justify-between cursor-pointer transition-all duration-200 active:scale-[0.98]"
               >
                 <div>
-                  <div className="flex items-start justify-between gap-1 mb-1.5">
-                    <h4 className="font-bold text-xs text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
-                      {food.name}
-                    </h4>
+                  <div className="relative w-full h-24 rounded-lg overflow-hidden mb-2 bg-muted">
+                    <img
+                      src={food.imageUrl}
+                      alt={food.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = 'none';
+                      }}
+                    />
                     {food.isBest && (
-                      <Badge variant="warning" className="text-[9px] px-1 py-0 shrink-0">
+                      <Badge variant="warning" className="absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0 shadow-sm font-bold">
                         HOT
                       </Badge>
                     )}
                   </div>
+
+                  <h4 className="font-bold text-xs text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+                    {food.name}
+                  </h4>
                   {food.desc && (
-                    <p className="text-[11px] text-muted-foreground line-clamp-1 mb-2">
+                    <p className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">
                       {food.desc}
                     </p>
                   )}
                 </div>
 
                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
-                  <span className="font-extrabold text-xs text-primary">
+                  <span className="font-extrabold text-xs text-primary font-mono">
                     {formatCurrency(food.price)}
                   </span>
                   <div className="w-6 h-6 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors">
