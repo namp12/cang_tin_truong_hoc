@@ -112,6 +112,7 @@ export const StudentCartPage: React.FC = () => {
       paymentMethod: payLabel,
       orderedAt: new Date().toISOString().replace('T', ' ').slice(0, 19),
       pickupTime: pickupTime,
+      customerUsername: user?.username || 'student_2110001',
     });
 
     // 2. If DNUPAY -> Deduct Student Wallet

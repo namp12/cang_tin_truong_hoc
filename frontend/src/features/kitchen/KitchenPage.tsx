@@ -394,22 +394,34 @@ export const KitchenPage: React.FC = () => {
                       ))}
                     </div>
 
-                    <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-bold text-[11px]">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                        <span>Chờ Quầy Giao Đồ</span>
+                    <div className="pt-2 border-t border-border/60 flex flex-col gap-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-bold text-[11px]">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                          <span>Chờ Quầy Giao Đồ</span>
+                        </div>
+                        <Button
+                          onClick={() => {
+                            emitStatusUpdate(ticket.id, ticket.orderNumber, 'READY', 1);
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 font-bold text-[10px] py-1 px-2 h-7"
+                          title="Bấm để phát lại chuông báo nhận món tới Quầy Thu Ngân và Sinh Viên"
+                        >
+                          <BellRing className="w-3 h-3 mr-1 text-emerald-600 animate-bounce" />
+                          Gọi Chuông
+                        </Button>
                       </div>
+
                       <Button
-                        onClick={() => {
-                          emitStatusUpdate(ticket.id, ticket.orderNumber, 'READY', 1);
-                        }}
-                        variant="outline"
+                        onClick={() => updateStatus(ticket.id, 'COMPLETED')}
+                        variant="default"
                         size="sm"
-                        className="border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 font-bold text-xs shadow-xs"
-                        title="Bấm để phát lại chuông báo nhận món tới Quầy Thu Ngân và Sinh Viên"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
                       >
-                        <BellRing className="w-3.5 h-3.5 mr-1 text-emerald-600 animate-bounce" />
-                        Gọi Chuông
+                        <CheckCheck className="w-3.5 h-3.5 mr-1" />
+                        Đã Giao Đồ (Hoàn Tất)
                       </Button>
                     </div>
                   </CardContent>

@@ -78,15 +78,19 @@ export const OrderTrackingModal: React.FC<OrderTrackingModalProps> = ({ open, on
 
         {/* Live Status Hero Banner */}
         <div className={`p-4 rounded-xl text-white text-center space-y-1 shadow-md ${
-          order.status === 'READY'
-            ? 'bg-gradient-to-r from-emerald-600 to-teal-600 animate-pulse'
+          order.status === 'COMPLETED'
+            ? 'bg-gradient-to-r from-teal-600 to-emerald-600'
+            : order.status === 'READY'
+            ? 'bg-gradient-to-r from-emerald-500 to-teal-500 animate-pulse'
             : order.status === 'PREPARING'
             ? 'bg-gradient-to-r from-orange-600 to-amber-600'
             : 'bg-gradient-to-r from-blue-600 to-indigo-600'
         }`}>
           <p className="text-[10px] uppercase font-bold tracking-wider opacity-90">TRẠNG THÁI HIỆN TẠI</p>
           <h3 className="text-lg font-black tracking-tight">
-            {order.status === 'READY'
+            {order.status === 'COMPLETED'
+              ? '🎉 ĐƠN HÀNG ĐÃ HOÀN TẤT!'
+              : order.status === 'READY'
               ? '🔔 MÓN ĂN ĐÃ SẴN SÀNG TẠI QUẦY 1!'
               : order.status === 'PREPARING'
               ? '🍳 ĐẦU BẾP ĐANG CHẾ BIẾN MÓN...'

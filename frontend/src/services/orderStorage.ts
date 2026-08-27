@@ -14,6 +14,7 @@ export interface OrderItem {
   paymentMethod: string;
   orderedAt: string;
   pickupTime?: string; // 'Ăn ngay' | '11:45 (Tan tiết 4)' | '12:15 (Tan tiết 5)' | '17:30'
+  customerUsername?: string;
 }
 
 export interface KitchenTicket {
@@ -328,12 +329,25 @@ export const orderStorage = {
     // Broadcast status notification
     try {
       const orderCode = matchedOrder?.code || `#${ticketId}`;
+      let targetUser = matchedOrder?.customerUsername;
+      if (!targetUser && matchedOrder) {
+        const name = matchedOrder.customerName;
+        if (name.includes('Nam')) targetUser = 'student_2110001';
+        else if (name.includes('Hòa')) targetUser = 'student_2110002';
+        else if (name.includes('Đức')) targetUser = 'student_2410011';
+        else if (name.includes('Linh')) targetUser = 'student_2210005';
+        else if (name.includes('Tuấn')) targetUser = 'student_2110009';
+        else if (name.includes('Toàn')) targetUser = 'student_2310004';
+      }
+      if (!targetUser) targetUser = 'student_2110001';
+
       if (nextStatus === 'READY') {
         dnuStore.addNotification({
           title: `🔔 Món đã nấu xong ${orderCode}`,
           desc: `Bếp Tòa G đã nấu xong món ăn. Mời ${matchedOrder?.customerName || 'sinh viên'} đến nhận món tại quầy!`,
           type: 'ORDER_READY',
-          targetRole: 'ALL',
+          targetRole: 'STUDENT',
+          targetUser: targetUser,
           linkUrl: '/student/orders',
           orderCode: orderCode,
         });
@@ -342,7 +356,8 @@ export const orderStorage = {
           title: `✅ Đơn hàng hoàn tất ${orderCode}`,
           desc: `Đơn hàng đã được trả món thành công. Chúc bạn dùng bữa ngon miệng!`,
           type: 'ORDER_COMPLETED',
-          targetRole: 'ALL',
+          targetRole: 'STUDENT',
+          targetUser: targetUser,
           linkUrl: '/student/orders',
           orderCode: orderCode,
         });

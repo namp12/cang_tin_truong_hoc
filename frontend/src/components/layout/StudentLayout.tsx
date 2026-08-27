@@ -42,6 +42,19 @@ export const StudentLayout: React.FC = () => {
   );
 
   React.useEffect(() => {
+    // Prevent non-students (Admins, Cashiers, Kitchen staff) from visiting the Student layout pages
+    if (user && !isStudent) {
+      if (user.roles?.includes('CASHIER')) {
+        navigate('/admin/pos', { replace: true });
+      } else if (user.roles?.includes('KITCHEN_STAFF')) {
+        navigate('/admin/kitchen', { replace: true });
+      } else {
+        navigate('/admin/dashboard', { replace: true });
+      }
+    }
+  }, [user, isStudent, navigate]);
+
+  React.useEffect(() => {
     const handleSync = () => {
       setWalletBalance(dnuStore.getStudentWallet(studentMssv).balance);
       setCartItemsCount(dnuStore.getStudentCart().reduce((s, i) => s + i.quantity, 0));

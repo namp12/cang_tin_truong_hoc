@@ -7,6 +7,8 @@ import { OrderTrackingModal } from '../../components/common/OrderTrackingModal.j
 import { useAuth } from '../../contexts/AuthContext.js';
 import { dnuStore, StudentCartItem } from '../../services/dnuStore.js';
 import { formatCurrency } from '../../utils/format.js';
+import { useSocket } from '../../contexts/SocketContext.js';
+import { orderStorage } from '../../services/orderStorage.js';
 import { 
   Search, 
   Sparkles, 
@@ -39,6 +41,7 @@ const getStudentCohort = (username?: string) => {
 export const StudentHomePage: React.FC = () => {
   const navigate = useNavigate();
   const { user, hasRole } = useAuth();
+  const { latestStatusUpdate } = useSocket();
   const isStudent = hasRole('STUDENT') || user?.roles?.includes('STUDENT') || user?.userType === 'STUDENT';
   const studentCohort = isStudent ? getStudentCohort(user?.username) : 'DNU';
 
@@ -88,11 +91,58 @@ export const StudentHomePage: React.FC = () => {
     alert(`Cảm ơn bạn! Đánh giá món "${selectedFoodToReview}" đã được gửi thành công!`);
   };
 
+  const getLatestStudentOrder = () => {
+    const allOrders = orderStorage.getOrders();
+    const studentName = user?.fullName || 'Nguyễn Thành Nam';
+    const studentOrders = allOrders.filter((o) => o.customerName.includes(studentName));
+    
+    let active = studentOrders
+      .filter((o) => o.status !== 'COMPLETED' && o.status !== 'CANCELLED')
+      .sort((a, b) => b.id - a.id)[0];
+      
+    if (!active) {
+      active = studentOrders.sort((a, b) => b.id - a.id)[0];
+    }
+    
+    if (active) {
+      return {
+        id: active.id,
+        orderNumber: active.code,
+        status: active.status as any,
+        canteenName: active.canteenName,
+        tableNumber: active.tableNumber,
+        items: active.itemsDetail.map((it) => ({ name: it.name, qty: it.qty })),
+        totalAmount: active.finalAmount,
+        orderedAt: active.orderedAt.includes(' ') ? active.orderedAt.split(' ')[1].slice(0, 5) : '11:45',
+      };
+    }
+    
+    // Fallback Mock order if student has no orders at all
+    return {
+      id: 1029,
+      orderNumber: '#1029',
+      status: 'PREPARING' as const,
+      canteenName: 'Căng tin Tòa G (Hà Đông)',
+      tableNumber: 'Bàn G1-02',
+      items: [
+        { name: 'Cơm Gà Xối Mỡ Giòn Da', qty: 2 },
+        { name: 'Trà Đào Cam Sả Hà Đông', qty: 1 },
+      ],
+      totalAmount: 95000,
+      orderedAt: '11:45',
+    };
+  };
+
+  const [activeOrder, setActiveOrder] = useState(() => getLatestStudentOrder());
+
   React.useEffect(() => {
     const syncData = () => {
       setFoods(dnuStore.getFoods());
       setCategories(dnuStore.getCategories());
       setCartItems(dnuStore.getStudentCart());
+
+      // Sync active order status dynamically from storage
+      setActiveOrder(getLatestStudentOrder());
     };
     syncData();
     window.addEventListener('dnu_store_updated', syncData);
@@ -103,18 +153,20 @@ export const StudentHomePage: React.FC = () => {
     };
   }, []);
 
-  const activeOrder = {
-    orderNumber: '#1029',
-    status: 'PREPARING' as const,
-    canteenName: 'Căng tin Tòa G (Hà Đông)',
-    tableNumber: 'Bàn G1-02',
-    items: [
-      { name: 'Cơm Gà Xối Mỡ Giòn Da', qty: 2 },
-      { name: 'Trà Đào Cam Sả Hà Đông', qty: 1 },
-    ],
-    totalAmount: 95000,
-    orderedAt: '11:45',
-  };
+  React.useEffect(() => {
+    if (latestStatusUpdate) {
+      const updatedNum = latestStatusUpdate.orderNumber;
+      const activeNum = activeOrder.orderNumber;
+      const cleanUpdated = updatedNum.replace(/[^0-9]/g, '');
+      const cleanActive = activeNum.replace(/[^0-9]/g, '');
+      if (cleanUpdated === cleanActive && cleanUpdated.length > 0) {
+        setActiveOrder((prev) => ({
+          ...prev,
+          status: latestStatusUpdate.status as any,
+        }));
+      }
+    }
+  }, [latestStatusUpdate, activeOrder.orderNumber]);
 
   const filteredFoods = foods.filter((f) => {
     const matchCat =

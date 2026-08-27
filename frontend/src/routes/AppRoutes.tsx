@@ -102,7 +102,14 @@ export const AppRoutes: React.FC = () => {
       </Route>
 
       {/* Student Portal Mobile-First Routes */}
-      <Route path="/student" element={<StudentLayout />}>
+      <Route
+        path="/student"
+        element={
+          <ProtectedRoute>
+            <StudentLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route index element={<Navigate to="/student/home" replace />} />
         <Route path="home" element={<StudentHomePage />} />
         <Route path="menu" element={<StudentHomePage />} />

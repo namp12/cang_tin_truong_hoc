@@ -37,27 +37,27 @@ export const AiFoodAssistant: React.FC = () => {
     let filtered = [...allFoods];
 
     if (pref === 'NUTRITIOUS') {
-      filtered = allFoods.filter((f) => 
-        f.category === 'Cơm Phần & Cơm Đĩa DNU' || 
-        f.name.includes('Cơm') || 
-        f.name.includes('Xôi') || 
+      filtered = allFoods.filter((f) =>
+        f.category === 'Cơm Phần & Cơm Đĩa DNU' ||
+        f.name.includes('Cơm') ||
+        f.name.includes('Xôi') ||
         f.name.includes('Mỡ') ||
         f.name.includes('Bò')
       );
     } else if (pref === 'HEALTHY') {
-      filtered = allFoods.filter((f) => 
-        f.name.includes('Phở gà') || 
-        f.name.includes('Cháo') || 
-        f.name.includes('Rau') || 
-        f.name.includes('Salad') || 
+      filtered = allFoods.filter((f) =>
+        f.name.includes('Phở gà') ||
+        f.name.includes('Cháo') ||
+        f.name.includes('Rau') ||
+        f.name.includes('Salad') ||
         f.name.includes('Suối') ||
         f.name.includes('Táo')
       );
     } else if (pref === 'DRINK') {
-      filtered = allFoods.filter((f) => 
-        f.category === 'Đồ Uống & Tráng Miệng' || 
-        f.name.includes('Trà') || 
-        f.name.includes('Cà phê') || 
+      filtered = allFoods.filter((f) =>
+        f.category === 'Đồ Uống & Tráng Miệng' ||
+        f.name.includes('Trà') ||
+        f.name.includes('Cà phê') ||
         f.name.includes('Lon') ||
         f.name.includes('Sữa')
       );
@@ -185,11 +185,10 @@ export const AiFoodAssistant: React.FC = () => {
             {messages.map((m) => (
               <div key={m.id} className={`flex ${m.sender === 'USER' ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  className={`max-w-[85%] p-3 rounded-2xl ${
-                    m.sender === 'USER'
+                  className={`max-w-[85%] p-3 rounded-2xl ${m.sender === 'USER'
                       ? 'bg-orange-600 text-white rounded-br-none shadow-xs'
                       : 'bg-white text-foreground rounded-bl-none border border-border/80 shadow-xs'
-                  }`}
+                    }`}
                 >
                   <p className="leading-relaxed font-medium">{m.text}</p>
 
@@ -210,11 +209,10 @@ export const AiFoodAssistant: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => handleAddToCart(f)}
-                            className={`p-1.5 rounded-lg transition-colors shrink-0 ${
-                              addedItem === f.id
+                            className={`p-1.5 rounded-lg transition-colors shrink-0 ${addedItem === f.id
                                 ? 'bg-emerald-500 text-white'
                                 : 'bg-orange-500/10 text-orange-600 hover:bg-orange-500 hover:text-white'
-                            }`}
+                              }`}
                             title="Thêm vào giỏ hàng"
                           >
                             {addedItem === f.id ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
