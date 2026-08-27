@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog.js';
-import { dnuStore, DishReview } from '../../services/dnuStore.js';
+import { dnuStore, DishReview, ReviewReply } from '../../services/dnuStore.js';
 import { useAuth } from '../../contexts/AuthContext.js';
 import { 
   Star, 
@@ -13,48 +13,53 @@ import {
   Sparkles, 
   UtensilsCrossed, 
   User, 
-  Clock,
-  Filter,
-  CheckCircle2,
-  Plus,
-  Heart,
-  Store
+  Clock, 
+  Filter, 
+  CheckCircle2, 
+  Plus, 
+  Heart, 
+  Store,
+  Trash2,
+  Reply,
+  Send,
+  ShieldCheck,
+  MessageCircle,
+  AlertTriangle
 } from 'lucide-react';
 
 export const ReviewsPage: React.FC = () => {
   const { user, hasRole } = useAuth();
   const isStudent = hasRole('STUDENT') || user?.roles?.includes('STUDENT') || user?.userType === 'STUDENT';
+  const isAdminOrManager = !isStudent && (hasRole('SUPER_ADMIN') || hasRole('ADMIN') || hasRole('CANTEEN_MANAGER') || user?.roles?.includes('SUPER_ADMIN'));
 
   const [reviews, setReviews] = useState<DishReview[]>(() => dnuStore.getReviews());
   const [stats, setStats] = useState(() => dnuStore.getReviewStats());
   const [filterRating, setFilterRating] = useState<number | 'ALL'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Student Add Review Modal
   const [showAddModal, setShowAddModal] = useState(false);
   const [foods] = useState(() => dnuStore.getFoods());
   const [newReview, setNewReview] = useState({
     studentName: user?.fullName || 'Nguyễn Thành Nam',
-    studentClass: isStudent ? (user?.username || 'K16 Khoa CNTT DNU') : 'Sinh Viên DNU',
+    studentClass: isStudent ? (user?.username || 'K16 Khoa CNTT DNU') : 'K16 Khoa CNTT DNU',
     foodName: foods[0]?.name || 'Cơm Gà Xối Mỡ Giòn Da',
     rating: 5,
     comment: '',
     sentiment: 'POSITIVE' as const,
     canteenName: 'Căng tin Tòa G (Hà Đông)',
   });
-  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
-  const handleOpenAddModal = () => {
-    setNewReview({
-      studentName: user?.fullName || 'Nguyễn Thành Nam',
-      studentClass: isStudent ? (user?.username || 'K16 Khoa CNTT DNU') : 'Sinh Viên DNU',
-      foodName: foods[0]?.name || 'Cơm Gà Xối Mỡ Giòn Da',
-      rating: 5,
-      comment: '',
-      sentiment: 'POSITIVE' as const,
-      canteenName: 'Căng tin Tòa G (Hà Đông)',
-    });
-    setShowAddModal(true);
-  };
+  // Admin Reply Modal
+  const [showReplyModal, setShowReplyModal] = useState(false);
+  const [selectedReviewForReply, setSelectedReviewForReply] = useState<DishReview | null>(null);
+  const [adminReplyText, setAdminReplyText] = useState('');
+
+  // Student Inline Comment Form State
+  const [activeCommentReviewId, setActiveCommentReviewId] = useState<number | null>(null);
+  const [inlineCommentText, setInlineCommentText] = useState('');
+
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
   // Sync with dnuStore
   useEffect(() => {
@@ -74,6 +79,19 @@ export const ReviewsPage: React.FC = () => {
     dnuStore.likeReview(id);
   };
 
+  const handleOpenAddModal = () => {
+    setNewReview({
+      studentName: user?.fullName || 'Nguyễn Thành Nam',
+      studentClass: isStudent ? (user?.username || 'K16 Khoa CNTT DNU') : 'K16 Khoa CNTT DNU',
+      foodName: foods[0]?.name || 'Cơm Gà Xối Mỡ Giòn Da',
+      rating: 5,
+      comment: '',
+      sentiment: 'POSITIVE' as const,
+      canteenName: 'Căng tin Tòa G (Hà Đông)',
+    });
+    setShowAddModal(true);
+  };
+
   const handleCreateReview = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newReview.comment.trim()) return;
@@ -88,7 +106,7 @@ export const ReviewsPage: React.FC = () => {
       canteenName: newReview.canteenName,
     });
 
-    setActionSuccess(`Cảm ơn ${newReview.studentName}! Đánh giá món "${newReview.foodName}" đã được gửi thành công!`);
+    setActionSuccess(`Cảm ơn bạn! Đánh giá món "${newReview.foodName}" đã được gửi thành công!`);
     setShowAddModal(false);
     setNewReview({
       ...newReview,
@@ -96,6 +114,48 @@ export const ReviewsPage: React.FC = () => {
       rating: 5,
     });
     setTimeout(() => setActionSuccess(null), 3000);
+  };
+
+  // Admin Delete Review
+  const handleDeleteReview = (id: number, foodName: string) => {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa bài đánh giá món "${foodName}" này không?`)) {
+      dnuStore.deleteReview(id);
+      setActionSuccess(`Đã xóa thành công bài đánh giá món "${foodName}".`);
+      setTimeout(() => setActionSuccess(null), 3000);
+    }
+  };
+
+  // Admin Reply Submission
+  const handleSubmitAdminReply = () => {
+    if (!selectedReviewForReply || !adminReplyText.trim()) return;
+
+    dnuStore.replyReview(selectedReviewForReply.id, {
+      replierName: user?.fullName || 'Ban Quản Lý Căng Tin DNU',
+      content: adminReplyText.trim(),
+    });
+
+    setShowReplyModal(false);
+    setAdminReplyText('');
+    setSelectedReviewForReply(null);
+    setActionSuccess(`Đã gửi phản hồi chính thức tới sinh viên ${selectedReviewForReply.studentName}!`);
+    setTimeout(() => setActionSuccess(null), 3000);
+  };
+
+  // Student / User Inline Comment Submission
+  const handleSendInlineComment = (reviewId: number) => {
+    if (!inlineCommentText.trim()) return;
+
+    dnuStore.addReplyToReview(reviewId, {
+      authorName: user?.fullName || (isStudent ? 'Sinh viên DNU' : 'Quản Lý Căng Tin'),
+      authorRole: isStudent ? 'STUDENT' : 'ADMIN',
+      authorClass: isStudent ? (user?.username || 'SV DNU') : 'Ban Quản Lý',
+      content: inlineCommentText.trim(),
+    });
+
+    setInlineCommentText('');
+    setActiveCommentReviewId(null);
+    setActionSuccess('Bình luận của bạn đã được đăng thành công!');
+    setTimeout(() => setActionSuccess(null), 2500);
   };
 
   const filteredReviews = reviews.filter((r) => {
@@ -110,7 +170,7 @@ export const ReviewsPage: React.FC = () => {
 
   return (
     <div className="space-y-5">
-      {/* Action Toast Alert */}
+      {/* Toast Alert */}
       {actionSuccess && (
         <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center justify-between animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center gap-2">
@@ -128,7 +188,7 @@ export const ReviewsPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl font-bold text-foreground tracking-tight">
-              {isStudent ? '⭐ Đánh Giá & Cảm Nhận Món Ăn' : 'Quản Lý Đánh Giá & Phản Hồi Sinh Viên'}
+              {isStudent ? '⭐ Đánh Giá & Cảm Nhận Món Ăn' : 'Quản Lý & Kiểm Duyệt Đánh Giá Sinh Viên'}
             </h2>
             <Badge variant="primary" className="bg-amber-600 text-white font-mono text-[10px]">
               {reviews.length} REVIEW
@@ -136,20 +196,30 @@ export const ReviewsPage: React.FC = () => {
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
             {isStudent
-              ? 'Gửi nhận xét và chấm điểm sao cho các món ăn bạn đã thưởng thức tại Căng tin DNU'
-              : 'Lắng nghe ý kiến của sinh viên Đại Học Đại Nam để liên tục nâng cao chất lượng ẩm thực học đường'}
+              ? 'Sinh viên DNU cùng thảo luận, chia sẻ cảm nhận và đánh giá chất lượng món ăn căng tin'
+              : 'Ban Quản Lý theo dõi phản hồi, trả lời thắc mắc và kiểm duyệt đánh giá từ sinh viên'}
           </p>
         </div>
 
-        <Button
-          onClick={handleOpenAddModal}
-          variant="default"
-          size="sm"
-          className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs"
-          leftIcon={<Plus className="w-4 h-4" />}
-        >
-          + Gửi Đánh Giá Món Ăn
-        </Button>
+        {/* Only STUDENTS can create new dish reviews */}
+        {isStudent && (
+          <Button
+            onClick={handleOpenAddModal}
+            variant="default"
+            size="sm"
+            className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs"
+            leftIcon={<Plus className="w-4 h-4" />}
+          >
+            + Viết Đánh Giá Món Ăn
+          </Button>
+        )}
+
+        {isAdminOrManager && (
+          <Badge variant="primary" className="bg-slate-800 text-amber-300 text-xs py-1.5 px-3 flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span>Quyền Quản Trị & Kiểm Duyệt</span>
+          </Badge>
+        )}
       </div>
 
       {/* Rating Overview KPIs */}
@@ -169,7 +239,7 @@ export const ReviewsPage: React.FC = () => {
                 ))}
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Điểm trung bình ({stats.total} lượt đánh giá thực tế)
+                Điểm trung bình ({stats.total} đánh giá từ sinh viên)
               </p>
             </div>
           </div>
@@ -197,7 +267,7 @@ export const ReviewsPage: React.FC = () => {
             <div>
               <p className="text-xs font-semibold text-muted-foreground">Món Được Yêu Thích Nhất</p>
               <p className="text-sm font-bold text-foreground truncate">
-                {foods[0]?.name || 'Cơm Rang Dưa Bò Hà Nội'}
+                {foods[0]?.name || 'Cơm Gà Xối Mỡ Giòn Da'}
               </p>
             </div>
           </div>
@@ -213,7 +283,7 @@ export const ReviewsPage: React.FC = () => {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Tìm theo món ăn, sinh viên hoặc bình luận..."
+              placeholder="Tìm theo món ăn, tên sinh viên hoặc nội dung..."
               className="w-full pl-9 pr-3.5 py-2 bg-muted/50 border border-input rounded-xl text-xs focus:ring-2 focus:ring-ring text-foreground"
             />
           </div>
@@ -240,18 +310,19 @@ export const ReviewsPage: React.FC = () => {
       </Card>
 
       {/* Reviews List */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {filteredReviews.length === 0 ? (
           <Card className="p-8 text-center text-muted-foreground text-xs">
             Chưa có đánh giá nào phù hợp với bộ lọc tìm kiếm.
           </Card>
         ) : (
           filteredReviews.map((rev) => (
-            <Card key={rev.id} className="hover:border-amber-500/40 transition-all shadow-xs">
-              <CardContent className="p-5 space-y-3">
+            <Card key={rev.id} className="hover:border-amber-500/40 transition-all shadow-xs overflow-hidden">
+              <CardContent className="p-5 space-y-3.5">
+                {/* Header of review */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold text-sm flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white font-bold text-sm flex items-center justify-center shadow-xs">
                       {rev.studentName.charAt(0)}
                     </div>
                     <div>
@@ -259,8 +330,8 @@ export const ReviewsPage: React.FC = () => {
                         <h3 className="font-bold text-xs text-foreground">{rev.studentName}</h3>
                         <span className="text-[10px] text-muted-foreground font-mono">({rev.studentClass})</span>
                       </div>
-                      <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
-                        <UtensilsCrossed className="w-3 h-3" />
+                      <p className="text-[11px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1">
+                        <UtensilsCrossed className="w-3.5 h-3.5" />
                         <span>{rev.foodName}</span>
                       </p>
                     </div>
@@ -276,20 +347,139 @@ export const ReviewsPage: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Review Body */}
                 <p className="text-xs text-foreground leading-relaxed bg-muted/30 p-3 rounded-xl border border-border/50">
                   "{rev.comment}"
                 </p>
 
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1">
-                  <span>Tại: <strong className="text-foreground">{rev.canteenName}</strong></span>
-                  <button
-                    type="button"
-                    onClick={() => handleLike(rev.id)}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-muted/60 hover:bg-amber-500/10 hover:text-amber-600 transition-colors font-medium"
-                  >
-                    <ThumbsUp className="w-3.5 h-3.5 text-amber-600" />
-                    <span>{rev.likes} Hữu ích</span>
-                  </button>
+                {/* Official Admin Reply Box (If exists) */}
+                {rev.adminReply && (
+                  <div className="p-3 bg-amber-500/10 border-l-4 border-amber-500 rounded-r-xl space-y-1 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-300">
+                        <ShieldCheck className="w-4 h-4 text-amber-600" />
+                        <span>Phản Hồi Từ Ban Quản Lý Căng Tin:</span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground font-mono">{rev.adminReply.repliedAt}</span>
+                    </div>
+                    <p className="text-foreground/90 pl-5">{rev.adminReply.content}</p>
+                  </div>
+                )}
+
+                {/* Other Students' Replies / Comments */}
+                {rev.replies && rev.replies.length > 0 && (
+                  <div className="space-y-2 pl-3 border-l-2 border-slate-200 dark:border-slate-800">
+                    {rev.replies.map((reply) => (
+                      <div key={reply.id} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-border/40 text-xs space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-foreground">
+                            {reply.authorName} <span className="text-[10px] text-muted-foreground font-normal">({reply.authorClass})</span>
+                          </span>
+                          <span className="text-[10px] text-muted-foreground font-mono">{reply.createdAt}</span>
+                        </div>
+                        <p className="text-foreground/90 text-[11px]">{reply.content}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Inline Comment Input (When open) */}
+                {activeCommentReviewId === rev.id && (
+                  <div className="p-3 bg-muted/40 rounded-xl border border-border space-y-2 animate-in fade-in">
+                    <label className="block text-[11px] font-bold text-foreground">
+                      Bình luận / Xác nhận cảm nhận của bạn:
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={inlineCommentText}
+                        onChange={(e) => setInlineCommentText(e.target.value)}
+                        placeholder="Ví dụ: Mình cũng ăn món này rồi, rất ngon và nóng sốt..."
+                        className="flex-1 px-3 py-1.5 bg-background border border-input rounded-lg text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSendInlineComment(rev.id);
+                        }}
+                      />
+                      <Button
+                        onClick={() => handleSendInlineComment(rev.id)}
+                        variant="default"
+                        size="sm"
+                        className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs"
+                      >
+                        <Send className="w-3.5 h-3.5 mr-1" />
+                        Gửi
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setActiveCommentReviewId(null);
+                          setInlineCommentText('');
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                      >
+                        Hủy
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Card Action Footer */}
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/40">
+                  <span className="truncate max-w-[200px]">Tại: <strong className="text-foreground">{rev.canteenName}</strong></span>
+
+                  <div className="flex items-center gap-2">
+                    {/* Like / Agree Button */}
+                    <button
+                      type="button"
+                      onClick={() => handleLike(rev.id)}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted/60 hover:bg-amber-500/10 hover:text-amber-600 transition-colors font-semibold"
+                    >
+                      <ThumbsUp className="w-3.5 h-3.5 text-amber-600" />
+                      <span>{rev.likes} Hữu ích</span>
+                    </button>
+
+                    {/* Student Comment / Confirm Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveCommentReviewId(activeCommentReviewId === rev.id ? null : rev.id);
+                        setInlineCommentText('');
+                      }}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted/60 hover:bg-blue-500/10 hover:text-blue-600 transition-colors font-semibold"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5 text-blue-600" />
+                      <span>{rev.replies?.length || 0} Bình luận</span>
+                    </button>
+
+                    {/* Admin Actions: Reply & Delete */}
+                    {isAdminOrManager && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedReviewForReply(rev);
+                            setAdminReplyText(rev.adminReply?.content || '');
+                            setShowReplyModal(true);
+                          }}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 font-bold transition-colors"
+                          title="Trả lời chính thức từ Ban Quản Lý"
+                        >
+                          <Reply className="w-3.5 h-3.5" />
+                          <span>Trả Lời</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteReview(rev.id, rev.foodName)}
+                          className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-500/10 rounded-lg transition-colors"
+                          title="Xóa đánh giá này (Quyền Admin)"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -298,7 +488,7 @@ export const ReviewsPage: React.FC = () => {
       </div>
 
       {/* ========================================================= */}
-      {/* MODAL: VIẾT ĐÁNH GIÁ MÓN ĂN                              */}
+      {/* MODAL 1: VIẾT ĐÁNH GIÁ MÓN ĂN (CHỈ DÀNH CHO SINH VIÊN)     */}
       {/* ========================================================= */}
       <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
         <DialogContent className="max-w-md">
@@ -349,59 +539,22 @@ export const ReviewsPage: React.FC = () => {
                     />
                   </button>
                 ))}
-                <span className="ml-2 font-bold text-amber-600">
-                  {newReview.rating === 5 ? 'Tuyệt hảo (5/5)' : newReview.rating === 4 ? 'Rất ngon (4/5)' : newReview.rating === 3 ? 'Bình thường (3/5)' : 'Cần cải thiện'}
+                <span className="ml-auto font-mono font-bold text-amber-600 text-sm">
+                  {newReview.rating} / 5 Sao
                 </span>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block font-semibold text-foreground mb-1">Tên sinh viên / người đánh giá</label>
-                <input
-                  type="text"
-                  required
-                  value={newReview.studentName}
-                  onChange={(e) => setNewReview({ ...newReview, studentName: e.target.value })}
-                  className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg font-medium"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold text-foreground mb-1">Khóa & Lớp học</label>
-                <input
-                  type="text"
-                  required
-                  value={newReview.studentClass}
-                  onChange={(e) => setNewReview({ ...newReview, studentClass: e.target.value })}
-                  className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg font-mono text-xs"
-                />
-              </div>
-            </div>
-
             <div>
-              <label className="block font-semibold text-foreground mb-1">Nhận xét chi tiết *</label>
+              <label className="block font-semibold text-foreground mb-1">Cảm nhận chi tiết của bạn *</label>
               <textarea
-                required
                 rows={3}
-                placeholder="VD: Cơm rang dưa bò thơm giòn, thịt bò mềm và dưa vừa ăn. Rất ngon miệng!"
+                required
                 value={newReview.comment}
                 onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })}
-                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg"
+                placeholder="Món ăn vừa miệng, thịt thơm giòn, cơm dẻo, phục vụ nhiệt tình..."
+                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg resize-none"
               />
-            </div>
-
-            <div>
-              <label className="block font-semibold text-foreground mb-1">Cơ sở căng tin</label>
-              <select
-                value={newReview.canteenName}
-                onChange={(e) => setNewReview({ ...newReview, canteenName: e.target.value })}
-                className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg"
-              >
-                <option value="Căng tin Tòa G (Hà Đông)">Căng tin Tòa G (Hà Đông)</option>
-                <option value="Căng tin Tòa A-B DNU">Căng tin Tòa A-B DNU</option>
-                <option value="Căng tin DNU Garden & Coffee">Căng tin DNU Garden & Coffee</option>
-              </select>
             </div>
 
             <DialogFooter>
@@ -413,6 +566,65 @@ export const ReviewsPage: React.FC = () => {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ========================================================= */}
+      {/* MODAL 2: TRẢ LỜI ĐÁNH GIÁ (DÀNH CHO ADMIN / QUẢN LÝ)       */}
+      {/* ========================================================= */}
+      <Dialog open={showReplyModal} onOpenChange={setShowReplyModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-foreground">
+              <span className="p-2 rounded-xl bg-amber-500/15 text-amber-600">
+                <Reply className="w-5 h-5 text-amber-600" />
+              </span>
+              <span>Phản Hồi Đánh Giá Sinh Viên</span>
+            </DialogTitle>
+            <DialogDescription>
+              Gửi phản hồi chính thức từ Ban Quản Lý Căng Tin DNU tới sinh viên {selectedReviewForReply?.studentName}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedReviewForReply && (
+            <div className="space-y-3.5 py-2 text-xs">
+              <div className="p-3 bg-muted/50 rounded-xl border border-border space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-foreground">{selectedReviewForReply.studentName}</span>
+                  <span className="text-amber-500 font-bold">{selectedReviewForReply.rating}★</span>
+                </div>
+                <p className="text-muted-foreground text-[11px]">"{selectedReviewForReply.comment}"</p>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-foreground mb-1">
+                  Nội dung phản hồi của Ban Quản Lý *
+                </label>
+                <textarea
+                  rows={4}
+                  required
+                  value={adminReplyText}
+                  onChange={(e) => setAdminReplyText(e.target.value)}
+                  placeholder="Căng tin DNU trân trọng cảm ơn bạn đã góp ý. Nhà bếp sẽ kiểm tra và điều chỉnh hương vị ngay trong ca ăn tới..."
+                  className="w-full px-3 py-2 bg-muted/40 border border-input rounded-lg resize-none"
+                />
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setShowReplyModal(false)}>
+                  Hủy
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleSubmitAdminReply}
+                  variant="default"
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold"
+                >
+                  Gửi Phản Hồi Chính Thức
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

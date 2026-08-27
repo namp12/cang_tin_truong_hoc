@@ -154,6 +154,15 @@ export interface StudentWallet {
   transactions: WalletTransaction[];
 }
 
+export interface ReviewReply {
+  id: number;
+  authorName: string;
+  authorRole: 'STUDENT' | 'ADMIN' | 'CANTEEN_MANAGER';
+  authorClass?: string;
+  content: string;
+  createdAt: string;
+}
+
 export interface DishReview {
   id: number;
   studentName: string;
@@ -165,6 +174,12 @@ export interface DishReview {
   createdAt: string;
   likes: number;
   canteenName: string;
+  adminReply?: {
+    replierName: string;
+    content: string;
+    repliedAt: string;
+  };
+  replies?: ReviewReply[];
 }
 
 // Storage Keys
@@ -1070,6 +1085,54 @@ export const dnuStore = {
     const list = this.getReviews();
     const updated = list.map((r) => (r.id === id ? { ...r, likes: r.likes + 1 } : r));
     this.saveReviews(updated);
+  },
+  deleteReview(id: number) {
+    const list = this.getReviews();
+    const updated = list.filter((r) => r.id !== id);
+    this.saveReviews(updated);
+    return updated;
+  },
+  replyReview(id: number, reply: { replierName: string; content: string }) {
+    const list = this.getReviews();
+    const updated = list.map((r) =>
+      r.id === id
+        ? {
+            ...r,
+            adminReply: {
+              replierName: reply.replierName || 'Ban Quản Lý Căng Tin DNU',
+              content: reply.content,
+              repliedAt: 'Vừa xong',
+            },
+          }
+        : r
+    );
+    this.saveReviews(updated);
+    return updated;
+  },
+  addReplyToReview(
+    reviewId: number,
+    comment: { authorName: string; authorRole: 'STUDENT' | 'ADMIN' | 'CANTEEN_MANAGER'; authorClass?: string; content: string }
+  ) {
+    const list = this.getReviews();
+    const updated = list.map((r) => {
+      if (r.id === reviewId) {
+        const newReply: ReviewReply = {
+          id: Date.now(),
+          authorName: comment.authorName,
+          authorRole: comment.authorRole,
+          authorClass: comment.authorClass,
+          content: comment.content,
+          createdAt: 'Vừa xong',
+        };
+        return {
+          ...r,
+          replies: [...(r.replies || []), newReply],
+        };
+      }
+      return r;
+    });
+    this.saveReviews(updated);
+    return updated;
   },
   getReviewStats() {
     const list = this.getReviews();
