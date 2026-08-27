@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '../../components/ui/Card.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
 import { Sheet, SheetHeader, SheetTitle, SheetClose } from '../../components/ui/sheet.js';
+import { useSocket } from '../../contexts/SocketContext.js';
 import { formatCurrency, formatDateTime } from '../../utils/format.js';
 import { 
   Search, 
@@ -16,7 +17,8 @@ import {
   User,
   MapPin,
   CreditCard,
-  Layers
+  Layers,
+  Wifi
 } from 'lucide-react';
 
 interface OrderItemRow {
@@ -35,11 +37,12 @@ interface OrderItemRow {
 }
 
 export const OrdersPage: React.FC = () => {
+  const { latestOrder, latestStatusUpdate, isConnected } = useSocket();
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<OrderItemRow | null>(null);
 
-  const orders: OrderItemRow[] = [
+  const [orders, setOrders] = useState<OrderItemRow[]>([
     {
       id: 1,
       code: 'ORD-20260826-0001',
@@ -123,7 +126,42 @@ export const OrdersPage: React.FC = () => {
       paymentMethod: 'Tiền mặt',
       orderedAt: '2026-08-26 11:55:00',
     },
-  ];
+  ]);
+
+  // Listen to new orders created in realtime via WebSocket
+  useEffect(() => {
+    if (latestOrder) {
+      const newRow: OrderItemRow = {
+        id: latestOrder.orderId,
+        code: `ORD-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${latestOrder.orderNumber.replace('#', '')}`,
+        customerName: latestOrder.customerName,
+        canteenName: 'Căng tin Tòa G (Hà Đông)',
+        tableNumber: latestOrder.tableNumber,
+        itemsSummary: latestOrder.items.map((i) => `${i.qty}× ${i.name}`).join(', '),
+        itemsDetail: latestOrder.items,
+        finalAmount: latestOrder.totalAmount,
+        status: latestOrder.status,
+        paymentStatus: 'PAID',
+        paymentMethod: 'Quầy POS / DNU Pay',
+        orderedAt: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      };
+
+      setOrders((prev) => [newRow, ...prev]);
+    }
+  }, [latestOrder]);
+
+  // Listen to status changes from Kitchen
+  useEffect(() => {
+    if (latestStatusUpdate) {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === latestStatusUpdate.orderId || o.code.includes(latestStatusUpdate.orderNumber.replace('#', ''))
+            ? { ...o, status: latestStatusUpdate.status as OrderItemRow['status'] }
+            : o
+        )
+      );
+    }
+  }, [latestStatusUpdate]);
 
   const getStatusBadge = (status: OrderItemRow['status']) => {
     switch (status) {
