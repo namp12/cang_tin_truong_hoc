@@ -22,10 +22,13 @@ import {
 import { formatCurrency } from '../../utils/format.js';
 import { dnuStore, SystemNotification } from '../../services/dnuStore.js';
 import { cn } from '../../utils/cn.js';
+import { useSocket } from '../../contexts/SocketContext.js';
+import { orderStorage } from '../../services/orderStorage.js';
 
 export const StudentLayout: React.FC = () => {
   const { user, logout, isStudent } = useAuth();
   const navigate = useNavigate();
+  const { latestStatusUpdate } = useSocket();
   const isAdminOrStaff = user && !isStudent;
   const studentMssv = isStudent && user?.username ? user.username.replace(/\D/g, '') || '2110001' : '2110001';
 
@@ -52,6 +55,56 @@ export const StudentLayout: React.FC = () => {
       }
     }
   }, [user, isStudent, navigate]);
+
+  React.useEffect(() => {
+    if (latestStatusUpdate) {
+      const { orderId, orderNumber, status } = latestStatusUpdate;
+      
+      const allOrders = orderStorage.getOrders();
+      const matchOrder = allOrders.find(
+        (o) => o.code === orderNumber || o.id === orderId || o.code.includes(String(orderId))
+      );
+      
+      const studentName = user?.fullName || 'Nguyễn Thành Nam';
+      const isMyOrder = matchOrder ? matchOrder.customerName.includes(studentName) : false;
+      
+      if (isMyOrder) {
+        const orderCode = orderNumber || `#${orderId}`;
+        const existingNotifs = dnuStore.getNotifications('STUDENT', user?.username);
+        
+        const isDuplicate = existingNotifs.some(
+          (n) => n.orderCode === orderCode && (
+            (status === 'READY' && n.type === 'ORDER_READY') ||
+            (status === 'COMPLETED' && n.type === 'ORDER_COMPLETED')
+          )
+        );
+        
+        if (!isDuplicate) {
+          if (status === 'READY') {
+            dnuStore.addNotification({
+              title: `🔔 Món đã nấu xong ${orderCode}`,
+              desc: `Bếp Tòa G đã nấu xong món ăn. Mời bạn đến nhận món tại quầy!`,
+              type: 'ORDER_READY',
+              targetRole: 'STUDENT',
+              targetUser: user?.username || 'student_2110001',
+              linkUrl: '/student/orders',
+              orderCode: orderCode,
+            });
+          } else if (status === 'COMPLETED') {
+            dnuStore.addNotification({
+              title: `✅ Đơn hàng hoàn tất ${orderCode}`,
+              desc: `Đơn hàng đã được trả món thành công. Chúc bạn dùng bữa ngon miệng!`,
+              type: 'ORDER_COMPLETED',
+              targetRole: 'STUDENT',
+              targetUser: user?.username || 'student_2110001',
+              linkUrl: '/student/orders',
+              orderCode: orderCode,
+            });
+          }
+        }
+      }
+    }
+  }, [latestStatusUpdate, user]);
 
   React.useEffect(() => {
     const handleSync = () => {
