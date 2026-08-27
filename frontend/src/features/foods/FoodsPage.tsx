@@ -31,6 +31,21 @@ export const FoodsPage: React.FC = () => {
   const [foods, setFoods] = useState<FoodCatalogItem[]>(() => dnuStore.getFoods());
   const categories = dnuStore.getCategories();
 
+  React.useEffect(() => {
+    const syncData = () => {
+      setFoods(dnuStore.getFoods());
+    };
+    syncData();
+    window.addEventListener('dnu_store_updated', syncData);
+    window.addEventListener('storage', syncData);
+    window.addEventListener('focus', syncData);
+    return () => {
+      window.removeEventListener('dnu_store_updated', syncData);
+      window.removeEventListener('storage', syncData);
+      window.removeEventListener('focus', syncData);
+    };
+  }, []);
+
   const [formState, setFormState] = useState({
     name: '',
     category: 'Cơm Phần & Cơm Đĩa DNU',
@@ -126,7 +141,15 @@ export const FoodsPage: React.FC = () => {
   };
 
   const filteredFoods = foods.filter((f) => {
-    const matchCat = selectedCategory === 'ALL' || f.category === selectedCategory;
+    const matchCat =
+      selectedCategory === 'ALL' ||
+      f.category === selectedCategory ||
+      f.categoryId.toString() === selectedCategory ||
+      (selectedCategory === 'Cơm Phần & Cơm Đĩa DNU' && (f.category.includes('Cơm') || f.categoryId === 1)) ||
+      (selectedCategory === 'Bún & Phở Hà Nội' && (f.category.includes('Bún') || f.category.includes('Phở') || f.categoryId === 2)) ||
+      (selectedCategory === 'Bánh Mì & Đồ Ăn Vặt' && (f.category.includes('Bánh Mì') || f.category.includes('Vặt') || f.categoryId === 3)) ||
+      (selectedCategory === 'Đồ Uống & Trà Sữa' && (f.category.includes('Uống') || f.category.includes('Trà') || f.categoryId === 4)) ||
+      (selectedCategory === 'Combo Tiết Kiệm Học Đường' && (f.category.includes('Combo') || f.categoryId === 5 || f.categoryId === 10));
     const matchSearch =
       f.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       f.code.toLowerCase().includes(searchTerm.toLowerCase());
@@ -182,25 +205,37 @@ export const FoodsPage: React.FC = () => {
               onClick={() => setSelectedCategory('ALL')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
                 selectedCategory === 'ALL'
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'bg-primary text-primary-foreground font-bold shadow-xs'
                   : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
               }`}
             >
               Tất cả ({foods.length})
             </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.name)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
-                  selectedCategory === cat.name
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                {cat.icon} {cat.name}
-              </button>
-            ))}
+            {categories.map((cat) => {
+              const count = foods.filter(
+                (f) =>
+                  f.category === cat.name ||
+                  f.categoryId === cat.id ||
+                  (cat.id === 1 && f.category.includes('Cơm')) ||
+                  (cat.id === 2 && (f.category.includes('Bún') || f.category.includes('Phở'))) ||
+                  (cat.id === 3 && (f.category.includes('Bánh Mì') || f.category.includes('Vặt'))) ||
+                  (cat.id === 4 && (f.category.includes('Uống') || f.category.includes('Trà'))) ||
+                  (cat.id === 5 && (f.category.includes('Combo') || f.categoryId === 10))
+              ).length;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.name)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
+                    selectedCategory === cat.name
+                      ? 'bg-primary text-primary-foreground font-bold shadow-xs'
+                      : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  {cat.icon} {cat.name} ({count})
+                </button>
+              );
+            })}
           </div>
         </CardContent>
       </Card>

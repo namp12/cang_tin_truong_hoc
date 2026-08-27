@@ -765,7 +765,32 @@ export const dnuStore = {
   getFoods(): FoodCatalogItem[] {
     try {
       const stored = localStorage.getItem(KEYS.FOODS);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed: FoodCatalogItem[] = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Normalize and synchronize category names and categoryIds for all items
+          return parsed.map((f) => {
+            const cat = f.category || '';
+            const catLower = cat.toLowerCase();
+            if (f.categoryId === 1 || catLower.includes('cơm')) {
+              return { ...f, category: 'Cơm Phần & Cơm Đĩa DNU', categoryId: 1 };
+            }
+            if (f.categoryId === 2 || catLower.includes('bún') || catLower.includes('phở') || catLower.includes('mì')) {
+              return { ...f, category: 'Bún & Phở Hà Nội', categoryId: 2 };
+            }
+            if (f.categoryId === 3 || catLower.includes('bánh mì') || catLower.includes('vặt') || catLower.includes('nem') || catLower.includes('xôi') || catLower.includes('bánh bao') || catLower.includes('khoai')) {
+              return { ...f, category: 'Bánh Mì & Đồ Ăn Vặt', categoryId: 3 };
+            }
+            if (f.categoryId === 4 || catLower.includes('uống') || catLower.includes('trà') || catLower.includes('cà phê') || catLower.includes('cafe') || catLower.includes('nước') || catLower.includes('coca') || catLower.includes('aquafina')) {
+              return { ...f, category: 'Đồ Uống & Trà Sữa', categoryId: 4 };
+            }
+            if (f.categoryId === 5 || f.categoryId === 10 || catLower.includes('combo')) {
+              return { ...f, category: 'Combo Tiết Kiệm Học Đường', categoryId: 5 };
+            }
+            return f;
+          });
+        }
+      }
     } catch (e) {}
     return initialFoodCatalog;
   },

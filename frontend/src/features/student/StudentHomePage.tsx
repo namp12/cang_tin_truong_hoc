@@ -5,7 +5,7 @@ import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
 import { OrderTrackingModal } from '../../components/common/OrderTrackingModal.js';
 import { useAuth } from '../../contexts/AuthContext.js';
-import { initialFoodCatalog } from '../../data/foodCatalog.js';
+import { dnuStore } from '../../services/dnuStore.js';
 import { formatCurrency } from '../../utils/format.js';
 import { 
   Search, 
@@ -46,8 +46,26 @@ export const StudentHomePage: React.FC = () => {
   const promoOffer = studentCohort === 'K18' ? 'Giảm 20% Cho Đơn Đầu Tiên' : 'Giảm 10.000đ Combo Trưa';
   const promoCode = studentCohort === 'K18' ? 'DNUCHAO2026' : 'DNUFOOD';
   const [selectedCat, setSelectedCat] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
   const [cartCount, setCartCount] = useState(2);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
+
+  const [foods, setFoods] = useState(() => dnuStore.getFoods());
+  const [categories, setCategories] = useState(() => dnuStore.getCategories());
+
+  React.useEffect(() => {
+    const syncData = () => {
+      setFoods(dnuStore.getFoods());
+      setCategories(dnuStore.getCategories());
+    };
+    syncData();
+    window.addEventListener('dnu_store_updated', syncData);
+    window.addEventListener('storage', syncData);
+    return () => {
+      window.removeEventListener('dnu_store_updated', syncData);
+      window.removeEventListener('storage', syncData);
+    };
+  }, []);
 
   const activeOrder = {
     orderNumber: '#1029',
@@ -62,15 +80,21 @@ export const StudentHomePage: React.FC = () => {
     orderedAt: '11:45',
   };
 
-  const categories = [
-    { id: 'ALL', name: 'Tất Cả', icon: '🍽️' },
-    { id: 'COM', name: 'Cơm Trưa', icon: '🍚' },
-    { id: 'PHO', name: 'Bún & Phở', icon: '🍜' },
-    { id: 'DRINK', name: 'Đồ Uống', icon: '🥤' },
-    { id: 'FAST', name: 'Bánh Mì', icon: '🥖' },
-  ];
-
-  const popularFoods = initialFoodCatalog.slice(0, 10);
+  const filteredFoods = foods.filter((f) => {
+    const matchCat =
+      selectedCat === 'ALL' ||
+      f.category === selectedCat ||
+      f.categoryId.toString() === selectedCat ||
+      (selectedCat === 'Cơm Phần & Cơm Đĩa DNU' && (f.category.includes('Cơm') || f.categoryId === 1)) ||
+      (selectedCat === 'Bún & Phở Hà Nội' && (f.category.includes('Bún') || f.category.includes('Phở') || f.categoryId === 2)) ||
+      (selectedCat === 'Bánh Mì & Đồ Ăn Vặt' && (f.category.includes('Bánh Mì') || f.category.includes('Vặt') || f.categoryId === 3)) ||
+      (selectedCat === 'Đồ Uống & Trà Sữa' && (f.category.includes('Uống') || f.category.includes('Trà') || f.categoryId === 4)) ||
+      (selectedCat === 'Combo Tiết Kiệm Học Đường' && (f.category.includes('Combo') || f.categoryId === 5 || f.categoryId === 10));
+    const matchSearch =
+      f.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      f.desc?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchCat && matchSearch;
+  });
 
   return (
     <div className="space-y-4">
@@ -118,6 +142,8 @@ export const StudentHomePage: React.FC = () => {
         <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Bạn muốn ăn gì trưa nay? (Cơm gà, phở, trà đào...)"
           className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200/80 rounded-xl text-xs shadow-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
         />
@@ -125,34 +151,59 @@ export const StudentHomePage: React.FC = () => {
 
       {/* Category Pills */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-        {categories.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => setSelectedCat(c.id)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-              selectedCat === c.id
-                ? 'bg-orange-600 text-white shadow-xs font-bold'
-                : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50'
-            }`}
-          >
-            <span>{c.icon}</span>
-            <span>{c.name}</span>
-          </button>
-        ))}
+        <button
+          onClick={() => setSelectedCat('ALL')}
+          className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+            selectedCat === 'ALL'
+              ? 'bg-orange-600 text-white shadow-xs font-bold'
+              : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50'
+          }`}
+        >
+          <span>🍽️</span>
+          <span>Tất Cả ({foods.length})</span>
+        </button>
+        {categories.map((c) => {
+          const count = foods.filter(
+            (f) =>
+              f.category === c.name ||
+              f.categoryId === c.id ||
+              (c.id === 1 && f.category.includes('Cơm')) ||
+              (c.id === 2 && (f.category.includes('Bún') || f.category.includes('Phở'))) ||
+              (c.id === 3 && (f.category.includes('Bánh Mì') || f.category.includes('Vặt'))) ||
+              (c.id === 4 && (f.category.includes('Uống') || f.category.includes('Trà'))) ||
+              (c.id === 5 && (f.category.includes('Combo') || f.categoryId === 10))
+          ).length;
+          return (
+            <button
+              key={c.id}
+              onClick={() => setSelectedCat(c.name)}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                selectedCat === c.name
+                  ? 'bg-orange-600 text-white shadow-xs font-bold'
+                  : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-slate-50'
+              }`}
+            >
+              <span>{c.icon}</span>
+              <span>{c.name} ({count})</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Section Title */}
       <div className="flex items-center justify-between pt-1">
         <div className="flex items-center gap-1.5">
           <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
-          <h3 className="text-sm font-bold text-slate-900">Món Ăn Nổi Bật DNU</h3>
+          <h3 className="text-sm font-bold text-slate-900">Món Ăn Thực Đơn DNU ({filteredFoods.length})</h3>
         </div>
-        <span className="text-xs font-semibold text-orange-600 cursor-pointer">Xem tất cả</span>
+        <span onClick={() => setSelectedCat('ALL')} className="text-xs font-semibold text-orange-600 cursor-pointer">
+          Xem tất cả
+        </span>
       </div>
 
       {/* Food List Cards with Image */}
       <div className="space-y-3">
-        {popularFoods.map((food) => (
+        {filteredFoods.map((food) => (
           <div
             key={food.id}
             className="p-3 bg-white rounded-2xl border border-slate-200/70 shadow-sm flex items-start gap-3 hover:border-orange-500 transition-all cursor-pointer group"
