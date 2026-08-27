@@ -22,6 +22,7 @@ import { AiAnalyticsPage } from '../features/ai/AiAnalyticsPage.js';
 import { SettingsPage } from '../features/settings/SettingsPage.js';
 import { StudentHomePage } from '../features/student/StudentHomePage.js';
 import { KioskPage } from '../features/kiosk/KioskPage.js';
+import { SystemTesterPage } from '../features/tester/SystemTesterPage.js';
 
 // Protected Route Wrapper
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -94,6 +95,8 @@ export const AppRoutes: React.FC = () => {
         <Route path="reports" element={<ReportsPage />} />
         <Route path="ai-analytics" element={<AiAnalyticsPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="tester" element={<SystemTesterPage />} />
+        <Route path="diagnostics" element={<SystemTesterPage />} />
       </Route>
 
       {/* Student Portal Mobile-First Routes */}

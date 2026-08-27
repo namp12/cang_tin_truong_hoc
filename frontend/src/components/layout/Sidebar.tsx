@@ -25,6 +25,7 @@ import {
   ChevronRight,
   ShieldCheck,
   Store,
+  Activity,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -119,6 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       title: 'HỆ THỐNG',
       roles: ['SUPER_ADMIN', 'ADMIN'],
       items: [
+        { label: 'Kiểm Thử Dữ Liệu DB', path: '/admin/tester', icon: Activity, badge: 'TEST' },
         { label: 'Cài đặt hệ thống', path: '/admin/settings', icon: Settings },
       ],
     },
