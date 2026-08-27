@@ -5,11 +5,14 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import { testDbConnection } from './config/database.js';
+import { initDatabaseSchema } from './config/initDb.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
 import ordersRoutes from './modules/orders/orders.routes.js';
 import reportsRoutes from './modules/reports/reports.routes.js';
+import inventoryRoutes from './modules/inventory/inventory.routes.js';
+import financeRoutes from './modules/finance/finance.routes.js';
 import { initSocketServer } from './socket.js';
 
 dotenv.config();
@@ -48,13 +51,18 @@ app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/orders', ordersRoutes);
 app.use('/api/v1/reports', reportsRoutes);
 app.use('/api/reports', reportsRoutes); // Alias support for /api/reports/daily-revenue
+app.use('/api/v1/inventory', inventoryRoutes);
+app.use('/api/v1/finance', financeRoutes);
 
 // Global Error Handler
 app.use(errorHandler);
 
 // Start Server with Socket.io
 async function bootstrap() {
-  await testDbConnection();
+  const isDbConnected = await testDbConnection();
+  if (isDbConnected) {
+    await initDatabaseSchema();
+  }
 
   const httpServer = http.createServer(app);
   initSocketServer(httpServer);
