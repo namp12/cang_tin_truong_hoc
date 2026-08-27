@@ -11,16 +11,20 @@ import {
   Receipt, 
   User as UserIcon,
   LogOut,
-  Wallet
+  Wallet,
+  LayoutDashboard,
+  ArrowLeft
 } from 'lucide-react';
 import { formatCurrency } from '../../utils/format.js';
 import { dnuStore } from '../../services/dnuStore.js';
 import { cn } from '../../utils/cn.js';
 
 export const StudentLayout: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, hasRole } = useAuth();
   const navigate = useNavigate();
-  const studentMssv = user?.username ? user.username.replace(/\D/g, '') || '2110001' : '2110001';
+  const isStudent = hasRole('STUDENT') || user?.roles?.includes('STUDENT') || user?.userType === 'STUDENT';
+  const isAdminOrStaff = user && !isStudent;
+  const studentMssv = isStudent && user?.username ? user.username.replace(/\D/g, '') || '2110001' : '2110001';
 
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
@@ -60,6 +64,18 @@ export const StudentLayout: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Back to Admin Dashboard Button for Admins / Staff */}
+          {isAdminOrStaff && (
+            <button
+              onClick={() => navigate('/admin/dashboard')}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold shadow-xs transition-colors"
+              title="Quay lại Trang Quản Trị"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Quản Trị</span>
+            </button>
+          )}
+
           {/* DNU Pay Wallet Quick Button */}
           <button
             type="button"
@@ -79,7 +95,7 @@ export const StudentLayout: React.FC = () => {
                 className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition-colors"
               >
                 <div className="w-5 h-5 rounded-full bg-orange-600 text-white text-[10px] flex items-center justify-center font-bold">
-                  {user.fullName?.charAt(0) || 'S'}
+                  {user.fullName?.charAt(0) || 'U'}
                 </div>
                 <span className="hidden sm:inline truncate max-w-[100px]">{user.fullName}</span>
               </button>

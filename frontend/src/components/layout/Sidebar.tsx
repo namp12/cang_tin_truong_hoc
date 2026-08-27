@@ -59,10 +59,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const menuSections: MenuSection[] = [
     {
       title: 'TỔNG QUAN',
-      roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER', 'STUDENT'],
+      roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER'],
       items: [
         { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard, exact: true },
-        { label: 'Cổng Sinh Viên DNU', path: '/student/home', icon: Sparkles, badge: 'APP' },
       ],
     },
     {

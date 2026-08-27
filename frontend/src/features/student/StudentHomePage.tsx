@@ -38,13 +38,24 @@ const getStudentCohort = (username?: string) => {
 
 export const StudentHomePage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const studentCohort = getStudentCohort(user?.username || 'student_2110001');
+  const { user, hasRole } = useAuth();
+  const isStudent = hasRole('STUDENT') || user?.roles?.includes('STUDENT') || user?.userType === 'STUDENT';
+  const studentCohort = isStudent ? getStudentCohort(user?.username) : 'DNU';
 
   // Determine promo details based on cohort
-  const promoTitle = studentCohort === 'K18' ? '🎁 CHÀO TÂN SINH VIÊN K18 DNU' : `🎁 ƯU ĐÃI SINH VIÊN DNU (${studentCohort})`;
-  const promoOffer = studentCohort === 'K18' ? 'Giảm 20% Cho Đơn Đầu Tiên' : 'Giảm 10.000đ Combo Trưa';
-  const promoCode = studentCohort === 'K18' ? 'DNUCHAO2026' : 'DNUFOOD';
+  const promoTitle = isStudent
+    ? studentCohort === 'K18'
+      ? '🎁 CHÀO TÂN SINH VIÊN K18 DNU'
+      : `🎁 ƯU ĐÃI SINH VIÊN DNU (${studentCohort})`
+    : '🎁 HỆ THỐNG ĐẶT MÓN DNU SMART CANTEEN';
+
+  const promoOffer = isStudent
+    ? studentCohort === 'K18'
+      ? 'Giảm 20% Cho Đơn Đầu Tiên'
+      : 'Giảm 10.000đ Combo Trưa'
+    : 'Thực Đơn Tươi Ngon • Phục Vụ Nhanh Chóng';
+
+  const promoCode = isStudent && studentCohort === 'K18' ? 'DNUCHAO2026' : 'DNUFOOD';
   const [selectedCat, setSelectedCat] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [cartCount, setCartCount] = useState(2);
