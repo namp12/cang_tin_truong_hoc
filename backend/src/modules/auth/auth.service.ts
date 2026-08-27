@@ -137,7 +137,7 @@ export class AuthService {
       return {
         id: userId,
         username: 'admin_super',
-        email: 'admin@canteen.edu.vn',
+        email: 'admin@dainam.edu.vn',
         fullName: 'Nguyễn Hoàng Long',
         userType: 'ADMIN',
         roles: ['SUPER_ADMIN'],
@@ -189,27 +189,27 @@ export class AuthService {
     }
 
     let role = 'SUPER_ADMIN';
-    let fullName = 'Nguyễn Hoàng Long (Admin)';
+    let fullName = 'Nguyễn Hoàng Long (Admin DNU)';
     let userType = 'ADMIN';
 
     if (credential.includes('cashier')) {
       role = 'CASHIER';
-      fullName = 'Phạm Quỳnh Như (Thu Ngân)';
+      fullName = 'Phạm Quỳnh Như (Thu Ngân Tòa G)';
       userType = 'EMPLOYEE';
     } else if (credential.includes('chef')) {
       role = 'KITCHEN_STAFF';
-      fullName = 'Võ Hoàng Hải (Đầu Bếp)';
+      fullName = 'Võ Hoàng Hải (Bếp Trưởng DNU)';
       userType = 'EMPLOYEE';
     } else if (credential.includes('student')) {
       role = 'STUDENT';
-      fullName = 'Nguyễn Thành Nam (Sinh Viên)';
+      fullName = 'Nguyễn Thành Nam (SV CNTT DNU)';
       userType = 'STUDENT';
     }
 
     const payload = {
       id: 1,
       username: credential,
-      email: `${credential}@canteen.edu.vn`,
+      email: `${credential}@dainam.edu.vn`,
       fullName,
       userType,
       roles: [role],

@@ -28,12 +28,12 @@ export const StudentLayout: React.FC = () => {
       {/* Student App Top Header */}
       <header className="h-14 bg-white border-b border-slate-100 px-4 flex items-center justify-between sticky top-0 z-30 shadow-xs">
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/student/home')}>
-          <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold">
+          <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white font-bold shadow-xs">
             <UtensilsCrossed className="w-4 h-4" />
           </div>
           <div>
-            <h1 className="text-xs font-bold text-slate-800 leading-tight">BK CANTEEN</h1>
-            <p className="text-[10px] text-emerald-600 font-semibold">Cơ sở 1 - Lý Thường Kiệt</p>
+            <h1 className="text-xs font-bold text-slate-800 leading-tight">DNU SMART CANTEEN</h1>
+            <p className="text-[10px] text-orange-600 font-semibold">Tòa G - Đại Học Đại Nam (Hà Đông)</p>
           </div>
         </div>
 

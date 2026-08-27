@@ -18,33 +18,34 @@ import {
 
 export const AiAnalyticsPage: React.FC = () => {
   const tomorrowForecasts = [
-    { food: 'Cơm Gà Xối Mỡ Giòn Da', quantity: 142, trend: '+18%', reason: 'Thứ 5 thường có lượng đặt món cơm gà cao nhất tuần' },
-    { food: 'Trà Đào Cam Sả Size M', quantity: 125, trend: '+24%', reason: 'Dự báo thời tiết ngày mai nắng nóng (34°C)' },
-    { food: 'Cơm Sườn Nướng Mật Ong', quantity: 98, trend: '+8%', reason: 'Nhu cầu ổn định ca trưa' },
-    { food: 'Phở Bò Tái Hà Nội', quantity: 65, trend: '-5%', reason: 'Dự kiến giảm nhẹ ca sáng' },
+    { food: 'Cơm Rang Dưa Bò Hà Nội', quantity: 165, trend: '+22%', reason: 'Lịch học tập trung ca trưa Khoa CNTT & Dược Tòa G' },
+    { food: 'Bún Chả Hà Nội Nướng Than', quantity: 135, trend: '+15%', reason: 'Nhu cầu cao điểm giải lao 11:30 - 12:30' },
+    { food: 'Trà Đào Cam Sả Hà Đông', quantity: 150, trend: '+28%', reason: 'Dự báo thời tiết Phú Lãm - Hà Đông ngày mai nắng nóng (34°C)' },
+    { food: 'Phở Bò Tái Lăn DNU', quantity: 85, trend: '+10%', reason: 'Sinh viên ăn sáng & ca 1 Giảng đường Tòa AB' },
+    { food: 'Cà Phê Cốt Dừa Hà Nội', quantity: 95, trend: '+18%', reason: 'Xu hướng chọn đồ uống giải khát tăng cao' },
   ];
 
   const recommendations = [
     {
       id: 1,
-      title: 'Chuẩn bị thêm 25kg thịt đùi gà phi lê',
-      desc: 'Nhu cầu Cơm Gà Xối Mỡ ngày mai dự kiến tăng 18%. Cần nhập thêm thịt gà từ NCC San Hà trước 06:30 sáng.',
-      confidence: 94,
+      title: 'Chuẩn bị thêm 30kg thịt thăn bò & dưa chua',
+      desc: 'Nhu cầu Cơm Rang Dưa Bò & Phở Bò Tái Lăn ngày mai tại Căng tin Tòa G dự kiến đạt 250 suất. Cần nhập thịt bò tươi trước 06:00 sáng.',
+      confidence: 95,
       priority: 'HIGH',
-      action: 'Tạo phiếu nhập gà',
+      action: 'Tạo phiếu nhập bò & dưa',
     },
     {
       id: 2,
-      title: 'Tăng cường 40 ly Trà Đào đá cho khung giờ 11:30 - 12:30',
-      desc: 'Dự báo thời tiết ngày mai nắng gắt (34°C). Học sinh/sinh viên có xu hướng chọn combo nước giải khát tăng 24%.',
-      confidence: 88,
+      title: 'Tăng cường 60 ly Trà Đào Cam Sả & Cốt Dừa Tòa G',
+      desc: 'Dự báo thời tiết Hà Đông nắng gắt (34°C). Sinh viên DNU K16, K17, K18 có xu hướng chọn đồ uống giải nhiệt tăng 28%.',
+      confidence: 91,
       priority: 'MEDIUM',
-      action: 'Chuẩn bị syrup & đào',
+      action: 'Chuẩn bị đào ngâm & cốt dừa',
     },
     {
       id: 3,
-      title: 'Cảnh báo hạn sử dụng lô trứng Ba Huân (Batch #0821)',
-      desc: 'Còn 120 quả trứng trong kho cần ưu tiên chế biến món trứng ốp la hoặc cơm tấm trong ngày hôm nay.',
+      title: 'Cảnh báo hạn sử dụng lô xúc xích Đức Vissan (Batch #DNU-0824)',
+      desc: 'Còn 80 cây xúc xích trong kho Tòa G cần ưu tiên chế biến món Bánh Mì Chảo DNU hoặc Cơm Chiên trong hôm nay.',
       confidence: 99,
       priority: 'CRITICAL',
       action: 'Đẩy vào menu hôm nay',

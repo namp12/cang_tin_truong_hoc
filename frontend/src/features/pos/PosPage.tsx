@@ -14,7 +14,9 @@ import {
   QrCode, 
   Banknote,
   CheckCircle2,
-  Utensils
+  Utensils,
+  Sparkles,
+  TicketPercent
 } from 'lucide-react';
 
 interface CartItem {
@@ -29,36 +31,77 @@ export const PosPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<number>(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([
-    { id: 1, name: 'Cơm Gà Xối Mỡ Giòn Da', price: 35000, quantity: 2, toppings: ['Trứng ốp la (+6k)'] },
-    { id: 13, name: 'Trà Đào Cam Sả Size M', price: 25000, quantity: 1 },
+    { id: 31, name: 'Cơm Rang Dưa Bò Hà Nội', price: 35000, quantity: 2, toppings: ['Trứng ốp la (+6k)'] },
+    { id: 13, name: 'Trà Đào Cam Sả Hà Đông', price: 25000, quantity: 1 },
   ]);
-  const [voucherCode, setVoucherCode] = useState('');
-  const [discount, setDiscount] = useState(10000);
+  const [voucherCode, setVoucherCode] = useState('DNUCHAO2026');
+  const [discount, setDiscount] = useState(15000);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'QRMOMO' | 'CASH' | 'DNUPAY'>('DNUPAY');
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   const categories = [
-    { id: 0, name: 'Tất cả món' },
-    { id: 1, name: 'Cơm Phần' },
-    { id: 2, name: 'Bún - Phở' },
-    { id: 3, name: 'Bánh Mì' },
-    { id: 4, name: 'Đồ Uống' },
-    { id: 10, name: 'Combo Hot' },
+    { id: 0, name: 'Tất cả món (40+)' },
+    { id: 1, name: 'Cơm Phần & Cơm Đĩa DNU' },
+    { id: 2, name: 'Bún - Phở - Mì Hà Nội' },
+    { id: 3, name: 'Bánh Mì & Đồ Ăn Vặt' },
+    { id: 4, name: 'Đồ Uống & Trà Sữa DNU' },
+    { id: 5, name: 'Tráng Miệng & Chè' },
+    { id: 10, name: 'Combo Tiết Kiệm DNU' },
   ];
 
   const foods = [
-    { id: 1, categoryId: 1, name: 'Cơm Gà Xối Mỡ Giòn Da', price: 35000, isBest: true },
-    { id: 2, categoryId: 1, name: 'Cơm Sườn Nướng Mật Ong', price: 35000, isBest: true },
-    { id: 3, categoryId: 1, name: 'Cơm Tấm Sườn Bì Chả', price: 40000 },
-    { id: 4, categoryId: 1, name: 'Cơm Bò Lúc Lắc', price: 45000 },
-    { id: 7, categoryId: 2, name: 'Phở Bò Tái Hà Nội', price: 35000, isBest: true },
-    { id: 9, categoryId: 2, name: 'Bún Bò Huế Đặc Biệt', price: 40000 },
-    { id: 13, categoryId: 4, name: 'Trà Đào Cam Sả Size M', price: 25000, isBest: true },
-    { id: 15, categoryId: 4, name: 'Trà Sữa Trân Châu Size M', price: 25000 },
-    { id: 17, categoryId: 4, name: 'Cà Phê Sữa Đá', price: 18000 },
-    { id: 18, categoryId: 4, name: 'Coca Cola Lon 320ml', price: 12000 },
-    { id: 21, categoryId: 3, name: 'Bánh Mì Thịt Chả', price: 20000 },
-    { id: 22, categoryId: 3, name: 'Bánh Mì Ốp La Xíu Mại', price: 22000 },
+    // 1. Cơm Phần & Cơm Đĩa
+    { id: 31, categoryId: 1, name: 'Cơm Rang Dưa Bò Hà Nội', price: 35000, isBest: true, desc: 'Bò xào mềm, dưa chua giòn rụm' },
+    { id: 1, categoryId: 1, name: 'Cơm Gà Xối Mỡ Giòn Da', price: 35000, isBest: true, desc: 'Đùi gà góc tư da giòn rụm' },
+    { id: 2, categoryId: 1, name: 'Cơm Sườn Nướng Mật Ong', price: 35000, isBest: true, desc: 'Sườn non ướp mật ong than hoa' },
+    { id: 4, categoryId: 1, name: 'Cơm Bò Lúc Lắc Sốt Tiêu', price: 45000, desc: 'Thịt bò xào ớt chuông đậm đà' },
+    { id: 3, categoryId: 1, name: 'Cơm Tấm Sườn Bì Chả DNU', price: 40000, isBest: true, desc: 'Đầy đủ sườn bì chả ốp la' },
+    { id: 5, categoryId: 1, name: 'Cơm Thịt Kho Trứng Cút', price: 30000, desc: 'Thịt ba chỉ mềm thơm béo ngậy' },
+    { id: 6, categoryId: 1, name: 'Cơm Cá Hú Kho Tộ', price: 30000, desc: 'Cá kho tộ đậm vị ăn kèm rau luộc' },
+    { id: 25, categoryId: 1, name: 'Cơm Chiên Dương Châu', price: 30000, desc: 'Lạp xưởng, đậu Hà Lan, trứng' },
+    { id: 30, categoryId: 1, name: 'Cơm Chay Nấm Đậu Phụ', price: 25000, desc: 'Thanh đạm, bổ dưỡng' },
+
+    // 2. Bún - Phở - Mì Hà Nội
+    { id: 32, categoryId: 2, name: 'Bún Chả Hà Nội Nướng Than', price: 35000, isBest: true, desc: 'Chả nướng than hoa, bún tươi, rau sống' },
+    { id: 33, categoryId: 2, name: 'Phở Bò Tái Lăn DNU', price: 40000, isBest: true, desc: 'Bò xào tỏi thơm phức, nước ninh xương' },
+    { id: 7, categoryId: 2, name: 'Phở Bò Tái Hà Nội', price: 35000, isBest: true, desc: 'Thịt bò tươi mềm, nước dùng ngọt thanh' },
+    { id: 34, categoryId: 2, name: 'Phở Gà Ta Lá Chanh', price: 35000, desc: 'Gà ta da giòn, lá chanh thơm ngát' },
+    { id: 35, categoryId: 2, name: 'Bún Đậu Mắm Tôm Thập Cẩm', price: 40000, isBest: true, desc: 'Đậu mơ rán, chả cốm, nem rán, chân giò' },
+    { id: 9, categoryId: 2, name: 'Bún Bò Huế Đặc Biệt', price: 40000, desc: 'Sa tế cay nồng kèm chả cua' },
+    { id: 11, categoryId: 2, name: 'Bún Riêu Cua Bắp Bò', price: 35000, desc: 'Riêu cua đồng, bắp bò tươi' },
+    { id: 10, categoryId: 2, name: 'Bún Trộn Thịt Nướng DNU', price: 32000, desc: 'Thịt nướng mè rang, đậu phộng giòn' },
+    { id: 12, categoryId: 2, name: 'Mì Quảng Gà Trứng Cút', price: 35000, desc: 'Mì vàng óng, bánh tráng giòn rụm' },
+
+    // 3. Bánh Mì & Đồ Ăn Vặt
+    { id: 39, categoryId: 3, name: 'Bánh Mì Chảo Đặc Biệt DNU', price: 30000, isBest: true, desc: 'Pate, 2 trứng ốp la, xúc xích, sốt cà' },
+    { id: 21, categoryId: 3, name: 'Bánh Mì Pate Chả Lụa Hà Nội', price: 20000, isBest: true, desc: 'Bánh mì giòn rụm, pate béo' },
+    { id: 22, categoryId: 3, name: 'Bánh Mì Xíu Mại Ốp La', price: 22000, desc: 'Trứng ốp la lòng đào kèm xíu mại' },
+    { id: 40, categoryId: 3, name: 'Nem Chua Rán Phố Cổ (5c)', price: 25000, isBest: true, desc: 'Chiên xù nóng giòn chấm tương ớt' },
+    { id: 23, categoryId: 3, name: 'Bánh Bao Trứng Cút Nóng Hổi', price: 15000, desc: 'Nhân thịt mộc nhĩ trứng cút' },
+    { id: 24, categoryId: 3, name: 'Xôi Gà Xé Nấm Hương', price: 25000, desc: 'Nếp dẻo thơm, gà xé xào nấm' },
+
+    // 4. Đồ Uống & Trà Sữa DNU
+    { id: 13, categoryId: 4, name: 'Trà Đào Cam Sả Hà Đông', price: 25000, isBest: true, desc: 'Đào miếng giòn ngọt, sả thơm ngát' },
+    { id: 36, categoryId: 4, name: 'Cà Phê Cốt Dừa Hà Nội', price: 25000, isBest: true, desc: 'Cốt dừa béo ngậy xay tuyết mát lạnh' },
+    { id: 37, categoryId: 4, name: 'Cà Phê Muối Béo Ngậy', price: 22000, isBest: true, desc: 'Kem muối mặn mà, cà phê đậm đà' },
+    { id: 38, categoryId: 4, name: 'Trà Chanh Giã Tay DNU', price: 18000, desc: 'Chanh thơm nồng, thanh mát' },
+    { id: 15, categoryId: 4, name: 'Trà Sữa Trân Châu Hoàng Kim', price: 25000, isBest: true, desc: 'Trà sữa đậm vị kèm trân châu hoàng kim' },
+    { id: 14, categoryId: 4, name: 'Trà Quất Mật Ong Hoa Nhài', price: 15000, desc: 'Giải khát thanh lọc cổ họng mùa thi' },
+    { id: 17, categoryId: 4, name: 'Cà Phê Sữa Đá Phin', price: 18000, desc: 'Robusta đậm đà pha phin truyền thống' },
+    { id: 16, categoryId: 4, name: 'Cà Phê Đen Đá', price: 15000, desc: 'Nguyên chất không đường/ít đường' },
+    { id: 18, categoryId: 4, name: 'Coca Cola Lon 320ml', price: 12000, desc: 'Ướp lạnh' },
+    { id: 20, categoryId: 4, name: 'Nước Suối Aquafina 500ml', price: 8000, desc: 'Ướp lạnh' },
+
+    // 5. Tráng Miệng & Chè
+    { id: 28, categoryId: 5, name: 'Chè Thái Sầu Riêng', price: 25000, desc: 'Trái cây sữa tươi thơm lừng' },
+    { id: 27, categoryId: 5, name: 'Chè Dưỡng Nhan Tuyết Yến', price: 20000, desc: 'Thanh mát bổ dưỡng' },
+    { id: 29, categoryId: 5, name: 'Sữa Chua Trái Cây Tươi DNU', price: 18000, desc: 'Sữa chua nhà làm mix dưa hấu' },
+
+    // 6. Combo Tiết Kiệm DNU
+    { id: 101, categoryId: 10, name: 'Combo Cơm Gà + Trà Đào Cam Sả', price: 50000, isBest: true, desc: 'Tiết kiệm 10.000đ cho sinh viên' },
+    { id: 102, categoryId: 10, name: 'Combo Bún Chả + Trà Quất Mật Ong', price: 42000, isBest: true, desc: 'Tiết kiệm 8.000đ cho sinh viên' },
+    { id: 103, categoryId: 10, name: 'Combo Bánh Mì Chảo + Cafe Sữa', price: 40000, isBest: true, desc: 'Bữa sáng đầy năng lượng DNU' },
   ];
 
   const filteredFoods = foods.filter((f) => {
@@ -75,7 +118,15 @@ export const PosPage: React.FC = () => {
           item.id === food.id ? { ...item, quantity: item.quantity + 1 } : item
         );
       }
-      return [...prev, { id: food.id, name: food.name, price: food.price, quantity: 1 }];
+      return [
+        ...prev,
+        {
+          id: food.id,
+          name: food.name,
+          price: food.price,
+          quantity: 1,
+        },
+      ];
     });
   };
 
@@ -84,13 +135,25 @@ export const PosPage: React.FC = () => {
       prev
         .map((item) => {
           if (item.id === id) {
-            const newQty = item.quantity + delta;
-            return newQty > 0 ? { ...item, quantity: newQty } : null;
+            const newQ = item.quantity + delta;
+            return newQ > 0 ? { ...item, quantity: newQ } : null;
           }
           return item;
         })
         .filter(Boolean) as CartItem[]
     );
+  };
+
+  const handleApplyVoucher = () => {
+    if (voucherCode.toUpperCase() === 'DNUCHAO2026') {
+      setDiscount(15000);
+    } else if (voucherCode.toUpperCase() === 'DNUK18') {
+      setDiscount(20000);
+    } else if (voucherCode.toUpperCase() === 'DNUFOOD') {
+      setDiscount(10000);
+    } else {
+      setDiscount(0);
+    }
   };
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -106,31 +169,32 @@ export const PosPage: React.FC = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-6.5rem)] flex flex-col lg:flex-row gap-5">
-      {/* Left Area: Food Selection Grid */}
-      <div className="flex-1 flex flex-col bg-white rounded-xl border border-slate-100 shadow-sm p-4 overflow-hidden">
-        {/* Search & Categories Bar */}
-        <div className="space-y-3 pb-3 border-b border-slate-100">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-6.5rem)]">
+      {/* Left Menu Area (8 Cols) */}
+      <div className="lg:col-span-8 flex flex-col gap-4 overflow-hidden">
+        {/* Search & Category Pills */}
+        <div className="space-y-3 bg-card p-4 rounded-xl border border-border">
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Tìm nhanh món ăn theo tên hoặc mã..."
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+              placeholder="🔍 Tìm nhanh trong 40+ món ăn, bún chả, phở bò, trà đào DNU..."
+              className="w-full pl-10 pr-4 py-2.5 bg-muted/50 border border-input rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:bg-background transition-all"
             />
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          {/* Category Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
             {categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                   selectedCategory === cat.id
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
                 {cat.name}
@@ -139,105 +203,148 @@ export const PosPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Food Items Cards */}
-        <div className="flex-1 overflow-y-auto pt-3 grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
-          {filteredFoods.map((food) => (
-            <div
-              key={food.id}
-              onClick={() => addToCart(food)}
-              className="group p-3 rounded-xl border border-slate-200/80 bg-white hover:border-emerald-500 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between select-none active:scale-[0.98]"
-            >
-              <div>
-                <div className="w-full h-20 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 mb-2.5 group-hover:bg-emerald-100 transition-colors">
-                  <Utensils className="w-7 h-7" />
+        {/* Food Items Grid (Scrollable) */}
+        <div className="flex-1 overflow-y-auto pr-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3.5">
+            {filteredFoods.map((food) => (
+              <div
+                key={food.id}
+                onClick={() => addToCart(food)}
+                className="group relative bg-card border border-border hover:border-primary/50 hover:shadow-card-hover rounded-xl p-3 flex flex-col justify-between cursor-pointer transition-all duration-200 active:scale-[0.98]"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-1 mb-1.5">
+                    <h4 className="font-bold text-xs text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+                      {food.name}
+                    </h4>
+                    {food.isBest && (
+                      <Badge variant="warning" className="text-[9px] px-1 py-0 shrink-0">
+                        HOT
+                      </Badge>
+                    )}
+                  </div>
+                  {food.desc && (
+                    <p className="text-[11px] text-muted-foreground line-clamp-1 mb-2">
+                      {food.desc}
+                    </p>
+                  )}
                 </div>
-                <h4 className="text-xs font-bold text-slate-800 line-clamp-2 leading-snug">{food.name}</h4>
-              </div>
 
-              <div className="mt-3 flex items-center justify-between">
-                <span className="text-xs font-bold text-emerald-700">{formatCurrency(food.price)}</span>
-                <span className="w-6 h-6 rounded-md bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white flex items-center justify-center font-bold text-sm transition-colors">
-                  +
-                </span>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
+                  <span className="font-extrabold text-xs text-primary">
+                    {formatCurrency(food.price)}
+                  </span>
+                  <div className="w-6 h-6 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors">
+                    <Plus className="w-3.5 h-3.5" />
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Right Area: POS Order Cart & Checkout Panel */}
-      <div className="w-full lg:w-96 flex flex-col bg-white rounded-xl border border-slate-100 shadow-sm p-4">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <ShoppingCart className="w-4 h-4 text-emerald-600" />
-            <h3 className="font-bold text-sm text-slate-800">Hóa Đơn Hiện Tại</h3>
+      {/* Right Order Bill Area (4 Cols) */}
+      <div className="lg:col-span-4 bg-card border border-border rounded-xl p-4 flex flex-col justify-between shadow-card overflow-hidden">
+        {/* Bill Header */}
+        <div className="pb-3 border-b border-border space-y-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="w-4 h-4 text-primary" />
+              <h3 className="font-bold text-sm text-foreground">Hóa Đơn Quầy Thu Ngân</h3>
+            </div>
+            <Badge variant="primary" className="text-[10px] bg-orange-600 text-white">
+              Tòa G Hà Đông
+            </Badge>
           </div>
-          <Badge variant="success" size="sm">
-            Bàn A1-02
-          </Badge>
+          <p className="text-[11px] text-muted-foreground">Bàn G1-02 • Thu ngân: Phạm Quỳnh Như</p>
         </div>
 
-        {/* Cart Item List */}
-        <div className="flex-1 overflow-y-auto py-3 space-y-2.5">
+        {/* Bill Items List */}
+        <div className="flex-1 overflow-y-auto py-2 space-y-2.5">
           {cart.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400">
-              <ShoppingCart className="w-8 h-8 mb-2 stroke-[1.5]" />
-              <p className="text-xs">Chưa có món nào được chọn</p>
+            <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground py-12">
+              <Utensils className="w-10 h-10 stroke-1 mb-2 text-muted-foreground/40" />
+              <p className="text-xs">Chưa có món nào được chọn.</p>
+              <p className="text-[10px] text-muted-foreground/60">Bấm (+) trên món ăn để thêm vào đơn</p>
             </div>
           ) : (
             cart.map((item) => (
-              <div key={item.id} className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1.5">
-                <div className="flex items-start justify-between">
-                  <h5 className="text-xs font-bold text-slate-800 leading-tight">{item.name}</h5>
-                  <span className="text-xs font-bold text-slate-900">{formatCurrency(item.price * item.quantity)}</span>
+              <div
+                key={item.id}
+                className="flex items-center justify-between gap-2 p-2 rounded-lg bg-muted/40 border border-border/60 text-xs"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-foreground truncate">{item.name}</p>
+                  <p className="text-[11px] text-primary font-medium">{formatCurrency(item.price)}</p>
+                  {item.toppings && (
+                    <p className="text-[10px] text-muted-foreground truncate">{item.toppings.join(', ')}</p>
+                  )}
                 </div>
-                {item.toppings && (
-                  <p className="text-[10px] text-slate-500">{item.toppings.join(', ')}</p>
-                )}
-                <div className="flex items-center justify-between pt-1">
-                  <span className="text-[11px] text-slate-400">{formatCurrency(item.price)} / suất</span>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => updateQuantity(item.id, -1)}
-                      className="w-5 h-5 rounded bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <span className="text-xs font-bold w-5 text-center">{item.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(item.id, 1)}
-                      className="w-5 h-5 rounded bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </button>
-                  </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => updateQuantity(item.id, -1)}
+                    className="w-6 h-6 rounded-md bg-background border border-border flex items-center justify-center text-muted-foreground hover:bg-muted"
+                  >
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <span className="font-bold text-xs w-4 text-center">{item.quantity}</span>
+                  <button
+                    onClick={() => updateQuantity(item.id, 1)}
+                    className="w-6 h-6 rounded-md bg-background border border-border flex items-center justify-center text-muted-foreground hover:bg-muted"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
                 </div>
               </div>
             ))
           )}
         </div>
 
-        {/* Calculation & Checkout */}
-        <div className="pt-3 border-t border-slate-100 space-y-2 text-xs">
-          <div className="flex justify-between text-slate-500">
-            <span>Tạm tính:</span>
-            <span className="font-semibold text-slate-800">{formatCurrency(subtotal)}</span>
-          </div>
-          <div className="flex justify-between text-emerald-600">
-            <span>Voucher sinh viên (BKCHAO2026):</span>
-            <span className="font-semibold">-{formatCurrency(discount)}</span>
-          </div>
-          <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-dashed border-slate-200">
-            <span>Tổng thanh toán:</span>
-            <span className="text-base text-emerald-600">{formatCurrency(finalTotal)}</span>
+        {/* Voucher & Calculations */}
+        <div className="pt-3 border-t border-border space-y-2.5">
+          {/* Voucher Input */}
+          <div className="flex gap-1.5">
+            <div className="relative flex-1">
+              <TicketPercent className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                value={voucherCode}
+                onChange={(e) => setVoucherCode(e.target.value)}
+                placeholder="Mã voucher DNU (DNUCHAO2026)"
+                className="w-full pl-8 pr-2 py-1.5 text-xs bg-muted/50 border border-input rounded-lg uppercase font-semibold focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <Button onClick={handleApplyVoucher} variant="secondary" size="sm" className="text-xs">
+              Áp Dụng
+            </Button>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-2">
+          <div className="space-y-1.5 text-xs">
+            <div className="flex justify-between text-muted-foreground">
+              <span>Tạm tính ({cart.reduce((s, i) => s + i.quantity, 0)} món):</span>
+              <span className="font-semibold text-foreground">{formatCurrency(subtotal)}</span>
+            </div>
+            {discount > 0 && (
+              <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
+                <span>Ưu đãi sinh viên DNU:</span>
+                <span className="font-semibold">-{formatCurrency(discount)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-sm font-bold text-foreground pt-2 border-t border-dashed border-border">
+              <span>Tổng thanh toán:</span>
+              <span className="text-base text-primary font-black">{formatCurrency(finalTotal)}</span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="grid grid-cols-2 gap-2 pt-1">
             <Button
               onClick={() => setShowCheckoutModal(true)}
               disabled={cart.length === 0}
               variant="primary"
-              className="w-full py-2.5 font-bold"
+              className="w-full font-bold bg-emerald-600 hover:bg-emerald-700"
             >
               Thanh Toán
             </Button>
@@ -245,7 +352,7 @@ export const PosPage: React.FC = () => {
               onClick={() => setCart([])}
               disabled={cart.length === 0}
               variant="outline"
-              className="w-full text-red-600 border-red-200 hover:bg-red-50"
+              className="w-full text-destructive border-destructive/20 hover:bg-destructive/10"
             >
               Hủy Đơn
             </Button>
@@ -255,41 +362,65 @@ export const PosPage: React.FC = () => {
 
       {/* Checkout Modal */}
       {showCheckoutModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95">
             {paymentSuccess ? (
               <div className="text-center py-6 space-y-2">
                 <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto animate-bounce" />
-                <h4 className="text-base font-bold text-slate-800">Thanh Toán Thành Công!</h4>
-                <p className="text-xs text-slate-500">Đơn hàng đã được tự động đẩy sang Màn hình Bếp (KDS).</p>
+                <h4 className="text-base font-bold text-foreground">Thanh Toán Thành Công!</h4>
+                <p className="text-xs text-muted-foreground">Đơn hàng đã được tự động đẩy sang KDS Bếp Tòa G.</p>
               </div>
             ) : (
               <>
                 <div className="text-center">
-                  <h4 className="text-base font-bold text-slate-900">Xác Nhận Thanh Toán POS</h4>
-                  <p className="text-2xl font-extrabold text-emerald-600 mt-1">{formatCurrency(finalTotal)}</p>
+                  <Badge variant="primary" className="mb-2 bg-orange-600 text-white">
+                    DNU SMART CANTEEN
+                  </Badge>
+                  <h4 className="text-base font-bold text-foreground">Xác Nhận Thanh Toán POS</h4>
+                  <p className="text-2xl font-black text-primary mt-1">{formatCurrency(finalTotal)}</p>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-xs font-semibold text-slate-600">Chọn phương thức:</label>
+                  <label className="block text-xs font-semibold text-muted-foreground">Chọn phương thức thanh toán:</label>
                   <div className="grid grid-cols-3 gap-2">
-                    <button className="p-3 rounded-xl border border-emerald-500 bg-emerald-50 text-emerald-700 flex flex-col items-center gap-1.5 text-xs font-bold">
+                    <button
+                      onClick={() => setSelectedPaymentMethod('DNUPAY')}
+                      className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 text-xs font-bold transition-all ${
+                        selectedPaymentMethod === 'DNUPAY'
+                          ? 'border-orange-500 bg-orange-500/10 text-orange-600 dark:text-orange-400'
+                          : 'border-border hover:bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      <CreditCard className="w-5 h-5" />
+                      <span>Ví DNU Pay</span>
+                    </button>
+                    <button
+                      onClick={() => setSelectedPaymentMethod('QRMOMO')}
+                      className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 text-xs font-bold transition-all ${
+                        selectedPaymentMethod === 'QRMOMO'
+                          ? 'border-pink-500 bg-pink-500/10 text-pink-600'
+                          : 'border-border hover:bg-muted text-muted-foreground'
+                      }`}
+                    >
                       <QrCode className="w-5 h-5" />
                       <span>QR MoMo</span>
                     </button>
-                    <button className="p-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 flex flex-col items-center gap-1.5 text-xs font-bold">
+                    <button
+                      onClick={() => setSelectedPaymentMethod('CASH')}
+                      className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 text-xs font-bold transition-all ${
+                        selectedPaymentMethod === 'CASH'
+                          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600'
+                          : 'border-border hover:bg-muted text-muted-foreground'
+                      }`}
+                    >
                       <Banknote className="w-5 h-5" />
                       <span>Tiền Mặt</span>
-                    </button>
-                    <button className="p-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 flex flex-col items-center gap-1.5 text-xs font-bold">
-                      <CreditCard className="w-5 h-5" />
-                      <span>Ví SV</span>
                     </button>
                   </div>
                 </div>
 
                 <div className="flex gap-2 pt-2">
-                  <Button onClick={handlePay} variant="primary" className="flex-1 py-2.5">
+                  <Button onClick={handlePay} variant="primary" className="flex-1 py-2.5 font-bold">
                     Hoàn Tất & In Hóa Đơn
                   </Button>
                   <Button onClick={() => setShowCheckoutModal(false)} variant="outline">

@@ -77,10 +77,10 @@ export const DashboardPage: React.FC = () => {
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
-            Xin chào, {user?.fullName || 'Quản trị viên'} 👋
+            Xin chào, {user?.fullName || 'Quản trị viên DNU'} 👋
           </h2>
           <p className="text-xs text-slate-300">
-            Tổng quan tình hình kinh doanh Căng tin Khu A (Nhà H1 - Q.10) hôm nay.
+            Tổng quan tình hình kinh doanh Căng tin Tòa G (Đại Học Đại Nam - Hà Đông) hôm nay.
           </p>
         </div>
 

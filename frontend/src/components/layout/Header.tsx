@@ -60,17 +60,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileSidebar }) => {
         </button>
 
         {/* Canteen Selector */}
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20 text-xs font-semibold">
+        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 text-xs font-semibold">
           <Store className="w-3.5 h-3.5" />
           <select 
             value={selectedCanteen}
             onChange={(e) => setSelectedCanteen(e.target.value)}
-            aria-label="Chọn chi nhánh căng tin"
+            aria-label="Chọn chi nhánh căng tin DNU"
             className="bg-transparent font-semibold focus:outline-none cursor-pointer pr-1 text-foreground"
           >
-            <option value="1" className="bg-card text-foreground">Căng tin Khu A (Nhà H1 - Q.10)</option>
-            <option value="2" className="bg-card text-foreground">Căng tin Khu B (Nhà B4 - Q.10)</option>
-            <option value="3" className="bg-card text-foreground">Căng tin Trung Tâm (Khu Dĩ An)</option>
+            <option value="1" className="bg-card text-foreground">Căng tin Trung Tâm (Tòa nhà G - Hà Đông)</option>
+            <option value="2" className="bg-card text-foreground">Căng tin Khu Giảng Đường & KTX (Tòa A-B DNU)</option>
+            <option value="3" className="bg-card text-foreground">Căng tin DNU Garden & Coffee (Khu Thể Thao)</option>
           </select>
         </div>
 

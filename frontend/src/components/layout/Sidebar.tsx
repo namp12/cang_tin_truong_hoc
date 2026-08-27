@@ -1,8 +1,9 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.js';
 import { cn } from '../../utils/cn.js';
 import { Tooltip } from '../ui/tooltip.js';
+import { Badge } from '../ui/Badge.js';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -121,21 +122,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
     >
       {/* Brand Header */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-border bg-card/50">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-sm shrink-0">
-            <UtensilsCrossed className="w-5 h-5 stroke-[2.2]" />
+      <div className="flex items-center justify-between h-16 px-4 border-b border-border/80">
+        <Link to="/admin/dashboard" className="flex items-center gap-3 overflow-hidden group">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-600 via-amber-500 to-emerald-500 flex items-center justify-center text-white shadow-md shadow-orange-500/20 shrink-0 group-hover:scale-105 transition-transform">
+            <UtensilsCrossed className="w-5 h-5" />
           </div>
           {!isCollapsed && (
-            <div className="min-w-0 animate-in fade-in-0 duration-200">
+            <div className="flex flex-col min-w-0 transition-opacity duration-200">
               <div className="flex items-center gap-1.5">
-                <h1 className="font-bold text-foreground tracking-wide text-xs truncate">SMART CANTEEN</h1>
-                <span className="text-[9px] bg-primary/10 text-primary font-bold px-1.5 py-0.2 rounded border border-primary/20">PRO</span>
+                <span className="font-bold text-sm tracking-tight text-foreground truncate">
+                  DNU CANTEEN
+                </span>
+                <Badge variant="primary" className="text-[9px] px-1 py-0 bg-orange-600 text-white">
+                  DNU
+                </Badge>
               </div>
-              <p className="text-[10px] text-muted-foreground font-medium truncate">ĐH Bách Khoa TP.HCM</p>
+              <span className="text-[11px] text-muted-foreground truncate">
+                Đại Học Đại Nam (Hà Đông)
+              </span>
             </div>
           )}
-        </div>
+        </Link>
 
         {/* Collapse Toggle Button (Desktop) */}
         {onToggleCollapse && (

@@ -29,57 +29,77 @@ export const StudentHomePage: React.FC = () => {
 
   const popularFoods = [
     {
-      id: 1,
-      name: 'Cơm Gà Xối Mỡ Giòn Da',
+      id: 31,
+      name: 'Cơm Rang Dưa Bò Hà Nội',
       category: 'COM',
       price: 35000,
       rating: 4.9,
-      reviews: 142,
-      tag: 'Bán chạy nhất',
-      desc: 'Đùi gà góc tư chiên giòn rụm, cơm vàng hoàng bào kèm canh nóng.',
+      reviews: 185,
+      tag: 'Bán chạy số 1',
+      desc: 'Hạt cơm chiên vàng giòn, bò xào mềm thơm đậm đà, dưa cải chua muối giòn rụm.',
     },
     {
-      id: 2,
-      name: 'Cơm Sườn Nướng Mật Ong',
-      category: 'COM',
+      id: 32,
+      name: 'Bún Chả Hà Nội Nướng Than Hoa',
+      category: 'PHO',
       price: 35000,
+      rating: 4.9,
+      reviews: 160,
+      tag: 'Đặc sản',
+      desc: 'Chả miếng chả băm nướng than hoa thơm lừng, bún tươi và nước chấm đu đủ cà rốt.',
+    },
+    {
+      id: 33,
+      name: 'Phở Bò Tái Lăn DNU',
+      category: 'PHO',
+      price: 40000,
       rating: 4.8,
-      reviews: 98,
-      tag: 'Ưa chuộng',
-      desc: 'Sườn non ướp mật ong thơm nức, mỡ hành, dưa chua thanh mát.',
+      reviews: 120,
+      tag: 'Món nước',
+      desc: 'Bò tái lăn xào tỏi thơm lừng, nước dùng hầm xương 12h đậm đà kèm quẩy giòn.',
     },
     {
       id: 13,
-      name: 'Trà Đào Cam Sả Size M',
+      name: 'Trà Đào Cam Sả Hà Đông',
       category: 'DRINK',
       price: 25000,
       rating: 4.9,
-      reviews: 215,
+      reviews: 240,
       tag: 'Giải nhiệt',
-      desc: 'Trà đen thơm mát kết hợp đào miếng giòn ngọt và sả tươi thanh.',
+      desc: 'Trà đen thanh mát kết hợp đào miếng giòn ngọt và sả tươi thơm nức mũi.',
     },
     {
-      id: 7,
-      name: 'Phở Bò Tái Hà Nội',
-      category: 'PHO',
-      price: 35000,
-      rating: 4.7,
-      reviews: 80,
-      tag: 'Món nước',
-      desc: 'Nước dùng ninh xương 12h, thịt bò mềm ngọt.',
+      id: 36,
+      name: 'Cà Phê Cốt Dừa Hà Nội',
+      category: 'DRINK',
+      price: 25000,
+      rating: 4.8,
+      reviews: 110,
+      tag: 'Best Seller',
+      desc: 'Cà phê phin đậm đà kết hợp cốt dừa béo ngậy xay đá tuyết mát lạnh.',
+    },
+    {
+      id: 39,
+      name: 'Bánh Mì Chảo Đặc Biệt DNU',
+      category: 'FAST',
+      price: 30000,
+      rating: 4.9,
+      reviews: 95,
+      tag: 'Năng lượng',
+      desc: 'Pate cột đèn, 2 trứng ốp la lòng đào, xúc xích Đức và sốt cà chua sánh mịn.',
     },
   ];
 
   return (
     <div className="space-y-4">
       {/* Promo Banner Card */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md relative overflow-hidden">
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md relative overflow-hidden">
         <div className="relative z-10 space-y-1">
           <span className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full inline-block backdrop-blur-xs">
-            🎁 ƯU ĐÃI SINH VIÊN K24
+            🎁 CHÀO TÂN SINH VIÊN K18 DNU
           </span>
           <h2 className="text-base font-extrabold leading-tight">Giảm 20% Cho Đơn Đầu Tiên</h2>
-          <p className="text-[11px] text-emerald-100">Nhập mã <span className="font-bold underline">BKCHAO2026</span> khi thanh toán</p>
+          <p className="text-[11px] text-orange-100">Nhập mã voucher <span className="font-bold underline bg-white/20 px-1 py-0.5 rounded">DNUCHAO2026</span> khi thanh toán</p>
         </div>
         <Sparkles className="w-16 h-16 absolute -right-2 -bottom-2 text-white/20" />
       </div>

@@ -32,14 +32,46 @@ export const FoodsPage: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
 
   const [foods, setFoods] = useState<FoodItem[]>([
-    { id: 1, code: 'FOOD-COM-GA', name: 'Cơm Gà Xối Mỡ Giòn Da', category: 'Cơm Phần', basePrice: 35000, costPrice: 18000, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
-    { id: 2, code: 'FOOD-COM-SUON', name: 'Cơm Sườn Nướng Mật Ong', category: 'Cơm Phần', basePrice: 35000, costPrice: 17500, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
-    { id: 3, code: 'FOOD-COM-TAM', name: 'Cơm Tấm Sườn Bì Chả', category: 'Cơm Phần', basePrice: 40000, costPrice: 20000, status: 'ACTIVE', isFeatured: true, isBestSeller: false },
-    { id: 7, code: 'FOOD-PHO-TAI', name: 'Phở Bò Tái Hà Nội', category: 'Bún - Phở', basePrice: 35000, costPrice: 17000, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
-    { id: 9, code: 'FOOD-BUN-BO', name: 'Bún Bò Huế Đặc Biệt', category: 'Bún - Phở', basePrice: 40000, costPrice: 21000, status: 'ACTIVE', isFeatured: true, isBestSeller: false },
-    { id: 13, code: 'FOOD-TRA-DAO', name: 'Trà Đào Cam Sả Size M', category: 'Đồ Uống', basePrice: 25000, costPrice: 9000, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
-    { id: 15, code: 'FOOD-TRA-SUA', name: 'Trà Sữa Trân Châu Đường Đen', category: 'Đồ Uống', basePrice: 25000, costPrice: 10000, status: 'ACTIVE', isFeatured: false, isBestSeller: true },
-    { id: 21, code: 'FOOD-BANH-MI', name: 'Bánh Mì Kẹp Thịt Chả', category: 'Bánh Mì', basePrice: 20000, costPrice: 9500, status: 'ACTIVE', isFeatured: true, isBestSeller: false },
+    // Cơm Phần & Cơm Đĩa DNU
+    { id: 31, code: 'FOOD-COM-RANG-DUA-BO', name: 'Cơm Rang Dưa Bò Hà Nội', category: 'Cơm Phần & Cơm Đĩa DNU', basePrice: 35000, costPrice: 18000, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
+    { id: 1, code: 'FOOD-COM-GA', name: 'Cơm Gà Xối Mỡ Giòn Da', category: 'Cơm Phần & Cơm Đĩa DNU', basePrice: 35000, costPrice: 18000, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
+    { id: 2, code: 'FOOD-COM-SUON', name: 'Cơm Sườn Nướng Mật Ong', category: 'Cơm Phần & Cơm Đĩa DNU', basePrice: 35000, costPrice: 17500, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
+    { id: 3, code: 'FOOD-COM-TAM', name: 'Cơm Tấm Sườn Bì Chả DNU', category: 'Cơm Phần & Cơm Đĩa DNU', basePrice: 40000, costPrice: 20000, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
+    { id: 4, code: 'FOOD-COM-BO', name: 'Cơm Bò Lúc Lắc Sốt Tiêu', category: 'Cơm Phần & Cơm Đĩa DNU', basePrice: 45000, costPrice: 24000, status: 'ACTIVE', isFeatured: false, isBestSeller: false },
+    { id: 5, code: 'FOOD-COM-THIT-KHO', name: 'Cơm Thịt Kho Trứng Cút', category: 'Cơm Phần & Cơm Đĩa DNU', basePrice: 30000, costPrice: 14000, status: 'ACTIVE', isFeatured: false, isBestSeller: true },
+    { id: 6, code: 'FOOD-COM-CA', name: 'Cơm Cá Hú Kho Tộ', category: 'Cơm Phần & Cơm Đĩa DNU', basePrice: 30000, costPrice: 13500, status: 'ACTIVE', isFeatured: false, isBestSeller: false },
+    { id: 25, code: 'FOOD-COM-DUONG-CHAU', name: 'Cơm Chiên Dương Châu', category: 'Cơm Phần & Cơm Đĩa DNU', basePrice: 30000, costPrice: 13000, status: 'ACTIVE', isFeatured: false, isBestSeller: true },
+    { id: 30, code: 'FOOD-COM-CHAY', name: 'Cơm Chay Nấm Đậu Phụ', category: 'Cơm Phần & Cơm Đĩa DNU', basePrice: 25000, costPrice: 9500, status: 'ACTIVE', isFeatured: false, isBestSeller: false },
+
+    // Bún - Phở - Mì Hà Nội
+    { id: 32, code: 'FOOD-BUN-CHA', name: 'Bún Chả Hà Nội Nướng Than', category: 'Bún - Phở - Mì Hà Nội', basePrice: 35000, costPrice: 17500, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
+    { id: 33, code: 'FOOD-PHO-TAI-LAN', name: 'Phở Bò Tái Lăn DNU', category: 'Bún - Phở - Mì Hà Nội', basePrice: 40000, costPrice: 20000, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
+    { id: 7, code: 'FOOD-PHO-TAI', name: 'Phở Bò Tái Hà Nội', category: 'Bún - Phở - Mì Hà Nội', basePrice: 35000, costPrice: 17000, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
+    { id: 34, code: 'FOOD-PHO-GA', name: 'Phở Gà Ta Lá Chanh', category: 'Bún - Phở - Mì Hà Nội', basePrice: 35000, costPrice: 17000, status: 'ACTIVE', isFeatured: true, isBestSeller: false },
+    { id: 35, code: 'FOOD-BUN-DAU', name: 'Bún Đậu Mắm Tôm Thập Cẩm', category: 'Bún - Phở - Mì Hà Nội', basePrice: 40000, costPrice: 19000, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
+    { id: 9, code: 'FOOD-BUN-BO-HUE', name: 'Bún Bò Huế Đặc Biệt', category: 'Bún - Phở - Mì Hà Nội', basePrice: 40000, costPrice: 21000, status: 'ACTIVE', isFeatured: true, isBestSeller: false },
+    { id: 11, code: 'FOOD-BUN-RIEU', name: 'Bún Riêu Cua Bắp Bò', category: 'Bún - Phở - Mì Hà Nội', basePrice: 35000, costPrice: 14000, status: 'ACTIVE', isFeatured: false, isBestSeller: false },
+    { id: 10, code: 'FOOD-BUN-TRON', name: 'Bún Trộn Thịt Nướng DNU', category: 'Bún - Phở - Mì Hà Nội', basePrice: 32000, costPrice: 15000, status: 'ACTIVE', isFeatured: false, isBestSeller: true },
+    { id: 12, code: 'FOOD-MI-QUANG', name: 'Mì Quảng Gà Trứng Cút', category: 'Bún - Phở - Mì Hà Nội', basePrice: 35000, costPrice: 16500, status: 'ACTIVE', isFeatured: false, isBestSeller: false },
+
+    // Bánh Mì & Đồ Ăn Vặt
+    { id: 39, code: 'FOOD-BANH-MI-CHAO', name: 'Bánh Mì Chảo Đặc Biệt DNU', category: 'Bánh Mì & Đồ Ăn Vặt', basePrice: 30000, costPrice: 14000, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
+    { id: 21, code: 'FOOD-BANH-MI-THIT', name: 'Bánh Mì Pate Chả Lụa Hà Nội', category: 'Bánh Mì & Đồ Ăn Vặt', basePrice: 20000, costPrice: 9500, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
+    { id: 22, code: 'FOOD-BANH-MI-OP-LA', name: 'Bánh Mì Xíu Mại Ốp La', category: 'Bánh Mì & Đồ Ăn Vặt', basePrice: 22000, costPrice: 10500, status: 'ACTIVE', isFeatured: false, isBestSeller: true },
+    { id: 40, code: 'FOOD-NEM-CHUA-RAN', name: 'Nem Chua Rán Phố Cổ (5c)', category: 'Bánh Mì & Đồ Ăn Vặt', basePrice: 25000, costPrice: 11000, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
+    { id: 23, code: 'FOOD-BANH-BAO', name: 'Bánh Bao Nhân Thịt Trứng Cút', category: 'Bánh Mì & Đồ Ăn Vặt', basePrice: 15000, costPrice: 7000, status: 'ACTIVE', isFeatured: false, isBestSeller: false },
+    { id: 24, code: 'FOOD-XOI-GA', name: 'Xôi Gà Xé Nấm Hương', category: 'Bánh Mì & Đồ Ăn Vặt', basePrice: 25000, costPrice: 11000, status: 'ACTIVE', isFeatured: false, isBestSeller: true },
+
+    // Đồ Uống & Trà Sữa DNU
+    { id: 13, code: 'FOOD-TRA-DAO', name: 'Trà Đào Cam Sả Hà Đông', category: 'Đồ Uống & Trà Sữa DNU', basePrice: 25000, costPrice: 9000, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
+    { id: 36, code: 'FOOD-CAFE-COT-DUA', name: 'Cà Phê Cốt Dừa Hà Nội', category: 'Đồ Uống & Trà Sữa DNU', basePrice: 25000, costPrice: 10000, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
+    { id: 37, code: 'FOOD-CAFE-MUOI', name: 'Cà Phê Muối Béo Ngậy', category: 'Đồ Uống & Trà Sữa DNU', basePrice: 22000, costPrice: 8500, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
+    { id: 38, code: 'FOOD-TRA-CHANH', name: 'Trà Chanh Giã Tay DNU', category: 'Đồ Uống & Trà Sữa DNU', basePrice: 18000, costPrice: 6000, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
+    { id: 15, code: 'FOOD-TRA-SUA', name: 'Trà Sữa Trân Châu Hoàng Kim', category: 'Đồ Uống & Trà Sữa DNU', basePrice: 25000, costPrice: 10000, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
+    { id: 14, code: 'FOOD-TRA-QUAT', name: 'Trà Quất Mật Ong Hoa Nhài', category: 'Đồ Uống & Trà Sữa DNU', basePrice: 15000, costPrice: 4500, status: 'ACTIVE', isFeatured: false, isBestSeller: true },
+    { id: 17, code: 'FOOD-CAFE-SUA', name: 'Cà Phê Sữa Đá Phin', category: 'Đồ Uống & Trà Sữa DNU', basePrice: 18000, costPrice: 5500, status: 'ACTIVE', isFeatured: true, isBestSeller: true },
+    { id: 18, code: 'FOOD-COCA', name: 'Coca Cola Lon 320ml', category: 'Đồ Uống & Trà Sữa DNU', basePrice: 12000, costPrice: 8500, status: 'ACTIVE', isFeatured: false, isBestSeller: true },
+    { id: 20, code: 'FOOD-AQUAFINA', name: 'Nước Suối Aquafina 500ml', category: 'Đồ Uống & Trà Sữa DNU', basePrice: 8000, costPrice: 4500, status: 'ACTIVE', isFeatured: false, isBestSeller: true },
   ]);
 
   const [newFood, setNewFood] = useState({
@@ -103,16 +135,24 @@ export const FoodsPage: React.FC = () => {
             />
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto">
-            {['ALL', 'Cơm Phần', 'Bún - Phở', 'Đồ Uống', 'Bánh Mì'].map((cat) => (
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            {[
+              { id: 'ALL', label: 'Tất cả' },
+              { id: 'Cơm Phần & Cơm Đĩa DNU', label: 'Cơm Phần DNU' },
+              { id: 'Bún - Phở - Mì Hà Nội', label: 'Bún - Phở Hà Nội' },
+              { id: 'Bánh Mì & Đồ Ăn Vặt', label: 'Bánh Mì & Ăn Vặt' },
+              { id: 'Đồ Uống & Trà Sữa DNU', label: 'Đồ Uống DNU' },
+            ].map((cat) => (
               <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
-                  selectedCategory === cat ? 'bg-primary text-primary-foreground shadow-xs' : 'bg-muted text-muted-foreground hover:text-foreground'
+                  selectedCategory === cat.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
-                {cat === 'ALL' ? 'Tất cả' : cat}
+                {cat.label}
               </button>
             ))}
           </div>

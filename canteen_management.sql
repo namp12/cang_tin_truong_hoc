@@ -2098,27 +2098,27 @@ DELIMITER ;
 
 -- 1. Trường học
 INSERT INTO schools (id, code, name, short_name, tax_code, phone, email, website, address) VALUES
-(1, 'UNI-BK-01', 'Đại Học Bách Khoa TP.HCM', 'HCMUT', '0301234567', '02838651234', 'canteen@hcmut.edu.vn', 'https://hcmut.edu.vn', '268 Lý Thường Kiệt, P.14, Q.10, TP.HCM');
+(1, 'UNI-DNU', 'Trường Đại Học Đại Nam', 'DNU', '0102434567', '02435577799', 'canteen@dainam.edu.vn', 'https://dainam.edu.vn', 'Số 1 Phố Xốm, Phú Lãm, Hà Đông, Hà Nội');
 
 -- 2. Cơ sở
 INSERT INTO campuses (id, school_id, code, name, phone, email, address) VALUES
-(1, 1, 'CAMPUS-Q10', 'Cơ sở 1 - Lý Thường Kiệt (Q.10)', '02838651234', 'campus1@hcmut.edu.vn', '268 Lý Thường Kiệt, P.14, Q.10, TP.HCM'),
-(2, 1, 'CAMPUS-TD', 'Cơ sở 2 - Dĩ An (Khu Đô Thị ĐHQG)', '02837245678', 'campus2@hcmut.edu.vn', 'Khu đô thị Đại học Quốc gia, Dĩ An, Bình Dương');
+(1, 1, 'CAMPUS-HADONG', 'Cơ sở Chính Hà Đông (Số 1 Phố Xốm)', '02435577799', 'hadong@dainam.edu.vn', 'Số 1 Phố Xốm, Phú Lãm, Hà Đông, Hà Nội'),
+(2, 1, 'CAMPUS-MYDINH', 'Cơ sở Mỹ Đình / Thanh Xuân', '02435577798', 'mydinh@dainam.edu.vn', 'Khu Đô Thị Mỹ Đình, Nam Từ Liêm, Hà Nội');
 
 -- 3. Khoa
 INSERT INTO faculties (id, school_id, campus_id, code, name, phone, email) VALUES
-(1, 1, 1, 'F-CSE', 'Khoa Khoa Học & Kỹ Thuật Máy Tính', '02838647256', 'cse@hcmut.edu.vn'),
-(2, 1, 1, 'F-MECH', 'Khoa Cơ Khí', '02838647257', 'mech@hcmut.edu.vn'),
-(3, 1, 2, 'F-EE', 'Khoa Điện - Điện Tử', '02838647258', 'ee@hcmut.edu.vn'),
-(4, 1, 2, 'F-CHEM', 'Khoa Kỹ Thuật Hóa Học', '02838647259', 'chem@hcmut.edu.vn');
+(1, 1, 1, 'F-IT', 'Khoa Công Nghệ Thông Tin DNU', '02435577756', 'fit@dainam.edu.vn'),
+(2, 1, 1, 'F-PHARM', 'Khoa Dược DNU', '02435577757', 'pharm@dainam.edu.vn'),
+(3, 1, 2, 'F-MED', 'Khoa Y Khoa DNU', '02435577758', 'med@dainam.edu.vn'),
+(4, 1, 2, 'F-BA', 'Khoa Quản Trị Kinh Doanh DNU', '02435577759', 'fba@dainam.edu.vn');
 
 -- 4. Lớp học
 INSERT INTO classes (id, faculty_id, code, name, academic_year) VALUES
-(1, 1, 'CC01', 'Khoa Học Máy Tính K21 - Lớp 01', '2021-2025'),
-(2, 1, 'CC02', 'Khoa Học Máy Tính K22 - Lớp 02', '2022-2026'),
-(3, 2, 'CK01', 'Kỹ Thuật Cơ Khí K21', '2021-2025'),
-(4, 3, 'DD01', 'Kỹ Thuật Điện Tử K22', '2022-2026'),
-(5, 4, 'HH01', 'Kỹ Thuật Hóa Học K23', '2023-2027');
+(1, 1, 'IT-K16', 'Công Nghệ Thông Tin K16 - Lớp 01', '2022-2026'),
+(2, 1, 'IT-K17', 'Công Nghệ Thông Tin K17 - Lớp 02', '2023-2027'),
+(3, 2, 'DUOC-K16', 'Dược Học K16', '2022-2027'),
+(4, 3, 'MED-K17', 'Y Khoa K17', '2023-2029'),
+(5, 4, 'QTKD-K18', 'Quản Trị Kinh Doanh K18', '2024-2028');
 
 -- 5. Roles
 INSERT INTO roles (id, code, name, description, is_system) VALUES
@@ -2252,19 +2252,19 @@ INSERT INTO teachers (id, user_id, school_id, campus_id, faculty_id, teacher_cod
 (1, 8, 1, 1, 1, 'GV-CSE01', 'Tiến sĩ', 'ACTIVE'),
 (2, 9, 1, 2, 4, 'GV-CHEM01', 'Thạc sĩ', 'ACTIVE');
 
--- 14. Căng tin (Canteens: 3 Căng tin)
+-- 14. Căng tin (Canteens: 3 Căng tin DNU)
 INSERT INTO canteens (id, campus_id, manager_employee_id, code, name, phone, location_description, opening_time, closing_time) VALUES
-(1, 1, 1, 'CT-A1', 'Căng tin Khu A (Tòa nhà H1 - Q.10)', '02838659991', 'Tầng 1 Tòa Nhà H1 Cơ sở 1', '06:30:00', '19:30:00'),
-(2, 1, 1, 'CT-B2', 'Căng tin Khu B (Tòa nhà B4 - Q.10)', '02838659992', 'Tầng Trệt Nhà B4 Cơ sở 1', '07:00:00', '18:00:00'),
-(3, 2, 2, 'CT-DA', 'Căng tin Trung Tâm (Khu Dĩ An)', '02837249993', 'Khu Phức Hợp Dịch Vụ Sinh Viên Cơ sở 2', '06:00:00', '20:30:00');
+(1, 1, 1, 'CT-DNU-G', 'Căng tin Trung Tâm (Tòa nhà G - Hà Đông)', '02435577701', 'Tầng 1 Tòa Nhà Trung Tâm G, Cơ sở Chính Phú Lãm', '06:30:00', '19:30:00'),
+(2, 1, 1, 'CT-DNU-AB', 'Căng tin Khu Giảng Đường & KTX (Tòa A-B DNU)', '02435577702', 'Tầng Trệt Tòa Nhà A-B Giảng Đường', '07:00:00', '18:00:00'),
+(3, 2, 2, 'CT-DNU-GARDEN', 'Căng tin DNU Garden & Coffee (Khu Thể Thao)', '02435577703', 'Khu Phức Hợp Sân Bóng & Thể Thao DNU', '06:00:00', '20:30:00');
 
 -- 15. Quầy phục vụ (Counters)
 INSERT INTO counters (id, canteen_id, code, name, counter_type) VALUES
-(1, 1, 'CTR-A1-RICE', 'Quầy Cơm Phần & Cơm Suất A1', 'FOOD'),
-(2, 1, 'CTR-A1-NOODLE', 'Quầy Bún Phở Bánh Canh A1', 'FOOD'),
-(3, 1, 'CTR-A1-DRINK', 'Quầy Nước Ép & Trà Sữa A1', 'DRINK'),
-(4, 2, 'CTR-B2-FAST', 'Quầy Bánh Mì & Fastfood B2', 'FAST_FOOD'),
-(5, 3, 'CTR-DA-ALL', 'Quầy Phục Vụ Tổng Hợp Dĩ An', 'ALL_IN_ONE');
+(1, 1, 'CTR-G-RICE', 'Quầy Cơm Sinh Viên DNU (Tòa G)', 'FOOD'),
+(2, 1, 'CTR-G-NOODLE', 'Quầy Bún Phở Hà Nội (Tòa G)', 'FOOD'),
+(3, 1, 'CTR-G-DRINK', 'Quầy Trà Sữa & Cà Phê DNU', 'DRINK'),
+(4, 2, 'CTR-AB-FAST', 'Quầy Bánh Mì & Ăn Vặt Tòa AB', 'FAST_FOOD'),
+(5, 3, 'CTR-GARDEN-ALL', 'Quầy DNU Garden & Coffee', 'ALL_IN_ONE');
 
 -- 16. Khu vực ăn & Bàn
 INSERT INTO dining_areas (id, canteen_id, name, floor_number, capacity) VALUES

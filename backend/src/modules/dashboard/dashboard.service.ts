@@ -142,20 +142,20 @@ export class DashboardService {
     } catch {}
 
     return [
-      { id: 1, name: 'Cơm Gà Xối Mỡ Giòn Da', category_name: 'Cơm Phần', base_price: 35000, total_sold: 823, total_revenue: 28805000 },
-      { id: 2, name: 'Cơm Sườn Nướng Mật Ong', category_name: 'Cơm Phần', base_price: 35000, total_sold: 721, total_revenue: 25235000 },
-      { id: 13, name: 'Trà Đào Cam Sả Size M', category_name: 'Đồ Uống', base_price: 25000, total_sold: 652, total_revenue: 16300000 },
-      { id: 7, name: 'Phở Bò Tái Hà Nội', category_name: 'Bún - Phở', base_price: 35000, total_sold: 510, total_revenue: 17850000 },
-      { id: 15, name: 'Trà Sữa Trân Châu Đường Đen', category_name: 'Đồ Uống', base_price: 25000, total_sold: 489, total_revenue: 12225000 },
+      { id: 31, name: 'Cơm Rang Dưa Bò Hà Nội', category_name: 'Cơm Phần & Cơm Đĩa DNU', base_price: 35000, total_sold: 850, total_revenue: 29750000 },
+      { id: 1, name: 'Cơm Gà Xối Mỡ Giòn Da', category_name: 'Cơm Phần & Cơm Đĩa DNU', base_price: 35000, total_sold: 823, total_revenue: 28805000 },
+      { id: 32, name: 'Bún Chả Hà Nội Nướng Than', category_name: 'Bún - Phở - Mì Hà Nội', base_price: 35000, total_sold: 760, total_revenue: 26600000 },
+      { id: 33, name: 'Phở Bò Tái Lăn DNU', category_name: 'Bún - Phở - Mì Hà Nội', base_price: 40000, total_sold: 710, total_revenue: 28400000 },
+      { id: 13, name: 'Trà Đào Cam Sả Hà Đông', category_name: 'Đồ Uống & Trà Sữa DNU', base_price: 25000, total_sold: 690, total_revenue: 17250000 },
     ];
   }
 
   static async getSystemAlerts() {
     return [
-      { id: 1, type: 'DANGER', title: 'Nguyên liệu sắp hết', message: 'Thịt đùi gà phi lê chỉ còn 5.2kg (dưới mức tối thiểu 20kg)', time: '10 phút trước' },
-      { id: 2, type: 'WARNING', title: 'Lô hàng sắp hết hạn', message: 'Lô BATCH-GA-20260820-A hết hạn sau 2 ngày (28/08)', time: '35 phút trước' },
-      { id: 3, type: 'INFO', title: 'Đơn hàng cao điểm', message: 'Có 18 đơn đặt trước cho khung giờ 11:30 - 12:00', time: '1 giờ trước' },
-      { id: 4, type: 'SUCCESS', title: 'Hoàn tất nhập hàng', message: 'Đã nhập thành công 500 lon Coca Cola từ NCC Coca-Cola VN', time: '2 giờ trước' },
+      { id: 1, type: 'DANGER', title: 'Nguyên liệu sắp hết', message: 'Thịt bò tươi xào dưa chỉ còn 4.5kg (dưới mức tối thiểu 15kg)', time: '10 phút trước' },
+      { id: 2, type: 'WARNING', title: 'Lô hàng sắp hết hạn', message: 'Lô BATCH-GA-DNU-20260822 hết hạn sau 2 ngày (29/08)', time: '35 phút trước' },
+      { id: 3, type: 'INFO', title: 'Đơn hàng cao điểm giờ trưa DNU', message: 'Có 35 đơn đặt trước cho khung giờ 11:30 - 12:15 tại Tòa G', time: '1 giờ trước' },
+      { id: 4, type: 'SUCCESS', title: 'Hoàn tất nhập hàng Căng tin DNU', message: 'Đã nhập thành công 400 lon Coca & 500 chai Aquafina từ NCC Hà Nội', time: '2 giờ trước' },
     ];
   }
 }
