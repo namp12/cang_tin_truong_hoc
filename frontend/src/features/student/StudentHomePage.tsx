@@ -5,7 +5,7 @@ import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
 import { OrderTrackingModal } from '../../components/common/OrderTrackingModal.js';
 import { useAuth } from '../../contexts/AuthContext.js';
-import { dnuStore } from '../../services/dnuStore.js';
+import { dnuStore, StudentCartItem } from '../../services/dnuStore.js';
 import { formatCurrency } from '../../utils/format.js';
 import { 
   Search, 
@@ -58,7 +58,7 @@ export const StudentHomePage: React.FC = () => {
   const promoCode = isStudent && studentCohort === 'K18' ? 'DNUCHAO2026' : 'DNUFOOD';
   const [selectedCat, setSelectedCat] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
-  const [cartCount, setCartCount] = useState(2);
+  const [cartItems, setCartItems] = useState<StudentCartItem[]>(() => dnuStore.getStudentCart());
   const [showTrackingModal, setShowTrackingModal] = useState(false);
 
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -92,6 +92,7 @@ export const StudentHomePage: React.FC = () => {
     const syncData = () => {
       setFoods(dnuStore.getFoods());
       setCategories(dnuStore.getCategories());
+      setCartItems(dnuStore.getStudentCart());
     };
     syncData();
     window.addEventListener('dnu_store_updated', syncData);
@@ -286,12 +287,13 @@ export const StudentHomePage: React.FC = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      setCartCount(cartCount + 1);
+                      dnuStore.addToStudentCart(food);
                     }}
-                    className="w-7 h-7 rounded-lg bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center shadow-sm"
+                    className="px-2.5 py-1 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm hover:scale-105 transition-transform"
                     title="Thêm vào giỏ"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Thêm</span>
                   </button>
                 </div>
               </div>
@@ -299,6 +301,35 @@ export const StudentHomePage: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* Floating Mini Cart Banner */}
+      {cartItems.length > 0 && (
+        <div className="fixed bottom-16 left-3 right-3 max-w-md mx-auto sm:max-w-2xl z-30 animate-in slide-in-from-bottom-3">
+          <div
+            onClick={() => navigate('/student/cart')}
+            className="p-3 bg-slate-900 text-white rounded-2xl shadow-2xl flex items-center justify-between cursor-pointer border border-slate-700/60 hover:bg-slate-950 transition-all hover:scale-[1.01]"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-orange-600 text-white flex items-center justify-center font-bold text-xs shadow-md">
+                <ShoppingBag className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold leading-tight">
+                  {cartItems.reduce((s, i) => s + i.quantity, 0)} món trong giỏ hàng
+                </p>
+                <p className="text-xs font-black text-orange-400 font-mono">
+                  {formatCurrency(cartItems.reduce((s, i) => s + i.price * i.quantity, 0))}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1 bg-orange-600 px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs hover:bg-orange-700 transition-colors">
+              <span>Xem Giỏ</span>
+              <ChevronRight className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Review Dialog for Student */}
       {showReviewModal && (

@@ -29,10 +29,14 @@ export const StudentLayout: React.FC = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [walletBalance, setWalletBalance] = useState(() => dnuStore.getStudentWallet(studentMssv).balance);
+  const [cartItemsCount, setCartItemsCount] = useState(() =>
+    dnuStore.getStudentCart().reduce((s, i) => s + i.quantity, 0)
+  );
 
   React.useEffect(() => {
     const handleSync = () => {
       setWalletBalance(dnuStore.getStudentWallet(studentMssv).balance);
+      setCartItemsCount(dnuStore.getStudentCart().reduce((s, i) => s + i.quantity, 0));
     };
     window.addEventListener('dnu_store_updated', handleSync);
     window.addEventListener('storage', handleSync);
@@ -45,8 +49,9 @@ export const StudentLayout: React.FC = () => {
   const navItems = [
     { label: 'Trang chủ', path: '/student/home', icon: Home },
     { label: 'Thực đơn', path: '/student/menu', icon: UtensilsCrossed },
-    { label: 'Giỏ hàng', path: '/student/cart', icon: ShoppingBag, badge: '2' },
+    { label: 'Giỏ hàng', path: '/student/cart', icon: ShoppingBag, badge: cartItemsCount > 0 ? String(cartItemsCount) : undefined },
     { label: 'Đơn hàng', path: '/student/orders', icon: Receipt },
+    { label: 'Tài khoản', path: '/student/profile', icon: UserIcon },
   ];
 
   return (
@@ -79,7 +84,7 @@ export const StudentLayout: React.FC = () => {
           {/* DNU Pay Wallet Quick Button */}
           <button
             type="button"
-            onClick={() => setShowWalletModal(true)}
+            onClick={() => navigate('/student/profile')}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-orange-500/15 to-amber-500/15 text-orange-700 dark:text-orange-300 border border-orange-500/20 text-xs font-bold hover:scale-105 transition-transform"
             title="Ví DNU Pay"
           >
@@ -91,7 +96,7 @@ export const StudentLayout: React.FC = () => {
           {user ? (
             <div className="flex items-center gap-1.5">
               <button
-                onClick={() => setShowProfileModal(true)}
+                onClick={() => navigate('/student/profile')}
                 className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition-colors"
               >
                 <div className="w-5 h-5 rounded-full bg-orange-600 text-white text-[10px] flex items-center justify-center font-bold">
@@ -137,14 +142,14 @@ export const StudentLayout: React.FC = () => {
               className={({ isActive }) =>
                 cn(
                   'flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-medium transition-all relative',
-                  isActive ? 'text-emerald-600 font-bold' : 'text-slate-400 hover:text-slate-600'
+                  isActive ? 'text-orange-600 font-bold' : 'text-slate-400 hover:text-slate-600'
                 )
               }
             >
               <div className="relative">
                 <Icon className="w-5 h-5 mb-0.5" />
                 {item.badge && (
-                  <span className="absolute -top-1 -right-2 w-3.5 h-3.5 bg-red-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center">
+                  <span className="absolute -top-1 -right-2 min-w-[15px] h-3.5 px-1 bg-red-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center">
                     {item.badge}
                   </span>
                 )}
@@ -153,29 +158,9 @@ export const StudentLayout: React.FC = () => {
             </NavLink>
           );
         })}
-
-        {/* Wallet Bottom Nav Item */}
-        <button
-          type="button"
-          onClick={() => setShowWalletModal(true)}
-          className="flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-medium text-slate-400 hover:text-slate-600 transition-all"
-        >
-          <Wallet className="w-5 h-5 mb-0.5" />
-          <span>Ví DNU</span>
-        </button>
-
-        {/* Profile Bottom Nav Item */}
-        <button
-          type="button"
-          onClick={() => setShowProfileModal(true)}
-          className="flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-medium text-slate-400 hover:text-slate-600 transition-all"
-        >
-          <UserIcon className="w-5 h-5 mb-0.5" />
-          <span>Cá nhân</span>
-        </button>
       </nav>
 
-      {/* Interactive Modals */}
+      {/* Profile & Wallet Modals */}
       <UserProfileModal open={showProfileModal} onOpenChange={setShowProfileModal} />
       <StudentWalletModal open={showWalletModal} onOpenChange={setShowWalletModal} />
     </div>

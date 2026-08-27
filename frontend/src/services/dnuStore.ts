@@ -39,6 +39,16 @@ export interface PromotionVoucher {
   targetRole?: string;
 }
 
+export interface StudentCartItem {
+  id: number;
+  name: string;
+  price: number;
+  quantity: number;
+  imageUrl?: string;
+  category?: string;
+  note?: string;
+}
+
 export interface StaffUser {
   id: number;
   username: string;
@@ -1075,6 +1085,47 @@ export const dnuStore = {
       fourStar: list.filter((r) => r.rating === 4).length,
       threeStar: list.filter((r) => r.rating === 3).length,
     };
+  },
+
+  // -------------------------------------------------------------
+  // 12. STUDENT CART (GIỎ HÀNG SINH VIÊN)
+  // -------------------------------------------------------------
+  getStudentCart(): StudentCartItem[] {
+    try {
+      const stored = localStorage.getItem('dnu_student_cart');
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return [
+      { id: 1, name: 'Cơm Gà Xối Mỡ Giòn Da', price: 35000, quantity: 1, imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80', category: 'Cơm' },
+      { id: 4, name: 'Trà Sữa Trân Châu Đường Đen DNU', price: 25000, quantity: 1, imageUrl: 'https://images.unsplash.com/photo-1558857563-b371f31ca957?w=500&q=80', category: 'Đồ Uống & Trà Sữa' },
+    ];
+  },
+  saveStudentCart(cart: StudentCartItem[]) {
+    localStorage.setItem('dnu_student_cart', JSON.stringify(cart));
+    window.dispatchEvent(new Event('dnu_store_updated'));
+  },
+  addToStudentCart(food: { id: number; name: string; price: number; imageUrl?: string; category?: string }) {
+    const cart = this.getStudentCart();
+    const existing = cart.find((i) => i.id === food.id || i.name === food.name);
+    let updated: StudentCartItem[];
+    if (existing) {
+      updated = cart.map((i) => (i.id === existing.id ? { ...i, quantity: i.quantity + 1 } : i));
+    } else {
+      updated = [...cart, { id: food.id, name: food.name, price: food.price, quantity: 1, imageUrl: food.imageUrl, category: food.category }];
+    }
+    this.saveStudentCart(updated);
+    return updated;
+  },
+  updateStudentCartQty(id: number, delta: number) {
+    const cart = this.getStudentCart();
+    const updated = cart
+      .map((i) => (i.id === id ? { ...i, quantity: i.quantity + delta } : i))
+      .filter((i) => i.quantity > 0);
+    this.saveStudentCart(updated);
+    return updated;
+  },
+  clearStudentCart() {
+    this.saveStudentCart([]);
   },
 
   // -------------------------------------------------------------

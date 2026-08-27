@@ -21,6 +21,8 @@ import { ReportsPage } from '../features/reports/ReportsPage.js';
 import { AiAnalyticsPage } from '../features/ai/AiAnalyticsPage.js';
 import { SettingsPage } from '../features/settings/SettingsPage.js';
 import { StudentHomePage } from '../features/student/StudentHomePage.js';
+import { StudentCartPage } from '../features/student/StudentCartPage.js';
+import { StudentProfilePage } from '../features/student/StudentProfilePage.js';
 import { KioskPage } from '../features/kiosk/KioskPage.js';
 import { SystemTesterPage } from '../features/tester/SystemTesterPage.js';
 
@@ -104,9 +106,9 @@ export const AppRoutes: React.FC = () => {
         <Route index element={<Navigate to="/student/home" replace />} />
         <Route path="home" element={<StudentHomePage />} />
         <Route path="menu" element={<StudentHomePage />} />
-        <Route path="cart" element={<PosPage />} />
+        <Route path="cart" element={<StudentCartPage />} />
         <Route path="orders" element={<OrdersPage />} />
-        <Route path="profile" element={<StudentHomePage />} />
+        <Route path="profile" element={<StudentProfilePage />} />
       </Route>
 
       {/* Self-Ordering Smart Kiosk Terminal Route */}
