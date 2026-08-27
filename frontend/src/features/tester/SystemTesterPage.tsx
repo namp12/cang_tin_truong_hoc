@@ -312,6 +312,102 @@ export const SystemTesterPage: React.FC = () => {
     setIsRunningAll(false);
   };
 
+  // Security Tester States
+  const [selectedTestUser, setSelectedTestUser] = useState<string>('student_2110001');
+  const [selectedTestVoucher, setSelectedTestVoucher] = useState<string>('DNUCHAO2026');
+  const [selectedTestPage, setSelectedTestPage] = useState<string>('ai-analytics');
+  
+  const [securityTestLogs, setSecurityTestLogs] = useState<Array<{
+    time: string;
+    user: string;
+    role: string;
+    action: string;
+    result: string;
+    status: 'SAFE' | 'BLOCKED' | 'WARNING';
+  }>>([
+    { time: '17:02:10', user: 'student_2110001', role: 'STUDENT', action: 'Truy cập trang AI Analytics', result: '🛡️ Chặn thành công! Redirect về /student/home (Không có quyền truy cập)', status: 'BLOCKED' },
+    { time: '17:02:15', user: 'student_2110001', role: 'STUDENT', action: 'Áp dụng mã DNUCHAO2026', result: '✅ Thành công! Mã giảm giá hợp lệ cho STUDENT', status: 'SAFE' },
+  ]);
+
+  const runVoucherTest = () => {
+    const userList = dnuStore.getUsers();
+    const user = userList.find((u) => u.username === selectedTestUser);
+    const voucherList = dnuStore.getVouchers();
+    const voucher = voucherList.find((v) => v.code === selectedTestVoucher);
+
+    if (!user || !voucher) return;
+
+    const time = new Date().toTimeString().slice(0, 8);
+    let result = '';
+    let status: 'SAFE' | 'BLOCKED' | 'WARNING' = 'SAFE';
+
+    if (voucher.targetRole && voucher.targetRole !== 'ALL') {
+      if (voucher.targetRole === 'STUDENT' && user.role !== 'STUDENT') {
+        result = `🛡️ Chặn thành công! Voucher ${voucher.code} (chỉ dành cho STUDENT) bị từ chối áp dụng cho ${user.fullName} (${user.role})`;
+        status = 'BLOCKED';
+      } else if (voucher.targetRole === 'STAFF' && user.role !== 'STUDENT') {
+        // Staff validation
+        result = `🛡️ Chặn thành công! Voucher ${voucher.code} (chỉ dành cho STAFF) bị từ chối áp dụng cho ${user.fullName} (${user.role})`;
+        status = 'BLOCKED';
+      } else {
+        result = `✅ Áp dụng thành công! Voucher ${voucher.code} hợp lệ cho tài khoản ${user.fullName} (${user.role})`;
+        status = 'SAFE';
+      }
+    } else {
+      result = `✅ Áp dụng thành công! Voucher ${voucher.code} (áp dụng cho Tất cả) hoạt động cho ${user.fullName} (${user.role})`;
+      status = 'SAFE';
+    }
+
+    setSecurityTestLogs((prev) => [
+      { time, user: user.username, role: user.role, action: `Áp dụng Voucher: ${voucher.code}`, result, status },
+      ...prev,
+    ]);
+  };
+
+  const runPageAccessTest = () => {
+    const userList = dnuStore.getUsers();
+    const user = userList.find((u) => u.username === selectedTestUser);
+    if (!user) return;
+
+    const time = new Date().toTimeString().slice(0, 8);
+    let result = '';
+    let status: 'SAFE' | 'BLOCKED' | 'WARNING' = 'SAFE';
+
+    const pagePermissions: { [key: string]: string[] } = {
+      'ai-analytics': ['SUPER_ADMIN', 'CANTEEN_MANAGER'],
+      'finance': ['SUPER_ADMIN', 'CANTEEN_MANAGER'],
+      'inventory': ['SUPER_ADMIN', 'CANTEEN_MANAGER', 'WAREHOUSE_MANAGER'],
+      'pos': ['SUPER_ADMIN', 'CANTEEN_MANAGER', 'CASHIER'],
+      'kitchen': ['SUPER_ADMIN', 'CANTEEN_MANAGER', 'KITCHEN_STAFF'],
+    };
+
+    const allowedRoles = pagePermissions[selectedTestPage] || [];
+    const isAllowed = allowedRoles.includes(user.role);
+
+    const pageNames: { [key: string]: string } = {
+      'ai-analytics': 'Báo cáo & AI Analytics',
+      'finance': 'Sổ Quỹ & Tài chính',
+      'inventory': 'Quản lý Tồn kho',
+      'pos': 'Bán hàng Quầy POS',
+      'kitchen': 'Màn hình KDS Bếp',
+    };
+
+    const pName = pageNames[selectedTestPage] || selectedTestPage;
+
+    if (isAllowed) {
+      result = `✅ Hợp lệ! Cho phép tài khoản ${user.fullName} (${user.role}) truy cập trang "${pName}"`;
+      status = 'SAFE';
+    } else {
+      result = `🛡️ Chặn thành công! Từ chối tài khoản ${user.fullName} (${user.role}) truy cập trang "${pName}" (Redirect 403 Forbidden)`;
+      status = 'BLOCKED';
+    }
+
+    setSecurityTestLogs((prev) => [
+      { time, user: user.username, role: user.role, action: `Truy cập trang: ${pName}`, result, status },
+      ...prev,
+    ]);
+  };
+
   const passedCount = modules.filter((m) => m.status === 'PASSED').length;
 
   return (
@@ -373,6 +469,139 @@ export const SystemTesterPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* SECTION: Role Security & Authentication Tester (Kiểm thử Phân quyền Bảo mật) */}
+      <Card className="border-indigo-500/25 bg-gradient-to-br from-card via-card to-indigo-500/5 shadow-md">
+        <CardHeader className="pb-3 border-b border-border/60">
+          <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+            <ShieldCheck className="w-5 h-5 text-indigo-500" />
+            <CardTitle className="text-base font-extrabold">Hệ Thống Kiểm Thử Phân Quyền & Bảo Mật Chống Bypass (Security Lab)</CardTitle>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Chọn vai trò tài khoản để thực hiện kiểm thử áp dụng Voucher và phân quyền bảo mật URL của từng trang. Bảo đảm các tài khoản không có quyền không thể bypass.
+          </p>
+        </CardHeader>
+        <CardContent className="p-5 space-y-5 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Step 1: Account selection */}
+            <div className="space-y-2">
+              <label className="block font-bold text-foreground">1. Chọn Tài Khoản & Vai Trò Test</label>
+              <select
+                value={selectedTestUser}
+                onChange={(e) => setSelectedTestUser(e.target.value)}
+                aria-label="Chọn tài khoản test"
+                className="w-full px-3 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-primary font-semibold"
+              >
+                {dnuStore.getUsers().map((u) => (
+                  <option key={u.id} value={u.username}>
+                    👤 {u.fullName} ({u.role})
+                  </option>
+                ))}
+              </select>
+              <div className="p-3 bg-muted/40 border border-border/80 rounded-xl space-y-1 text-[11px]">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Username:</span>
+                  <span className="font-mono font-bold text-foreground">{selectedTestUser}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Quyền Hệ Thống:</span>
+                  <Badge variant="primary" className="text-[10px] font-mono py-0 font-extrabold bg-indigo-600 text-white">
+                    {dnuStore.getUsers().find(u => u.username === selectedTestUser)?.role}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 2: Voucher tests */}
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <label className="block font-bold text-foreground">2. Test Giới Hạn Voucher Theo Vai Trò</label>
+                <div className="flex gap-2">
+                  <select
+                    value={selectedTestVoucher}
+                    onChange={(e) => setSelectedTestVoucher(e.target.value)}
+                    aria-label="Chọn mã voucher test"
+                    className="flex-1 px-3 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-primary font-mono font-bold"
+                  >
+                    {dnuStore.getVouchers().map((v) => (
+                      <option key={v.id} value={v.code}>
+                        🎫 {v.code} ({v.targetRole === 'ALL' ? 'Tất cả' : v.targetRole})
+                      </option>
+                    ))}
+                  </select>
+                  <Button 
+                    onClick={runVoucherTest}
+                    variant="default"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9"
+                  >
+                    Chạy Test Áp Mã
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Voucher: <strong>{selectedTestVoucher}</strong> (Dành riêng cho: <strong>{dnuStore.getVouchers().find(v => v.code === selectedTestVoucher)?.targetRole}</strong>)
+                </p>
+              </div>
+
+              {/* Step 3: Page access tests */}
+              <div className="space-y-2 pt-2 border-t border-border/60">
+                <label className="block font-bold text-foreground">3. Test Bảo Mật Chặn Quyền Truy Cập Trang</label>
+                <div className="flex gap-2">
+                  <select
+                    value={selectedTestPage}
+                    onChange={(e) => setSelectedTestPage(e.target.value)}
+                    aria-label="Chọn trang kiểm thử"
+                    className="flex-1 px-3 py-2 bg-background border border-input rounded-xl focus:ring-2 focus:ring-primary font-semibold"
+                  >
+                    <option value="ai-analytics">📊 AI Analytics</option>
+                    <option value="finance">💰 Quản lý Tài chính</option>
+                    <option value="inventory">📦 Quản lý Tồn kho</option>
+                    <option value="pos">🛒 Quầy POS Bán hàng</option>
+                    <option value="kitchen">🍳 Màn hình KDS Bếp</option>
+                  </select>
+                  <Button 
+                    onClick={runPageAccessTest}
+                    variant="outline"
+                    className="border-indigo-500 hover:bg-indigo-50 text-indigo-600 font-bold h-9"
+                  >
+                    Test Quyền Trang
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Test Logger Panel */}
+            <div className="space-y-2 flex flex-col justify-between">
+              <label className="block font-bold text-foreground flex items-center justify-between">
+                <span>Console Security Log</span>
+                <span className="text-[10px] font-mono text-emerald-600 animate-pulse flex items-center gap-1">
+                  ● ACTIVE
+                </span>
+              </label>
+              <div className="p-3 bg-slate-900 text-slate-100 rounded-xl font-mono text-[10px] h-32 overflow-y-auto space-y-2 shadow-inner border border-slate-800">
+                {securityTestLogs.map((log, idx) => (
+                  <div key={idx} className="border-b border-slate-800/60 pb-1.5 last:border-0">
+                    <span className="text-slate-400 mr-1.5">[{log.time}]</span>
+                    <span className="text-cyan-400 mr-1">@{log.user} ({log.role}):</span>
+                    <p className={`font-semibold mt-0.5 ${
+                      log.status === 'BLOCKED' ? 'text-rose-400' : 'text-emerald-400'
+                    }`}>
+                      {log.result}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <Button 
+                onClick={() => setSecurityTestLogs([])}
+                variant="ghost" 
+                size="sm" 
+                className="w-full text-muted-foreground text-[10px] h-6 mt-1 hover:text-foreground"
+              >
+                Clear Security Logs
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Module Grid List */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

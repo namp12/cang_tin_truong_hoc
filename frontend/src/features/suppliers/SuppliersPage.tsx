@@ -716,24 +716,32 @@ export const SuppliersPage: React.FC = () => {
               </div>
             </SheetHeader>
 
-            <div className="space-y-3">
-              <div className="p-3 rounded-xl bg-card border border-border space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-foreground">Đợt giao hàng gần nhất:</span>
-                  <Badge variant="success">Đã nhập kho 05:30 Sáng nay</Badge>
+            <div className="space-y-3 overflow-y-auto max-h-[60vh] pr-1">
+              {dnuStore.getInboundReceipts()
+                .filter((rec) => rec.supplierName === historySupplier.name)
+                .map((rec) => (
+                  <div key={rec.id} className="p-3 rounded-xl bg-card border border-border space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-foreground">{rec.code}</span>
+                      <Badge variant="success">Đã nhập kho</Badge>
+                    </div>
+                    <div className="text-muted-foreground space-y-0.5">
+                      {rec.items.map((it, idx) => (
+                        <div key={idx}>
+                          • {it.qty} {it.unit} × {it.name} ({formatCurrency(it.price)}/{it.unit})
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-muted-foreground font-mono text-[10px] pt-1 border-t border-border/40">
+                      Thời gian: {rec.receivedDate} • Tổng: {formatCurrency(rec.totalAmount)}
+                    </p>
+                  </div>
+                ))}
+              {dnuStore.getInboundReceipts().filter((rec) => rec.supplierName === historySupplier.name).length === 0 && (
+                <div className="text-center py-6 text-muted-foreground">
+                  Chưa ghi nhận lịch sử đơn nhập hàng nào cho nhà cung cấp này.
                 </div>
-                <p className="text-muted-foreground">Thực phẩm: Thịt bò tươi (15kg), Dưa cải (10kg)</p>
-                <p className="text-muted-foreground font-mono text-[11px]">Người nhận: Thủ kho Bùi Văn Quân • Kiểm tra VSATTP: ĐẠT 100%</p>
-              </div>
-
-              <div className="p-3 rounded-xl bg-card border border-border space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-foreground">Đợt giao hàng hôm qua:</span>
-                  <Badge variant="success">Đã nhập kho 05:30 Hôm qua</Badge>
-                </div>
-                <p className="text-muted-foreground">Thực phẩm: Thịt gà đùi (25kg), Trứng gà (100 quả)</p>
-                <p className="text-muted-foreground font-mono text-[11px]">Người nhận: Thủ kho Bùi Văn Quân • Hóa đơn đỏ #001928</p>
-              </div>
+              )}
             </div>
 
             <Button onClick={() => setHistorySupplier(null)} variant="outline" className="w-full">

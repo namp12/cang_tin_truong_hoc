@@ -56,11 +56,11 @@ export const PromotionsPage: React.FC = () => {
       code: voucherForm.code.toUpperCase(),
       title: voucherForm.title,
       discountType: voucherForm.discountType,
-      discountValue: Number(voucherForm.discountValue) || 10,
-      minOrderValue: Number(voucherForm.minOrderValue) || 30000,
-      maxDiscount: Number(voucherForm.maxDiscount) || 15000,
+      discountValue: voucherForm.discountValue !== '' ? Number(voucherForm.discountValue) : 10,
+      minOrderValue: voucherForm.minOrderValue !== '' ? Number(voucherForm.minOrderValue) : 0,
+      maxDiscount: voucherForm.maxDiscount !== '' ? Number(voucherForm.maxDiscount) : undefined,
       usedCount: 0,
-      maxUsage: Number(voucherForm.maxUsage) || 500,
+      maxUsage: voucherForm.maxUsage !== '' ? Number(voucherForm.maxUsage) : 500,
       validFrom: new Date().toISOString().slice(0, 10),
       validTo: voucherForm.validTo || '2026-12-31',
       targetStudents: voucherForm.targetStudents,
@@ -285,6 +285,29 @@ export const PromotionsPage: React.FC = () => {
                   value={voucherForm.validTo}
                   onChange={(e) => setVoucherForm({ ...voucherForm, validTo: e.target.value })}
                   className="w-full px-3 py-2 bg-background border border-input rounded-lg focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Giảm tối đa (VNĐ)</label>
+                <input
+                  type="number"
+                  value={voucherForm.maxDiscount}
+                  onChange={(e) => setVoucherForm({ ...voucherForm, maxDiscount: e.target.value })}
+                  placeholder="Không giới hạn"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-lg font-mono focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-foreground mb-1">Lượt dùng tối đa</label>
+                <input
+                  type="number"
+                  value={voucherForm.maxUsage}
+                  onChange={(e) => setVoucherForm({ ...voucherForm, maxUsage: e.target.value })}
+                  placeholder="500"
+                  className="w-full px-3 py-2 bg-background border border-input rounded-lg font-mono focus:ring-2 focus:ring-ring"
                 />
               </div>
             </div>
