@@ -24,6 +24,19 @@ export const KitchenPage: React.FC = () => {
   const [tickets, setTickets] = useState<KitchenTicket[]>(() => orderStorage.getKitchenTickets());
   const [showCompletedHistory, setShowCompletedHistory] = useState(false);
 
+  // Sync tickets whenever storage or store is updated
+  useEffect(() => {
+    const handleSync = () => {
+      setTickets(orderStorage.getKitchenTickets());
+    };
+    window.addEventListener('dnu_store_updated', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('dnu_store_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, []);
+
   // Sync tickets whenever latestOrder arrives via Socket
   useEffect(() => {
     if (latestOrder) {

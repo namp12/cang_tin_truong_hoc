@@ -49,26 +49,16 @@ export const InventoryPage: React.FC = () => {
   const suppliersList = dnuStore.getSuppliers();
 
   useEffect(() => {
-    dnuStore.saveStocks(stocks);
-  }, [stocks]);
-
-  useEffect(() => {
-    dnuStore.saveInboundReceipts(inboundReceipts);
-  }, [inboundReceipts]);
-
-  useEffect(() => {
-    dnuStore.saveOutboundIssues(outboundIssues);
-  }, [outboundIssues]);
-
-  useEffect(() => {
     const handleSync = () => {
       setStocks(dnuStore.getStocks());
       setInboundReceipts(dnuStore.getInboundReceipts());
       setOutboundIssues(dnuStore.getOutboundIssues());
     };
     window.addEventListener('dnu_store_updated', handleSync);
+    window.addEventListener('storage', handleSync);
     return () => {
       window.removeEventListener('dnu_store_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
     };
   }, []);
 
@@ -119,25 +109,27 @@ export const InventoryPage: React.FC = () => {
       totalAmount: receiptTotal,
       status: 'COMPLETED',
     };
-    setInboundReceipts([newReceipt, ...inboundReceipts]);
+    const updatedInbounds = [newReceipt, ...inboundReceipts];
+    setInboundReceipts(updatedInbounds);
+    dnuStore.saveInboundReceipts(updatedInbounds);
 
     // 2. Increase stock
-    setStocks((prev) =>
-      prev.map((s) => {
-        if (s.name.toLowerCase().includes(inboundForm.ingredientName.toLowerCase())) {
-          const newQty = s.quantity + Number(inboundForm.qty);
-          const newAvail = s.available + Number(inboundForm.qty);
-          return {
-            ...s,
-            quantity: newQty,
-            available: newAvail,
-            status: newAvail <= s.minStock ? 'LOW_STOCK' : 'NORMAL',
-            expiryDate: inboundForm.expiryDate || s.expiryDate,
-          };
-        }
-        return s;
-      })
-    );
+    const updatedStocks = stocks.map((s) => {
+      if (s.name.toLowerCase().includes(inboundForm.ingredientName.toLowerCase())) {
+        const newQty = s.quantity + Number(inboundForm.qty);
+        const newAvail = s.available + Number(inboundForm.qty);
+        return {
+          ...s,
+          quantity: newQty,
+          available: newAvail,
+          status: (newAvail <= s.minStock ? 'LOW_STOCK' : 'NORMAL') as StockItem['status'],
+          expiryDate: inboundForm.expiryDate || s.expiryDate,
+        };
+      }
+      return s;
+    });
+    setStocks(updatedStocks);
+    dnuStore.saveStocks(updatedStocks);
 
     setShowInboundModal(false);
   };
@@ -159,24 +151,26 @@ export const InventoryPage: React.FC = () => {
       items: [{ name: outboundForm.ingredientName, qty: Number(outboundForm.qty), unit: outboundForm.unit }],
       supplierName: outboundForm.supplierName,
     };
-    setOutboundIssues([newIssue, ...outboundIssues]);
+    const updatedOutbounds = [newIssue, ...outboundIssues];
+    setOutboundIssues(updatedOutbounds);
+    dnuStore.saveOutboundIssues(updatedOutbounds);
 
     // 2. Decrease stock
-    setStocks((prev) =>
-      prev.map((s) => {
-        if (s.name.toLowerCase().includes(outboundForm.ingredientName.toLowerCase())) {
-          const newQty = Math.max(0, s.quantity - Number(outboundForm.qty));
-          const newAvail = Math.max(0, s.available - Number(outboundForm.qty));
-          return {
-            ...s,
-            quantity: newQty,
-            available: newAvail,
-            status: newAvail === 0 ? 'OUT_OF_STOCK' : newAvail <= s.minStock ? 'LOW_STOCK' : 'NORMAL',
-          };
-        }
-        return s;
-      })
-    );
+    const updatedStocks = stocks.map((s) => {
+      if (s.name.toLowerCase().includes(outboundForm.ingredientName.toLowerCase())) {
+        const newQty = Math.max(0, s.quantity - Number(outboundForm.qty));
+        const newAvail = Math.max(0, s.available - Number(outboundForm.qty));
+        return {
+          ...s,
+          quantity: newQty,
+          available: newAvail,
+          status: (newAvail === 0 ? 'OUT_OF_STOCK' : newAvail <= s.minStock ? 'LOW_STOCK' : 'NORMAL') as StockItem['status'],
+        };
+      }
+      return s;
+    });
+    setStocks(updatedStocks);
+    dnuStore.saveStocks(updatedStocks);
 
     setShowOutboundModal(false);
   };
@@ -205,7 +199,9 @@ export const InventoryPage: React.FC = () => {
       supplierName: newItemForm.supplierName,
     };
 
-    setStocks([created, ...stocks]);
+    const updatedStocks = [created, ...stocks];
+    setStocks(updatedStocks);
+    dnuStore.saveStocks(updatedStocks);
     setShowAddItemModal(false);
   };
 
@@ -215,18 +211,18 @@ export const InventoryPage: React.FC = () => {
     if (!adjustItem || !adjustQty) return;
 
     const targetQty = Number(adjustQty);
-    setStocks((prev) =>
-      prev.map((s) =>
-        s.id === adjustItem.id
-          ? {
-              ...s,
-              quantity: targetQty,
-              available: Math.max(0, targetQty - s.reserved),
-              status: targetQty <= s.minStock ? 'LOW_STOCK' : 'NORMAL',
-            }
-          : s
-      )
+    const updatedStocks = stocks.map((s) =>
+      s.id === adjustItem.id
+        ? {
+            ...s,
+            quantity: targetQty,
+            available: Math.max(0, targetQty - s.reserved),
+            status: (targetQty <= s.minStock ? 'LOW_STOCK' : 'NORMAL') as StockItem['status'],
+          }
+        : s
     );
+    setStocks(updatedStocks);
+    dnuStore.saveStocks(updatedStocks);
     setAdjustItem(null);
   };
 

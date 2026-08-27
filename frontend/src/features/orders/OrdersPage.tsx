@@ -95,6 +95,19 @@ export const OrdersPage: React.FC = () => {
     }
   }, [latestOrder]);
 
+  // Sync orders whenever storage or store is updated
+  useEffect(() => {
+    const handleSync = () => {
+      setOrders(orderStorage.getOrders());
+    };
+    window.addEventListener('dnu_store_updated', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('dnu_store_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, []);
+
   // Listen to status changes from Kitchen & sync
   useEffect(() => {
     if (latestStatusUpdate) {

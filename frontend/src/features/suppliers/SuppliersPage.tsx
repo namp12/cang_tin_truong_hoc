@@ -51,20 +51,17 @@ export const SuppliersPage: React.FC = () => {
 
   // Supplier History Sheet State
   const [historySupplier, setHistorySupplier] = useState<Supplier | null>(null);
-
   const [suppliers, setSuppliers] = useState<Supplier[]>(() => dnuStore.getSuppliers());
-
-  useEffect(() => {
-    dnuStore.saveSuppliers(suppliers);
-  }, [suppliers]);
 
   useEffect(() => {
     const handleSync = () => {
       setSuppliers(dnuStore.getSuppliers());
     };
     window.addEventListener('dnu_store_updated', handleSync);
+    window.addEventListener('storage', handleSync);
     return () => {
       window.removeEventListener('dnu_store_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
     };
   }, []);
 
@@ -114,24 +111,23 @@ export const SuppliersPage: React.FC = () => {
     e.preventDefault();
     if (!formData.name || !formData.phone) return;
 
+    let updated: Supplier[];
     if (editingSupplier) {
       // Update existing
-      setSuppliers((prev) =>
-        prev.map((s) =>
-          s.id === editingSupplier.id
-            ? {
-                ...s,
-                name: formData.name,
-                category: formData.category,
-                contactPerson: formData.contactPerson || 'Đại diện kinh doanh',
-                phone: formData.phone,
-                email: formData.email || `contact@${formData.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.vn`,
-                address: formData.address || 'Hà Đông, Hà Nội',
-                deliveryTime: formData.deliveryTime,
-                certVsattp: formData.certVsattp,
-              }
-            : s
-        )
+      updated = suppliers.map((s) =>
+        s.id === editingSupplier.id
+          ? {
+              ...s,
+              name: formData.name,
+              category: formData.category,
+              contactPerson: formData.contactPerson || 'Đại diện kinh doanh',
+              phone: formData.phone,
+              email: formData.email || `contact@${formData.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.vn`,
+              address: formData.address || 'Hà Đông, Hà Nội',
+              deliveryTime: formData.deliveryTime,
+              certVsattp: formData.certVsattp,
+            }
+          : s
       );
     } else {
       // Create new
@@ -159,16 +155,18 @@ export const SuppliersPage: React.FC = () => {
         status: 'ACTIVE',
         deliveriesCount: 0,
       };
-
-      setSuppliers([newSupplier, ...suppliers]);
+      updated = [newSupplier, ...suppliers];
     }
-
+    setSuppliers(updated);
+    dnuStore.saveSuppliers(updated);
     setShowAddModal(false);
   };
 
   const handleDeleteSupplier = (id: number) => {
     if (window.confirm('Bạn có chắc muốn xóa đối tác nhà cung cấp này?')) {
-      setSuppliers((prev) => prev.filter((s) => s.id !== id));
+      const updated = suppliers.filter((s) => s.id !== id);
+      setSuppliers(updated);
+      dnuStore.saveSuppliers(updated);
     }
   };
 

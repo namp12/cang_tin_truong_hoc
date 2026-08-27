@@ -196,6 +196,8 @@ export const orderStorage = {
       const stored = localStorage.getItem(STORAGE_ORDERS_KEY);
       if (stored) {
         return JSON.parse(stored);
+      } else {
+        localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(initialOrders));
       }
     } catch (e) {
       console.warn('Storage read error:', e);
@@ -206,6 +208,8 @@ export const orderStorage = {
   saveOrders(orders: OrderItem[]) {
     try {
       localStorage.setItem(STORAGE_ORDERS_KEY, JSON.stringify(orders));
+      window.dispatchEvent(new Event('dnu_store_updated'));
+      window.dispatchEvent(new Event('storage'));
     } catch (e) {
       console.warn('Storage write error:', e);
     }
@@ -216,6 +220,8 @@ export const orderStorage = {
       const stored = localStorage.getItem(STORAGE_TICKETS_KEY);
       if (stored) {
         return JSON.parse(stored);
+      } else {
+        localStorage.setItem(STORAGE_TICKETS_KEY, JSON.stringify(initialTickets));
       }
     } catch (e) {
       console.warn('Storage read error:', e);
@@ -226,6 +232,8 @@ export const orderStorage = {
   saveKitchenTickets(tickets: KitchenTicket[]) {
     try {
       localStorage.setItem(STORAGE_TICKETS_KEY, JSON.stringify(tickets));
+      window.dispatchEvent(new Event('dnu_store_updated'));
+      window.dispatchEvent(new Event('storage'));
     } catch (e) {
       console.warn('Storage write error:', e);
     }
