@@ -92,8 +92,12 @@ export const StudentHomePage: React.FC = () => {
 
   const getLatestStudentOrder = () => {
     const allOrders = orderStorage.getOrders();
+    const cleanName = (name: string) => name.split('(')[0].trim().toLowerCase();
     const studentName = user?.fullName || 'Nguyễn Thành Nam';
-    const studentOrders = allOrders.filter((o) => o.customerName.includes(studentName));
+    const studentOrders = allOrders.filter((o) => 
+      (o.customerUsername && user?.username && o.customerUsername.toLowerCase() === user.username.toLowerCase()) ||
+      (cleanName(o.customerName) === cleanName(studentName))
+    );
     
     let active = studentOrders
       .filter((o) => o.status !== 'COMPLETED' && o.status !== 'CANCELLED')

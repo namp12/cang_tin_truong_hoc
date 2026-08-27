@@ -65,8 +65,12 @@ export const StudentLayout: React.FC = () => {
         (o) => o.code === orderNumber || o.id === orderId || o.code.includes(String(orderId))
       );
       
+      const cleanName = (name: string) => name.split('(')[0].trim().toLowerCase();
       const studentName = user?.fullName || 'Nguyễn Thành Nam';
-      const isMyOrder = matchOrder ? matchOrder.customerName.includes(studentName) : false;
+      const isMyOrder = matchOrder ? (
+        (matchOrder.customerUsername && user?.username && matchOrder.customerUsername.toLowerCase() === user.username.toLowerCase()) ||
+        (cleanName(matchOrder.customerName) === cleanName(studentName))
+      ) : false;
       
       if (isMyOrder) {
         const orderCode = orderNumber || `#${orderId}`;
