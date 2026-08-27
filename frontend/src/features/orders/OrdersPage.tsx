@@ -31,8 +31,7 @@ import {
 } from 'lucide-react';
 
 export const OrdersPage: React.FC = () => {
-  const { user, hasRole } = useAuth();
-  const isStudent = hasRole('STUDENT') || user?.roles?.includes('STUDENT') || user?.userType === 'STUDENT';
+  const { user, isStudent } = useAuth();
 
   const { latestOrder, latestStatusUpdate, isConnected, emitStatusUpdate } = useSocket();
   const [filterStatus, setFilterStatus] = useState<string>('ALL');

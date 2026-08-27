@@ -24,9 +24,8 @@ import { dnuStore, SystemNotification } from '../../services/dnuStore.js';
 import { cn } from '../../utils/cn.js';
 
 export const StudentLayout: React.FC = () => {
-  const { user, logout, hasRole } = useAuth();
+  const { user, logout, isStudent } = useAuth();
   const navigate = useNavigate();
-  const isStudent = hasRole('STUDENT') || user?.roles?.includes('STUDENT') || user?.userType === 'STUDENT';
   const isAdminOrStaff = user && !isStudent;
   const studentMssv = isStudent && user?.username ? user.username.replace(/\D/g, '') || '2110001' : '2110001';
 

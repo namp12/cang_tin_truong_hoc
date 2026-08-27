@@ -167,7 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isAdmin = hasRole('SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER');
   const isStaff = hasRole('CASHIER', 'KITCHEN_STAFF', 'WAREHOUSE_MANAGER', 'ACCOUNTANT', 'STAFF');
-  const isStudent = hasRole('STUDENT', 'TEACHER');
+  const isStudent = user ? (user.roles.includes('STUDENT') || user.roles.includes('TEACHER') || user.userType === 'STUDENT') : false;
 
   return (
     <AuthContext.Provider

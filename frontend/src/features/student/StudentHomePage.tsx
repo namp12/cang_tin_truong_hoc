@@ -40,9 +40,8 @@ const getStudentCohort = (username?: string) => {
 
 export const StudentHomePage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, hasRole } = useAuth();
+  const { user, isStudent } = useAuth();
   const { latestStatusUpdate } = useSocket();
-  const isStudent = hasRole('STUDENT') || user?.roles?.includes('STUDENT') || user?.userType === 'STUDENT';
   const studentCohort = isStudent ? getStudentCohort(user?.username) : 'DNU';
 
   // Determine promo details based on cohort

@@ -29,9 +29,8 @@ import {
 } from 'lucide-react';
 
 export const ReviewsPage: React.FC = () => {
-  const { user, hasRole } = useAuth();
-  const isStudent = hasRole('STUDENT') || user?.roles?.includes('STUDENT') || user?.userType === 'STUDENT';
-  const isAdminOrManager = !isStudent && (hasRole('SUPER_ADMIN') || hasRole('ADMIN') || hasRole('CANTEEN_MANAGER') || user?.roles?.includes('SUPER_ADMIN'));
+  const { user, isStudent, hasRole } = useAuth();
+  const isAdminOrManager = !isStudent && (hasRole('SUPER_ADMIN') || hasRole('ADMIN') || hasRole('CANTEEN_MANAGER'));
 
   const [reviews, setReviews] = useState<DishReview[]>(() => dnuStore.getReviews());
   const [stats, setStats] = useState(() => dnuStore.getReviewStats());
