@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card.js';
 import { Button } from '../../components/ui/Button.js';
 import { Badge } from '../../components/ui/Badge.js';
+import { useSocket } from '../../contexts/SocketContext.js';
 import { formatCurrency } from '../../utils/format.js';
 import { 
   Search, 
@@ -159,8 +160,30 @@ export const PosPage: React.FC = () => {
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const finalTotal = Math.max(0, subtotal - discount);
 
+  const { emitNewOrder } = useSocket();
+
   const handlePay = () => {
     setPaymentSuccess(true);
+    
+    // Broadcast order to Kitchen (KDS) realtime via WebSocket
+    const orderNum = `#${Math.floor(1000 + Math.random() * 9000)}`;
+    emitNewOrder({
+      orderId: Date.now(),
+      orderNumber: orderNum,
+      tableNumber: 'Bàn G1-02',
+      canteenId: 1,
+      customerName: 'Khách Quầy POS Tòa G',
+      items: cart.map((i) => ({
+        name: i.name,
+        qty: i.quantity,
+        price: i.price,
+        note: i.toppings?.join(', '),
+      })),
+      totalAmount: finalTotal,
+      status: 'PREPARING',
+      orderedAt: new Date().toLocaleTimeString().slice(0, 5),
+    });
+
     setTimeout(() => {
       setPaymentSuccess(false);
       setShowCheckoutModal(false);

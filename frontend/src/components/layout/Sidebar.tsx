@@ -57,7 +57,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const menuSections: MenuSection[] = [
     {
       title: 'TỔNG QUAN',
-      roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER', 'CASHIER', 'KITCHEN_STAFF', 'WAREHOUSE_MANAGER', 'ACCOUNTANT'],
+      roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER'],
       items: [
         { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard, exact: true },
       ],
@@ -69,7 +69,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Quầy POS Cảm ứng', path: '/admin/pos', icon: ShoppingCart, badge: 'HOT' },
         { label: 'Quản lý Đơn hàng', path: '/admin/orders', icon: Receipt },
         { label: 'Màn hình Bếp (KDS)', path: '/admin/kitchen', icon: ChefHat, badge: 'LIVE' },
-      ],
+      ].filter((item) => {
+        if (user?.roles?.includes('CASHIER') && !user?.roles?.includes('SUPER_ADMIN')) {
+          return item.path === '/admin/pos' || item.path === '/admin/orders';
+        }
+        if (user?.roles?.includes('KITCHEN_STAFF') && !user?.roles?.includes('SUPER_ADMIN')) {
+          return item.path === '/admin/kitchen';
+        }
+        return true;
+      }),
     },
     {
       title: 'THỰC ĐƠN & MÓN ĂN',
@@ -88,10 +96,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       ],
     },
     {
-      title: 'VẬN HÀNH & TÀI CHÍNH',
-      roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER', 'ACCOUNTANT'],
+      title: 'VẬN HÀNH & NHÂN SỰ',
+      roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER'],
       items: [
-        { label: 'Nhân sự & Chấm công', path: '/admin/employees', icon: Users },
+        { label: 'Cấp & Quản lý Tài khoản', path: '/admin/users', icon: Users },
         { label: 'Dòng tiền & Chi phí', path: '/admin/finance', icon: DollarSign },
         { label: 'Khuyến mãi & Voucher', path: '/admin/promotions', icon: Gift },
         { label: 'Đánh giá món', path: '/admin/reviews', icon: Star },
@@ -99,7 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       title: 'BÁO CÁO & TRÍ TUỆ NHÂN TẠO',
-      roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER', 'ACCOUNTANT'],
+      roles: ['SUPER_ADMIN', 'ADMIN', 'CANTEEN_MANAGER'],
       items: [
         { label: 'Báo cáo Kinh doanh', path: '/admin/reports', icon: BarChart3 },
         { label: 'AI Analytics Insights', path: '/admin/ai-analytics', icon: Bot, isAi: true },

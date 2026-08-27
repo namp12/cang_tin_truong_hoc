@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card.js';
 import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
-import { ChefHat, Clock, CheckCircle2, Play, AlertCircle } from 'lucide-react';
+import { useSocket } from '../../contexts/SocketContext.js';
+import { ChefHat, Clock, CheckCircle2, Play, AlertCircle, Wifi, BellRing, Sparkles } from 'lucide-react';
 
 interface KitchenTicket {
   id: number;
@@ -12,9 +13,12 @@ interface KitchenTicket {
   status: 'WAITING' | 'PREPARING' | 'READY';
   orderTime: string;
   elapsedMinutes: number;
+  isRealtimeNew?: boolean;
 }
 
 export const KitchenPage: React.FC = () => {
+  const { latestOrder, emitStatusUpdate, isConnected } = useSocket();
+
   const [tickets, setTickets] = useState<KitchenTicket[]>([
     {
       id: 1,
@@ -66,10 +70,32 @@ export const KitchenPage: React.FC = () => {
     },
   ]);
 
+  // Listen to incoming WebSocket orders from POS or Student App in realtime
+  useEffect(() => {
+    if (latestOrder) {
+      const newTicket: KitchenTicket = {
+        id: latestOrder.orderId,
+        orderNumber: latestOrder.orderNumber,
+        table: latestOrder.tableNumber,
+        items: latestOrder.items.map((i) => ({ name: i.name, qty: i.qty, note: i.note })),
+        status: 'WAITING',
+        orderTime: latestOrder.orderedAt,
+        elapsedMinutes: 0,
+        isRealtimeNew: true,
+      };
+
+      setTickets((prev) => [newTicket, ...prev]);
+    }
+  }, [latestOrder]);
+
   const updateStatus = (id: number, nextStatus: KitchenTicket['status']) => {
-    setTickets((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: nextStatus } : t))
-    );
+    setTickets((prev) => {
+      const target = prev.find((t) => t.id === id);
+      if (target) {
+        emitStatusUpdate(id, target.orderNumber, nextStatus, 1);
+      }
+      return prev.map((t) => (t.id === id ? { ...t, status: nextStatus, isRealtimeNew: false } : t));
+    });
   };
 
   const waitingTickets = tickets.filter((t) => t.status === 'WAITING');
@@ -79,18 +105,24 @@ export const KitchenPage: React.FC = () => {
   return (
     <div className="space-y-5">
       {/* KDS Header */}
-      <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-slate-100 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-card p-4 rounded-xl border border-border shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600">
+          <div className="p-2.5 rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400">
             <ChefHat className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-slate-900 leading-tight">Kitchen Display System (KDS)</h2>
-            <p className="text-xs text-slate-500">Màn hình điều phối chế biến Bếp Căng tin Khu A</p>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-foreground leading-tight">Kitchen Display System (KDS Bếp DNU)</h2>
+              <Badge variant="primary" className="text-[10px] bg-emerald-600 text-white flex items-center gap-1">
+                <Wifi className="w-3 h-3 animate-pulse" />
+                <span>{isConnected ? 'Realtime Live' : 'Connecting...'}</span>
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">Màn hình điều phối chế biến Bếp Căng tin Tòa G (Đại Học Đại Nam)</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 text-xs font-semibold">
+        <div className="flex items-center gap-2 text-xs font-semibold">
           <Badge variant="warning">{waitingTickets.length} Chờ nấu</Badge>
           <Badge variant="info">{preparingTickets.length} Đang nấu</Badge>
           <Badge variant="success">{readyTickets.length} Sẵn sàng</Badge>
