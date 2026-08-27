@@ -13,10 +13,14 @@ import {
   LogOut,
   Wallet,
   LayoutDashboard,
-  ArrowLeft
+  ArrowLeft,
+  Bell,
+  CheckCircle2,
+  ChefHat,
+  Star
 } from 'lucide-react';
 import { formatCurrency } from '../../utils/format.js';
-import { dnuStore } from '../../services/dnuStore.js';
+import { dnuStore, SystemNotification } from '../../services/dnuStore.js';
 import { cn } from '../../utils/cn.js';
 
 export const StudentLayout: React.FC = () => {
@@ -28,15 +32,20 @@ export const StudentLayout: React.FC = () => {
 
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showWalletModal, setShowWalletModal] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [walletBalance, setWalletBalance] = useState(() => dnuStore.getStudentWallet(studentMssv).balance);
   const [cartItemsCount, setCartItemsCount] = useState(() =>
     dnuStore.getStudentCart().reduce((s, i) => s + i.quantity, 0)
+  );
+  const [notifications, setNotifications] = useState<SystemNotification[]>(() =>
+    dnuStore.getNotifications('STUDENT', user?.username)
   );
 
   React.useEffect(() => {
     const handleSync = () => {
       setWalletBalance(dnuStore.getStudentWallet(studentMssv).balance);
       setCartItemsCount(dnuStore.getStudentCart().reduce((s, i) => s + i.quantity, 0));
+      setNotifications(dnuStore.getNotifications('STUDENT', user?.username));
     };
     window.addEventListener('dnu_store_updated', handleSync);
     window.addEventListener('storage', handleSync);
@@ -44,7 +53,22 @@ export const StudentLayout: React.FC = () => {
       window.removeEventListener('dnu_store_updated', handleSync);
       window.removeEventListener('storage', handleSync);
     };
-  }, [studentMssv]);
+  }, [studentMssv, user]);
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const handleMarkAllRead = () => {
+    dnuStore.markAllNotificationsAsRead();
+    setNotifications(dnuStore.getNotifications('STUDENT', user?.username));
+  };
+
+  const handleClickNotif = (notif: SystemNotification) => {
+    dnuStore.markNotificationAsRead(notif.id);
+    setShowNotifications(false);
+    if (notif.linkUrl) {
+      navigate(notif.linkUrl);
+    }
+  };
 
   const navItems = [
     { label: 'Trang chủ', path: '/student/home', icon: Home },
@@ -92,6 +116,84 @@ export const StudentLayout: React.FC = () => {
             <span className="hidden sm:inline">Ví:</span>
             <span className="font-mono">{formatCurrency(walletBalance)}</span>
           </button>
+
+          {/* Student Notifications Bell */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="p-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 relative transition-colors"
+              title="Thông báo"
+            >
+              <Bell className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 px-1 min-w-[15px] h-3.5 bg-rose-500 text-white rounded-full text-[8px] font-bold flex items-center justify-center ring-2 ring-white animate-pulse">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-76 sm:w-84 bg-white rounded-2xl shadow-2xl border border-slate-200 py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+                <div className="px-3.5 py-2 border-b border-slate-100 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-bold text-slate-800">Thông Báo Của Bạn</p>
+                    {unreadCount > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-rose-50 text-rose-600 font-bold text-[9px]">
+                        {unreadCount} mới
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={handleMarkAllRead}
+                    className="text-[10px] text-orange-600 font-semibold hover:underline"
+                  >
+                    Đã đọc tất cả
+                  </button>
+                </div>
+                <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
+                  {notifications.length === 0 ? (
+                    <div className="p-5 text-center text-xs text-slate-400">
+                      Chưa có thông báo nào
+                    </div>
+                  ) : (
+                    notifications.map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => handleClickNotif(item)}
+                        className={`p-3 hover:bg-orange-50/50 transition-colors flex items-start gap-2.5 cursor-pointer ${
+                          !item.isRead ? 'bg-orange-50/30' : ''
+                        }`}
+                      >
+                        <div className="shrink-0 mt-0.5">
+                          {item.type === 'ORDER_READY' ? (
+                            <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                              <ChefHat className="w-3.5 h-3.5" />
+                            </div>
+                          ) : item.type === 'ADMIN_REPLY' ? (
+                            <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            </div>
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center">
+                              <ShoppingBag className="w-3.5 h-3.5" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-xs ${!item.isRead ? 'font-bold text-slate-900' : 'font-semibold text-slate-700'}`}>
+                            {item.title}
+                          </p>
+                          <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5">{item.desc}</p>
+                          <p className="text-[9px] text-slate-400 mt-1 font-mono">{item.time}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {user ? (
             <div className="flex items-center gap-1.5">

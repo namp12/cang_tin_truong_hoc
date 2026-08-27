@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.js';
 import { useTheme } from '../../contexts/ThemeContext.js';
 import { UserProfileModal } from '../common/UserProfileModal.js';
 import { SystemDiagnosticsModal } from '../common/SystemDiagnosticsModal.js';
+import { dnuStore, SystemNotification } from '../../services/dnuStore.js';
 import { 
   Menu, 
   Search, 
@@ -15,7 +17,11 @@ import {
   UserCheck,
   Sun,
   Moon,
-  Activity
+  Activity,
+  ShoppingBag,
+  ChefHat,
+  Star,
+  Wallet
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -23,6 +29,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onOpenMobileSidebar }) => {
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { theme, setTheme, isDark } = useTheme();
 
@@ -32,11 +39,36 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileSidebar }) => {
   const [showDiagnosticsModal, setShowDiagnosticsModal] = useState(false);
   const [selectedCanteen, setSelectedCanteen] = useState('1');
 
-  const notifications = [
-    { id: 1, title: 'Đơn mới #1029', desc: '2 Cơm gà xối mỡ cần nấu', time: '1 phút trước', isNew: true },
-    { id: 2, title: 'Kho thịt gà sắp hết', desc: 'Chỉ còn 5.2kg trong kho A1', time: '10 phút trước', isNew: true },
-    { id: 3, title: 'Thanh toán thành công', desc: 'Đơn #1028 đã thanh toán QR 70.000đ', time: '25 phút trước', isNew: false },
-  ];
+  const [notifications, setNotifications] = useState<SystemNotification[]>(() =>
+    dnuStore.getNotifications(user?.roles?.[0], user?.username)
+  );
+
+  useEffect(() => {
+    const handleSync = () => {
+      setNotifications(dnuStore.getNotifications(user?.roles?.[0], user?.username));
+    };
+    window.addEventListener('dnu_store_updated', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('dnu_store_updated', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
+  }, [user]);
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const handleMarkAllRead = () => {
+    dnuStore.markAllNotificationsAsRead();
+    setNotifications(dnuStore.getNotifications(user?.roles?.[0], user?.username));
+  };
+
+  const handleClickNotif = (notif: SystemNotification) => {
+    dnuStore.markNotificationAsRead(notif.id);
+    setShowNotifications(false);
+    if (notif.linkUrl) {
+      navigate(notif.linkUrl);
+    }
+  };
 
   return (
     <>
@@ -106,35 +138,95 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileSidebar }) => {
                 setShowUserMenu(false);
               }}
               className="p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground relative transition-colors"
-              title="Thông báo"
+              title="Thông báo hệ thống"
             >
               <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-card animate-pulse" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 px-1 min-w-[16px] h-4 bg-rose-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center ring-2 ring-card animate-pulse">
+                  {unreadCount}
+                </span>
+              )}
             </button>
 
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-card rounded-xl shadow-xl border border-border py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+              <div className="absolute right-0 mt-2 w-84 sm:w-96 bg-card rounded-xl shadow-xl border border-border py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
                 <div className="px-4 py-2 border-b border-border flex items-center justify-between">
-                  <p className="text-xs font-bold text-foreground">Thông báo hệ thống</p>
-                  <span className="text-[10px] text-primary font-semibold cursor-pointer hover:underline">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-bold text-foreground">Thông Báo Hệ Thống</p>
+                    {unreadCount > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-rose-500/15 text-rose-600 font-bold text-[10px]">
+                        {unreadCount} mới
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={handleMarkAllRead}
+                    className="text-[11px] text-primary font-semibold hover:underline"
+                  >
                     Đánh dấu đã đọc
-                  </span>
+                  </button>
                 </div>
-                <div className="max-h-72 overflow-y-auto divide-y divide-border">
-                  {notifications.map((item) => (
-                    <div key={item.id} className="p-3 hover:bg-muted/50 transition-colors flex items-start gap-2.5 cursor-pointer">
-                      {item.isNew ? (
-                        <span className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5" />
-                      ) : (
-                        <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-foreground">{item.title}</p>
-                        <p className="text-[11px] text-muted-foreground truncate">{item.desc}</p>
-                        <p className="text-[10px] text-muted-foreground/70 mt-1">{item.time}</p>
-                      </div>
+                <div className="max-h-80 overflow-y-auto divide-y divide-border">
+                  {notifications.length === 0 ? (
+                    <div className="p-6 text-center text-xs text-muted-foreground">
+                      Không có thông báo mới
                     </div>
-                  ))}
+                  ) : (
+                    notifications.map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => handleClickNotif(item)}
+                        className={`p-3 hover:bg-muted/60 transition-colors flex items-start gap-3 cursor-pointer ${
+                          !item.isRead ? 'bg-orange-500/5' : ''
+                        }`}
+                      >
+                        <div className="shrink-0 mt-0.5">
+                          {item.type === 'ORDER_NEW' && (
+                            <div className="w-7 h-7 rounded-lg bg-orange-500/20 text-orange-600 flex items-center justify-center">
+                              <ShoppingBag className="w-3.5 h-3.5" />
+                            </div>
+                          )}
+                          {item.type === 'ORDER_READY' && (
+                            <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-600 flex items-center justify-center">
+                              <ChefHat className="w-3.5 h-3.5" />
+                            </div>
+                          )}
+                          {item.type === 'STOCK_LOW' && (
+                            <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-600 flex items-center justify-center">
+                              <AlertTriangle className="w-3.5 h-3.5" />
+                            </div>
+                          )}
+                          {item.type === 'REVIEW_NEW' && (
+                            <div className="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-600 flex items-center justify-center">
+                              <Star className="w-3.5 h-3.5" />
+                            </div>
+                          )}
+                          {item.type === 'PAYMENT_SUCCESS' && (
+                            <div className="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-600 flex items-center justify-center">
+                              <Wallet className="w-3.5 h-3.5" />
+                            </div>
+                          )}
+                          {item.type === 'ADMIN_REPLY' && (
+                            <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-600 flex items-center justify-center">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <p className={`text-xs ${!item.isRead ? 'font-bold text-foreground' : 'font-semibold text-foreground/80'}`}>
+                              {item.title}
+                            </p>
+                            {!item.isRead && (
+                              <span className="w-2 h-2 rounded-full bg-orange-500 shrink-0" />
+                            )}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground line-clamp-2 mt-0.5">{item.desc}</p>
+                          <p className="text-[10px] text-muted-foreground/70 mt-1 font-mono">{item.time}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}

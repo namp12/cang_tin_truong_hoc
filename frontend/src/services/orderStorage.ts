@@ -259,6 +259,18 @@ export const orderStorage = {
       console.warn('Auto stock deduction warning:', e);
     }
 
+    // Broadcast system notification across all roles (Admin, Kitchen, Cashier, Student)
+    try {
+      dnuStore.addNotification({
+        title: `Đơn hàng mới ${order.code}`,
+        desc: `${order.customerName || 'Sinh viên'} vừa đặt ${order.itemsSummary} (${order.tableNumber || 'Bàn Quầy'})`,
+        type: 'ORDER_NEW',
+        targetRole: 'ALL',
+        linkUrl: '/kitchen',
+        orderCode: order.code,
+      });
+    } catch (e) {}
+
     // Also sync to backend API in background
     try {
       fetch('http://localhost:5000/api/v1/orders', {
@@ -289,8 +301,10 @@ export const orderStorage = {
 
     // 2. Synchronize Orders
     const orders = this.getOrders();
+    let matchedOrder: OrderItem | undefined;
     const updatedOrders = orders.map((o) => {
       if (o.id === ticketId || o.code === `#${ticketId}`) {
+        matchedOrder = o;
         return {
           ...o,
           status: (nextStatus as OrderItem['status']),
@@ -299,6 +313,30 @@ export const orderStorage = {
       return o;
     });
     this.saveOrders(updatedOrders);
+
+    // Broadcast status notification
+    try {
+      const orderCode = matchedOrder?.code || `#${ticketId}`;
+      if (nextStatus === 'READY') {
+        dnuStore.addNotification({
+          title: `🔔 Món đã nấu xong ${orderCode}`,
+          desc: `Bếp Tòa G đã nấu xong món ăn. Mời ${matchedOrder?.customerName || 'sinh viên'} đến nhận món tại quầy!`,
+          type: 'ORDER_READY',
+          targetRole: 'ALL',
+          linkUrl: '/student/orders',
+          orderCode: orderCode,
+        });
+      } else if (nextStatus === 'COMPLETED') {
+        dnuStore.addNotification({
+          title: `✅ Đơn hàng hoàn tất ${orderCode}`,
+          desc: `Đơn hàng đã được trả món thành công. Chúc bạn dùng bữa ngon miệng!`,
+          type: 'ORDER_COMPLETED',
+          targetRole: 'ALL',
+          linkUrl: '/student/orders',
+          orderCode: orderCode,
+        });
+      }
+    } catch (e) {}
 
     // 3. Sync to backend API in background
     try {

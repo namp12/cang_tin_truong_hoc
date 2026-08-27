@@ -245,6 +245,20 @@ export interface DishReview {
   replies?: ReviewReply[];
 }
 
+export interface SystemNotification {
+  id: number;
+  title: string;
+  desc: string;
+  type: 'ORDER_NEW' | 'ORDER_READY' | 'ORDER_COMPLETED' | 'STOCK_LOW' | 'PAYMENT_SUCCESS' | 'REVIEW_NEW' | 'ADMIN_REPLY' | 'ADMIN_BROADCAST';
+  time: string;
+  createdAt: string;
+  isRead: boolean;
+  targetRole: 'ALL' | 'STUDENT' | 'ADMIN' | 'KITCHEN' | 'CASHIER';
+  targetUser?: string;
+  linkUrl?: string;
+  orderCode?: string;
+}
+
 // Storage Keys
 const KEYS = {
   FOODS: 'dnu_canteen_foods_v2',
@@ -259,6 +273,7 @@ const KEYS = {
   FINANCE: 'dnu_canteen_finance_ledger_v2',
   WALLET: 'dnu_canteen_student_wallet_v2',
   REVIEWS: 'dnu_canteen_reviews_v2',
+  NOTIFICATIONS: 'dnu_canteen_notifications_v2',
 };
 
 // Initial Data Sets
@@ -848,6 +863,66 @@ const initialDishReviews: DishReview[] = [
   },
 ];
 
+const initialNotifications: SystemNotification[] = [
+  {
+    id: 1,
+    title: 'Đơn hàng mới #1029',
+    desc: 'Nguyễn Thành Nam vừa đặt 2 Cơm gà xối mỡ, 1 Trà đào - Bàn G1-02',
+    type: 'ORDER_NEW',
+    time: '2 phút trước',
+    createdAt: new Date().toISOString(),
+    isRead: false,
+    targetRole: 'ALL',
+    linkUrl: '/kitchen',
+    orderCode: '#1029',
+  },
+  {
+    id: 2,
+    title: 'Món ăn đã nấu xong #1028',
+    desc: 'Bếp Tòa G đã hoàn tất 1 Phở bò tái lăn. Mời sinh viên đến nhận món!',
+    type: 'ORDER_READY',
+    time: '8 phút trước',
+    createdAt: new Date().toISOString(),
+    isRead: false,
+    targetRole: 'ALL',
+    linkUrl: '/student/orders',
+    orderCode: '#1028',
+  },
+  {
+    id: 3,
+    title: 'Cảnh báo tồn kho: Sườn non heo',
+    desc: 'Kho thực phẩm chỉ còn 1.2kg (Dưới ngưỡng an toàn 10kg). Vui lòng nhập thêm!',
+    type: 'STOCK_LOW',
+    time: '15 phút trước',
+    createdAt: new Date().toISOString(),
+    isRead: false,
+    targetRole: 'ADMIN',
+    linkUrl: '/admin/inventory',
+  },
+  {
+    id: 4,
+    title: 'Đánh giá món mới: Cơm Gà Xối Mỡ',
+    desc: 'Sinh viên Nguyễn Thành Nam vừa đánh giá 5⭐ cho món Cơm gà xối mỡ giòn da.',
+    type: 'REVIEW_NEW',
+    time: '25 phút trước',
+    createdAt: new Date().toISOString(),
+    isRead: true,
+    targetRole: 'ADMIN',
+    linkUrl: '/admin/reviews',
+  },
+  {
+    id: 5,
+    title: 'Thanh toán ví DNU Pay thành công',
+    desc: 'Đơn hàng #1029 đã được thanh toán 95.000đ qua Ví DNU Pay.',
+    type: 'PAYMENT_SUCCESS',
+    time: '30 phút trước',
+    createdAt: new Date().toISOString(),
+    isRead: true,
+    targetRole: 'ALL',
+    linkUrl: '/admin/finance',
+  },
+];
+
 export const dnuStore = {
   // 1. FOODS
   getFoods(): FoodCatalogItem[] {
@@ -1328,6 +1403,69 @@ export const dnuStore = {
   },
 
   // -------------------------------------------------------------
+  // 13. SYSTEM NOTIFICATIONS (THÔNG BÁO THÔNG SUỐT ĐA KÊNH)
+  // -------------------------------------------------------------
+  getNotifications(userRole: string = 'ALL', username?: string): SystemNotification[] {
+    try {
+      const stored = localStorage.getItem(KEYS.NOTIFICATIONS);
+      if (stored) {
+        const list: SystemNotification[] = JSON.parse(stored);
+        return list.filter((n) => {
+          if (n.targetRole === 'ALL') return true;
+          if (userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userRole === 'CANTEEN_MANAGER') {
+            return n.targetRole === 'ADMIN';
+          }
+          if (userRole === 'KITCHEN_STAFF') {
+            return n.targetRole === 'KITCHEN';
+          }
+          if (userRole === 'CASHIER') {
+            return n.targetRole === 'CASHIER';
+          }
+          if (userRole === 'STUDENT') {
+            if (n.targetRole === 'STUDENT') {
+              if (n.targetUser && username) {
+                return n.targetUser.toLowerCase() === username.toLowerCase();
+              }
+              return true;
+            }
+          }
+          return true;
+        });
+      }
+    } catch (e) {}
+    return initialNotifications;
+  },
+  saveNotifications(notifs: SystemNotification[]) {
+    localStorage.setItem(KEYS.NOTIFICATIONS, JSON.stringify(notifs));
+    window.dispatchEvent(new Event('dnu_store_updated'));
+  },
+  addNotification(notif: Omit<SystemNotification, 'id' | 'createdAt' | 'isRead' | 'time'>) {
+    const list = this.getNotifications('ALL');
+    const created: SystemNotification = {
+      ...notif,
+      id: Date.now(),
+      createdAt: new Date().toISOString(),
+      time: 'Vừa xong',
+      isRead: false,
+    };
+    const updated = [created, ...list];
+    this.saveNotifications(updated);
+    return created;
+  },
+  markAllNotificationsAsRead() {
+    const list = this.getNotifications('ALL');
+    const updated = list.map((n) => ({ ...n, isRead: true }));
+    this.saveNotifications(updated);
+    return updated;
+  },
+  markNotificationAsRead(id: number) {
+    const list = this.getNotifications('ALL');
+    const updated = list.map((n) => (n.id === id ? { ...n, isRead: true } : n));
+    this.saveNotifications(updated);
+    return updated;
+  },
+
+  // -------------------------------------------------------------
   // DIAGNOSTIC CHECK
   // -------------------------------------------------------------
   runSystemHealthCheck() {
@@ -1341,6 +1479,7 @@ export const dnuStore = {
       { module: 'Tồn kho & Xuất nhập', status: 'OK', persistent: true },
       { module: 'Sổ quỹ Dòng tiền & Ví DNU Pay', status: 'OK', count: this.getFinanceTransactions().length, persistent: true },
       { module: 'Đánh giá & Rating Món ăn', status: 'OK', count: this.getReviews().length, persistent: true },
+      { module: 'Hệ thống thông báo Realtime', status: 'OK', count: this.getNotifications('ALL').length, persistent: true },
       { module: 'Backend API MySQL / WebSocket', status: 'ONLINE', persistent: true },
     ];
     return checks;
