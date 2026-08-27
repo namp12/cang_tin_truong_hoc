@@ -269,15 +269,21 @@ export const KitchenPage: React.FC = () => {
                     </div>
 
                     <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs">
-                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Đã báo khách lấy</span>
+                      <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-bold text-[11px]">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                        <span>Chờ Quầy Giao Đồ</span>
+                      </div>
                       <Button
-                        onClick={() => updateStatus(ticket.id, 'COMPLETED')}
-                        variant="default"
+                        onClick={() => {
+                          emitStatusUpdate(ticket.id, ticket.orderNumber, 'READY', 1);
+                        }}
+                        variant="outline"
                         size="sm"
-                        className="bg-emerald-600 hover:bg-emerald-700 font-bold text-white shadow-xs"
+                        className="border-emerald-500/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10 font-bold text-xs shadow-xs"
+                        title="Bấm để phát lại chuông báo nhận món tới Quầy Thu Ngân và Sinh Viên"
                       >
-                        <CheckCheck className="w-3.5 h-3.5 mr-1" />
-                        Đã Trả Món
+                        <BellRing className="w-3.5 h-3.5 mr-1 text-emerald-600 animate-bounce" />
+                        Gọi Chuông
                       </Button>
                     </div>
                   </CardContent>

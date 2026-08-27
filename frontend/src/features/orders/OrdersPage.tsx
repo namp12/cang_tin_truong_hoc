@@ -261,32 +261,42 @@ export const OrdersPage: React.FC = () => {
                   </td>
                   <td className="py-3.5 px-4">{getStatusBadge(order.status)}</td>
                   <td className="py-3.5 px-4 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {order.status === 'READY' && (
+                    <div className="flex items-center justify-end gap-1.5">
+                      {/* Cashier / Manager / Admin Action: Mark order as COMPLETED when giving dishes to customer */}
+                      {!isStudent && order.status === 'READY' && (
                         <button
                           onClick={() => handleChangeStatus(order.id, 'COMPLETED')}
-                          className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold shadow-xs transition-colors flex items-center gap-1"
-                          title="Xác nhận trả món cho khách"
+                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold shadow-xs transition-colors flex items-center gap-1"
+                          title="Xác nhận trả món cho khách (Thu ngân quầy)"
                         >
-                          <CheckCheck className="w-3 h-3" />
+                          <CheckCheck className="w-3.5 h-3.5" />
                           <span>Trả món</span>
                         </button>
                       )}
 
-                      <button
-                        onClick={() => handlePrintOrder(order)}
-                        className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
-                        title="In hóa đơn K80"
-                      >
-                        <Printer className="w-4 h-4" />
-                      </button>
+                      {/* Print Thermal POS K80 Receipt (Cashier & Admin only, hidden from Student) */}
+                      {!isStudent && (
+                        <button
+                          onClick={() => handlePrintOrder(order)}
+                          className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                          title="In hóa đơn nhiệt K80 (Quầy Thu Ngân)"
+                        >
+                          <Printer className="w-4 h-4" />
+                        </button>
+                      )}
 
+                      {/* View E-Receipt / Order Details (Available to everyone) */}
                       <button
                         onClick={() => setSelectedOrder(order)}
-                        className="p-1.5 text-muted-foreground hover:text-primary hover:bg-muted rounded-lg transition-colors"
-                        title="Xem chi tiết"
+                        className={`p-1.5 rounded-lg transition-colors flex items-center gap-1 ${
+                          isStudent
+                            ? 'bg-orange-500/10 text-orange-600 hover:bg-orange-500/20 font-bold px-2.5 py-1'
+                            : 'text-muted-foreground hover:text-primary hover:bg-muted'
+                        }`}
+                        title={isStudent ? 'Xem chi tiết đơn & phiếu điện tử' : 'Xem chi tiết'}
                       >
                         <Eye className="w-4 h-4" />
+                        {isStudent && <span className="text-[11px]">Xem Chi Tiết</span>}
                       </button>
                     </div>
                   </td>
