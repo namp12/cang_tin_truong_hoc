@@ -61,8 +61,32 @@ export const StudentHomePage: React.FC = () => {
   const [cartCount, setCartCount] = useState(2);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
 
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedFoodToReview, setSelectedFoodToReview] = useState('');
+  const [reviewStars, setReviewStars] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+
   const [foods, setFoods] = useState(() => dnuStore.getFoods());
   const [categories, setCategories] = useState(() => dnuStore.getCategories());
+
+  const handleSubmitReview = () => {
+    if (!reviewComment.trim()) return;
+
+    dnuStore.addReview({
+      studentName: user?.fullName || 'Nguyễn Thành Nam',
+      studentClass: isStudent ? (user?.username || 'K16 Khoa CNTT DNU') : 'Sinh Viên DNU',
+      foodName: selectedFoodToReview || foods[0]?.name || 'Cơm Gà Xối Mỡ Giòn Da',
+      rating: reviewStars,
+      comment: reviewComment,
+      sentiment: reviewStars >= 4 ? 'POSITIVE' : reviewStars === 3 ? 'NEUTRAL' : 'CRITICAL',
+      canteenName: 'Căng tin Tòa G (Hà Đông)',
+    });
+
+    setShowReviewModal(false);
+    setReviewComment('');
+    setReviewStars(5);
+    alert(`Cảm ơn bạn! Đánh giá món "${selectedFoodToReview}" đã được gửi thành công!`);
+  };
 
   React.useEffect(() => {
     const syncData = () => {
@@ -246,21 +270,99 @@ export const StudentHomePage: React.FC = () => {
 
               <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-100">
                 <span className="text-xs font-extrabold text-orange-600 font-mono">{formatCurrency(food.price)}</span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCartCount(cartCount + 1);
-                  }}
-                  className="w-7 h-7 rounded-lg bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center shadow-sm"
-                  title="Thêm vào giỏ"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFoodToReview(food.name);
+                      setShowReviewModal(true);
+                    }}
+                    className="px-2 py-1 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 text-[11px] font-bold flex items-center gap-0.5 border border-amber-200"
+                    title="Đánh giá món này"
+                  >
+                    <Star className="w-3 h-3 fill-amber-400" />
+                    <span>Đánh giá</span>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCartCount(cartCount + 1);
+                    }}
+                    className="w-7 h-7 rounded-lg bg-orange-600 hover:bg-orange-700 text-white flex items-center justify-center shadow-sm"
+                    title="Thêm vào giỏ"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Review Dialog for Student */}
+      {showReviewModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4 border border-slate-100 animate-in zoom-in-95">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600">
+                  <Star className="w-5 h-5 fill-amber-400" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">Đánh Giá Món Ăn</h4>
+                  <p className="text-[11px] text-slate-500 font-semibold">{selectedFoodToReview}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="text-slate-400 hover:text-slate-700 font-bold p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Mức độ hài lòng của bạn:</label>
+                <div className="flex items-center justify-center gap-2 py-2 bg-slate-50 rounded-xl">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setReviewStars(s)}
+                      className="p-1 hover:scale-125 transition-transform"
+                    >
+                      <Star
+                        className={`w-7 h-7 ${s <= reviewStars ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Cảm nhận về hương vị / phục vụ:</label>
+                <textarea
+                  rows={3}
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="Món ăn vừa miệng, nóng hổi, thịt mềm, phục vụ nhanh chóng..."
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+
+              <Button
+                onClick={handleSubmitReview}
+                variant="default"
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs"
+              >
+                Gửi Đánh Giá Ngay
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Live Order Tracking Modal */}
       <OrderTrackingModal open={showTrackingModal} onOpenChange={setShowTrackingModal} order={activeOrder} />

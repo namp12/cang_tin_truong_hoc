@@ -4,6 +4,7 @@ import { Badge } from '../../components/ui/Badge.js';
 import { Button } from '../../components/ui/Button.js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../../components/ui/dialog.js';
 import { dnuStore, DishReview } from '../../services/dnuStore.js';
+import { useAuth } from '../../contexts/AuthContext.js';
 import { 
   Star, 
   Search, 
@@ -21,6 +22,9 @@ import {
 } from 'lucide-react';
 
 export const ReviewsPage: React.FC = () => {
+  const { user, hasRole } = useAuth();
+  const isStudent = hasRole('STUDENT') || user?.roles?.includes('STUDENT') || user?.userType === 'STUDENT';
+
   const [reviews, setReviews] = useState<DishReview[]>(() => dnuStore.getReviews());
   const [stats, setStats] = useState(() => dnuStore.getReviewStats());
   const [filterRating, setFilterRating] = useState<number | 'ALL'>('ALL');
@@ -29,8 +33,8 @@ export const ReviewsPage: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [foods] = useState(() => dnuStore.getFoods());
   const [newReview, setNewReview] = useState({
-    studentName: 'Nguyễn Thành Nam',
-    studentClass: 'K16 Khoa CNTT DNU',
+    studentName: user?.fullName || 'Nguyễn Thành Nam',
+    studentClass: isStudent ? (user?.username || 'K16 Khoa CNTT DNU') : 'Sinh Viên DNU',
     foodName: foods[0]?.name || 'Cơm Gà Xối Mỡ Giòn Da',
     rating: 5,
     comment: '',
@@ -38,6 +42,19 @@ export const ReviewsPage: React.FC = () => {
     canteenName: 'Căng tin Tòa G (Hà Đông)',
   });
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+
+  const handleOpenAddModal = () => {
+    setNewReview({
+      studentName: user?.fullName || 'Nguyễn Thành Nam',
+      studentClass: isStudent ? (user?.username || 'K16 Khoa CNTT DNU') : 'Sinh Viên DNU',
+      foodName: foods[0]?.name || 'Cơm Gà Xối Mỡ Giòn Da',
+      rating: 5,
+      comment: '',
+      sentiment: 'POSITIVE' as const,
+      canteenName: 'Căng tin Tòa G (Hà Đông)',
+    });
+    setShowAddModal(true);
+  };
 
   // Sync with dnuStore
   useEffect(() => {
@@ -71,7 +88,7 @@ export const ReviewsPage: React.FC = () => {
       canteenName: newReview.canteenName,
     });
 
-    setActionSuccess(`Cảm ơn bạn! Đánh giá món "${newReview.foodName}" đã được lưu thành công!`);
+    setActionSuccess(`Cảm ơn ${newReview.studentName}! Đánh giá món "${newReview.foodName}" đã được gửi thành công!`);
     setShowAddModal(false);
     setNewReview({
       ...newReview,
@@ -93,15 +110,15 @@ export const ReviewsPage: React.FC = () => {
 
   return (
     <div className="space-y-5">
-      {/* Toast Alert */}
+      {/* Action Toast Alert */}
       {actionSuccess && (
-        <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 flex items-center justify-between shadow-xs animate-in slide-in-from-top-2">
-          <div className="flex items-center gap-2 text-xs font-bold">
+        <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             <span>{actionSuccess}</span>
           </div>
-          <button onClick={() => setActionSuccess(null)} className="text-xs font-semibold opacity-70 hover:opacity-100">
-            ✕ Đóng
+          <button onClick={() => setActionSuccess(null)} className="text-emerald-700 font-bold hover:underline">
+            ✕
           </button>
         </div>
       )}
@@ -110,24 +127,28 @@ export const ReviewsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-foreground tracking-tight">Đánh Giá & Phản Hồi Món Ăn DNU</h2>
+            <h2 className="text-xl font-bold text-foreground tracking-tight">
+              {isStudent ? '⭐ Đánh Giá & Cảm Nhận Món Ăn' : 'Quản Lý Đánh Giá & Phản Hồi Sinh Viên'}
+            </h2>
             <Badge variant="primary" className="bg-amber-600 text-white font-mono text-[10px]">
               {reviews.length} REVIEW
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Lắng nghe ý kiến của sinh viên Đại Học Đại Nam để liên tục nâng cao chất lượng ẩm thực học đường
+            {isStudent
+              ? 'Gửi nhận xét và chấm điểm sao cho các món ăn bạn đã thưởng thức tại Căng tin DNU'
+              : 'Lắng nghe ý kiến của sinh viên Đại Học Đại Nam để liên tục nâng cao chất lượng ẩm thực học đường'}
           </p>
         </div>
 
         <Button
-          onClick={() => setShowAddModal(true)}
+          onClick={handleOpenAddModal}
           variant="default"
           size="sm"
           className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs"
           leftIcon={<Plus className="w-4 h-4" />}
         >
-          + Viết Đánh Giá Món Ăn
+          + Gửi Đánh Giá Món Ăn
         </Button>
       </div>
 
