@@ -9,6 +9,7 @@ import { errorHandler } from './middlewares/error.middleware.js';
 import authRoutes from './modules/auth/auth.routes.js';
 import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
 import ordersRoutes from './modules/orders/orders.routes.js';
+import reportsRoutes from './modules/reports/reports.routes.js';
 import { initSocketServer } from './socket.js';
 
 dotenv.config();
@@ -45,6 +46,8 @@ app.get('/api/v1/health', (req, res) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/orders', ordersRoutes);
+app.use('/api/v1/reports', reportsRoutes);
+app.use('/api/reports', reportsRoutes); // Alias support for /api/reports/daily-revenue
 
 // Global Error Handler
 app.use(errorHandler);
