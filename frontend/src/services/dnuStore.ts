@@ -214,6 +214,7 @@ export interface StudentWallet {
   mssv: string;
   studentName: string;
   balance: number;
+  points: number; // Điểm tích lũy sinh viên DNU (1.000đ = 1 điểm)
   transactions: WalletTransaction[];
 }
 
@@ -791,6 +792,7 @@ const initialStudentWallet: StudentWallet = {
   mssv: '2110001',
   studentName: 'Nguyễn Thành Nam',
   balance: 185000,
+  points: 380,
   transactions: [
     {
       id: 1,
@@ -1573,6 +1575,8 @@ export const dnuStore = {
     const cleanMssv = (mssv || '2110001').replace(/\D/g, '') || '2110001';
     const wallet = this.getStudentWallet(cleanMssv);
     const newBalance = Math.max(0, wallet.balance - amount);
+    const earnedPoints = Math.max(1, Math.floor(amount / 1000));
+
     const newTx: WalletTransaction = {
       id: Date.now(),
       type: 'PAYMENT',
@@ -1584,13 +1588,75 @@ export const dnuStore = {
       balanceAfter: newBalance,
     };
     wallet.balance = newBalance;
+    wallet.points = (wallet.points || 0) + earnedPoints;
     wallet.transactions = [newTx, ...wallet.transactions];
     this.saveStudentWallet(wallet);
+
+    // Notify point reward
+    this.addNotification({
+      title: `Tích lũy +${earnedPoints} Điểm Thưởng DNU ⭐`,
+      desc: `Bạn vừa nhận được ${earnedPoints} điểm từ đơn hàng ${orderCode}. Tích điểm đổi voucher và quà căng tin!`,
+      type: 'ORDER_COMPLETED',
+      targetRole: 'STUDENT',
+      linkUrl: '/student/profile',
+    });
+
     return wallet;
   },
 
-  // -------------------------------------------------------------
-  // 11. DISH REVIEWS & RATINGS
+  redeemStudentPoints(rewardType: 'VOUCHER_10K' | 'FREE_DRINK' | 'FREE_MEAL' | 'VIP_PASS', mssv: string = '2110001') {
+    const cleanMssv = (mssv || '2110001').replace(/\D/g, '') || '2110001';
+    const wallet = this.getStudentWallet(cleanMssv);
+
+    const costMap = {
+      VOUCHER_10K: { points: 100, name: 'Voucher Giảm 10.000đ', val: 10000, type: 'FIXED_AMOUNT' as const },
+      FREE_DRINK: { points: 200, name: 'Voucher Miễn Phí 1 Ly Trà Đào', val: 25000, type: 'FIXED_AMOUNT' as const },
+      FREE_MEAL: { points: 300, name: 'Voucher Miễn Phí 1 Suất Cơm Gà', val: 35000, type: 'FIXED_AMOUNT' as const },
+      VIP_PASS: { points: 500, name: 'Thẻ VIP Căng Tin DNU (Giảm 10%)', val: 10, type: 'PERCENT' as const },
+    };
+
+    const reward = costMap[rewardType];
+    if (!reward) return { success: false, message: 'Phần thưởng không hợp lệ' };
+    if ((wallet.points || 0) < reward.points) {
+      return { success: false, message: `Bạn cần tối thiểu ${reward.points} điểm (Hiện có: ${wallet.points || 0} điểm)` };
+    }
+
+    // Deduct points
+    wallet.points = (wallet.points || 0) - reward.points;
+    this.saveStudentWallet(wallet);
+
+    // Create new personal voucher for student
+    const codeSuffix = Date.now().toString().slice(-4);
+    const voucherCode = `REWARD-${rewardType.slice(0, 4)}-${codeSuffix}`;
+    const vouchers = this.getVouchers();
+    const newVoucher: PromotionVoucher = {
+      id: Date.now(),
+      code: voucherCode,
+      title: reward.name,
+      discountType: reward.type,
+      discountValue: reward.val,
+      minOrderValue: 0,
+      status: 'ACTIVE',
+      maxUsage: 1,
+      usedCount: 0,
+      validFrom: '2026-08-28',
+      validTo: '2026-12-31',
+      targetStudents: `Sinh viên MSSV ${cleanMssv}`,
+      targetRole: 'STUDENT',
+    };
+    this.saveVouchers([newVoucher, ...vouchers]);
+
+    // Send notification
+    this.addNotification({
+      title: `Đổi thưởng thành công: ${reward.name} 🎁`,
+      desc: `Đã sử dụng ${reward.points} điểm. Mã voucher của bạn là: ${voucherCode}. Dùng ngay khi thanh toán!`,
+      type: 'PAYMENT_SUCCESS',
+      targetRole: 'STUDENT',
+      linkUrl: '/student/cart',
+    });
+
+    return { success: true, voucherCode, rewardName: reward.name };
+  },
   // -------------------------------------------------------------
   getReviews(): DishReview[] {
     try {
